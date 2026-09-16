@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#17233d">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://*.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=()">
+  <title>Intendencia | Órdenes de trabajo</title>
+  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="enhancements.css?v=7">
+  <link rel="stylesheet" href="actions.css?v=7">
+  <link rel="stylesheet" href="services.css?v=7">
+  <link rel="stylesheet" href="workflow.css?v=8">
+  <link rel="stylesheet" href="auth.css?v=8">
+  <link rel="stylesheet" href="modules.css?v=9">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">IC</span><div><strong>Intendencia</strong><small>Cámara Comercial</small></div></div>
+      <nav>
+        <button class="nav-item active" data-view="dashboard">Panel general</button>
+        <button class="nav-item" data-view="orders">Órdenes de trabajo</button>
+        <button class="nav-item" data-view="people">Personal</button>
+        <button class="nav-item" data-view="tools">Herramientas</button>
+        <button class="nav-item" data-view="services">Servicios</button>
+        <button class="nav-item" data-view="contacts">Contactos de utilidad</button>
+      </nav>
+      <div class="sidebar-footer"><span class="online-dot"></span> Datos guardados localmente</div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div><p class="eyebrow">GESTIÓN OPERATIVA</p><h1 id="pageTitle">Panel general</h1></div>
+        <div class="top-actions"><div class="session-user"><small>Sesión activa</small><strong id="sessionEmail"></strong></div><button class="secondary" id="logoutBtn">Cerrar sesión</button><button class="primary" id="newOrderBtn">+ Nueva orden</button></div>
+      </header>
+
+      <section id="dashboardView" class="view active">
+        <div class="metrics" id="metrics"></div>
+        <div class="content-grid">
+          <section class="panel"><div class="panel-head"><div><h2>Actividad por edificio</h2><p>Órdenes activas y resueltas</p></div></div><div id="buildingSummary"></div></section>
+          <section class="panel"><div class="panel-head"><div><h2>Atención prioritaria</h2><p>Urgentes, demoradas o sin asignar</p></div></div><div id="priorityList"></div></section>
+        </div>
+        <section class="panel recent"><div class="panel-head"><div><h2>Órdenes recientes</h2><p>Últimas actualizaciones del equipo</p></div><button class="text-button" data-go="orders">Ver todas</button></div><div id="recentOrders"></div></section>
+      </section>
+
+      <section id="ordersView" class="view">
+        <div class="toolbar panel">
+          <input id="searchInput" type="search" placeholder="Buscar por número, tarea, sector o responsable">
+          <select id="statusFilter"><option value="">Todos los estados</option></select>
+          <select id="buildingFilter"><option value="">Todos los edificios</option></select>
+          <select id="specialtyFilter"><option value="">Todas las especialidades</option></select>
+        </div>
+        <div class="panel"><div class="panel-head"><div><h2>Órdenes de trabajo</h2><p id="ordersCount"></p></div></div><div id="ordersTable"></div></div>
+      </section>
+
+      <section id="peopleView" class="view">
+        <div class="people-header"><p>Administrá la dotación disponible para asignar trabajos.</p><button class="secondary" id="newPersonBtn">+ Agregar empleado</button></div>
+        <div class="people-grid" id="peopleGrid"></div>
+      </section>
+
+      <section id="toolsView" class="view">
+        <div class="people-header"><div><p>Inventario y registro de herramientas entregadas al personal.</p></div><button class="secondary" id="newToolBtn">+ Cargar herramienta</button></div>
+        <div class="metrics tool-metrics" id="toolMetrics"></div>
+        <div class="toolbar panel tool-toolbar">
+          <input id="toolSearch" type="search" placeholder="Buscar herramienta, marca, modelo o responsable">
+          <select id="toolStatusFilter"><option value="">Todos los estados</option><option>Disponible</option><option>Entregada</option><option>En reparación</option><option>Fuera de servicio</option></select>
+        </div>
+        <div class="panel"><div class="panel-head"><div><h2>Inventario de herramientas</h2><p id="toolsCount"></p></div></div><div id="toolsTable"></div></div>
+      </section>
+
+      <section id="servicesView" class="view">
+        <div class="people-header"><p>Contratos, prestadores, vencimientos y reclamos organizados por edificio.</p><button class="secondary" id="newServiceBtn">+ Cargar servicio</button></div>
+        <div id="servicesByBuilding"></div>
+      </section>
+
+      <section id="contactsView" class="view">
+        <div class="people-header"><p>Agenda centralizada de proveedores, organismos y contactos operativos.</p><button class="secondary" id="newContactBtn">+ Agregar contacto</button></div>
+        <div class="toolbar panel contact-toolbar"><input id="contactSearch" type="search" placeholder="Buscar nombre, entidad, función, teléfono o correo"></div>
+        <div class="panel"><div class="panel-head"><div><h2>Contactos de utilidad</h2><p id="contactsCount"></p></div></div><div id="contactsTable"></div></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="orderDialog">
+    <form id="orderForm" method="dialog">
+      <div class="modal-head"><div><p class="eyebrow">ORDEN DE TRABAJO</p><h2 id="orderModalTitle">Nueva orden</h2></div><button type="button" class="icon-btn close-modal">×</button></div>
+      <input type="hidden" name="id">
+      <div class="form-grid">
+        <label class="wide">Reparación predeterminada<select name="template"><option value="">Seleccionar o escribir manualmente</option></select></label>
+        <label class="wide">Título del trabajo<input name="title" required maxlength="90" placeholder="Ej.: Reparar pérdida de agua"></label>
+        <label>Edificio<select name="building" required></select></label>
+        <label>Dependencia<select name="dependency" required></select></label>
+        <label class="wide">Detalle del sector, oficina o puerta<input name="location" required placeholder="Ej.: 9.º piso, oficina 914, puerta 22"></label>
+        <label>Categoría<select name="category" required></select></label>
+        <label>Especialidad requerida<select name="specialty" required></select></label>
+        <label>Prioridad<select name="priority" required></select></label>
+        <label>Estado<select name="status" required></select></label>
+        <label>Responsable<select name="assignee"></select></label>
+        <label>Fecha límite<input name="dueDate" type="date"></label>
+        <label class="wide">Descripción<textarea name="description" rows="3" placeholder="Detalle del problema, materiales o indicaciones"></textarea></label>
+      </div>
+      <div class="modal-actions"><button type="button" class="danger" id="deleteOrderBtn">Eliminar orden</button><button type="button" class="finish-button" id="finishOrderBtn">Finalizar orden</button><span class="action-spacer"></span><button type="button" class="secondary close-modal">Cancelar</button><button class="primary" type="submit">Guardar orden</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="personDialog">
+    <form id="personForm" method="dialog">
+      <div class="modal-head"><h2>Agregar empleado</h2><button type="button" class="icon-btn close-person">×</button></div>
+      <div class="form-grid"><label class="wide">Nombre y apellido<input name="name" required></label><label>Especialidad<select name="role" required></select></label><label>Edificio base<select name="building" required></select></label><label class="wide">WhatsApp<input name="phone" inputmode="tel" placeholder="Ej.: 1155551234"></label></div>
+      <div class="modal-actions"><button type="button" class="secondary close-person">Cancelar</button><button class="primary" type="submit">Agregar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="serviceDialog"><form id="serviceForm" method="dialog"><div class="modal-head"><div><p class="eyebrow">SERVICIOS</p><h2 id="serviceModalTitle">Cargar servicio</h2></div><button type="button" class="icon-btn close-service">×</button></div><input type="hidden" name="id"><div class="form-grid"><label>Edificio<select name="building" required></select></label><label>Tipo de servicio<select name="serviceType" required></select></label><label>Empresa / prestador<input name="provider" required></label><label>Vigente hasta<input name="endDate" type="date"></label><label>Contacto<input name="contactName" placeholder="Nombre y apellido"></label><label>Teléfono<input name="phone" inputmode="tel"></label><label class="wide">Correo electrónico<input name="email" type="email"></label><label class="wide">Observaciones<textarea name="notes" rows="3"></textarea></label></div><div class="modal-actions"><button type="button" class="danger" id="deleteServiceBtn">Eliminar</button><span class="action-spacer"></span><button type="button" class="secondary close-service">Cancelar</button><button class="primary" type="submit">Guardar servicio</button></div></form></dialog>
+
+  <dialog id="claimDialog"><form id="claimForm" method="dialog"><div class="modal-head"><div><p class="eyebrow">RECLAMO DE SERVICIO</p><h2 id="claimTitle">Generar correo</h2></div><button type="button" class="icon-btn close-claim">×</button></div><input type="hidden" name="serviceId"><div class="form-grid"><label class="wide">Motivo del reclamo<select name="reason" required></select></label><label class="wide">Ubicación precisa<input name="location" required placeholder="Piso, oficina, sector o equipo"></label><label class="wide">Detalle adicional<textarea name="detail" rows="3"></textarea></label><label class="wide">Correo generado<textarea id="claimEmail" rows="10" readonly></textarea></label></div><div class="modal-actions"><button type="button" class="secondary" id="copyClaimBtn">Copiar correo</button><button type="button" class="primary" id="generateClaimBtn">Redactar correo</button></div></form></dialog>
+
+  <dialog id="contactDialog"><form id="contactForm" method="dialog"><div class="modal-head"><div><p class="eyebrow">AGENDA</p><h2 id="contactModalTitle">Agregar contacto</h2></div><button type="button" class="icon-btn close-contact">×</button></div><input type="hidden" name="id"><div class="form-grid"><label>Nombre<input name="name" required></label><label>Entidad / empresa<input name="organization"></label><label>Función o rubro<input name="role" required></label><label>Edificio relacionado<select name="building"></select></label><label>Teléfono<input name="phone" inputmode="tel"></label><label>Correo<input name="email" type="email"></label><label class="wide">Notas<textarea name="notes" rows="3"></textarea></label></div><div class="modal-actions"><button type="button" class="danger" id="deleteContactBtn">Eliminar</button><span class="action-spacer"></span><button type="button" class="secondary close-contact">Cancelar</button><button class="primary" type="submit">Guardar contacto</button></div></form></dialog>
+
+  <dialog id="messageDialog">
+    <div class="modal-head"><div><p class="eyebrow">ASIGNACIÓN GENERADA</p><h2>Mensaje para WhatsApp</h2></div><button type="button" class="icon-btn close-message">×</button></div>
+    <div class="message-body"><textarea id="whatsappMessage" rows="11" readonly></textarea></div>
+    <div class="modal-actions order-actions"><a class="primary whatsapp-link" id="openWhatsappBtn" target="_blank" rel="noopener">Enviar por WhatsApp</a><button type="button" class="secondary" id="copyMessageBtn">Copiar orden</button><button type="button" class="secondary" id="printOrderBtn">Imprimir orden</button></div>
+  </dialog>
+
+  <dialog id="toolDialog">
+    <form id="toolForm" method="dialog">
+      <div class="modal-head"><div><p class="eyebrow">INVENTARIO</p><h2 id="toolModalTitle">Cargar herramienta</h2></div><button type="button" class="icon-btn close-tool">×</button></div>
+      <input type="hidden" name="id">
+      <div class="form-grid">
+        <label>Herramienta<input name="name" required placeholder="Ej.: Taladro percutor"></label>
+        <label>Tipo<select name="type" required><option>Herramienta eléctrica</option><option>Herramienta manual</option><option>Instrumento de medición</option><option>Elemento de seguridad</option><option>Equipo de mantenimiento</option><option>Otro</option></select></label>
+        <label>Marca<input name="brand" required placeholder="Ej.: Bosch"></label>
+        <label>Modelo<input name="model" required placeholder="Ej.: GSB 13 RE"></label>
+        <label>N.º de inventario o serie<input name="serial" placeholder="Identificación interna"></label>
+        <label>Estado<select name="toolStatus" required><option>Disponible</option><option>Entregada</option><option>En reparación</option><option>Fuera de servicio</option></select></label>
+        <label>Entregada a<select name="holder"></select></label>
+        <label>Fecha de entrega<input name="assignedDate" type="date"></label>
+        <label class="wide">Observaciones<textarea name="notes" rows="3" placeholder="Estado, accesorios incluidos o aclaraciones"></textarea></label>
+      </div>
+      <div class="modal-actions"><button type="button" class="danger" id="deleteToolBtn">Eliminar</button><span class="action-spacer"></span><button type="button" class="secondary close-tool">Cancelar</button><button class="primary" type="submit">Guardar herramienta</button></div>
+    </form>
+  </dialog>
+
+  <section id="printSheet" class="print-sheet" aria-hidden="true"></section>
+  <section id="authScreen" class="auth-screen">
+    <form id="loginForm" class="login-card">
+      <div class="brand auth-brand"><span class="brand-mark">IC</span><div><strong>Intendencia</strong><small>Cámara Comercial</small></div></div>
+      <p class="eyebrow">ACCESO RESTRINGIDO</p><h1>Sistema de gestión</h1><p class="login-copy">Ingresá con el usuario autorizado por la Intendencia.</p>
+      <p>Usuario: <strong>Master</strong></p>
+      <label>Contraseña<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+      <p id="loginError" class="login-error" role="alert"></p><button class="primary login-submit" type="submit">Ingresar</button>
+      <p class="config-warning" id="configWarning">Primero completá la configuración de Supabase en <strong>config.js</strong>.</p>
+    </form>
+  </section>
+  <div id="toast" class="toast"></div>
+  <script src="config.js?v=9"></script>
+  <script src="supabase-api.js?v=9"></script>
+  <script src="modules.js?v=9"></script>
+  <script src="app.js?v=9"></script>
+</body>
+</html>
