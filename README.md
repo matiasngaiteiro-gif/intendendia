@@ -1,5 +1,28 @@
 # Sistema de órdenes de trabajo — Intendencia + Supabase
 
+## Versión 10: formulario simplificado y contactos PJN
+
+- Nueva especialidad Administrativo y 40 tareas predeterminadas (30 incorporaciones).
+- Se eliminan los campos visibles Título del trabajo y Especialidad requerida. El trabajo se toma del catálogo; «Otra tarea» permite escribir uno propio. La especialidad se obtiene del responsable o, si no lo hay, de la categoría. Las órdenes anteriores conservan sus títulos y especialidades hasta editarlas.
+- «Nueva orden» aparece únicamente en Órdenes de trabajo.
+- WhatsApp breve y cercano: primer nombre, tarea, edificio, dependencia abreviada, sector y vencimiento/prioridad cuando corresponde. No incluye descripción. La impresión conserva los detalles completos.
+- Abrir una herramienta entregada y pulsar «Ya la devolvió»: registra responsable anterior, fecha de entrega y devolución; queda disponible. El historial se conserva en Supabase.
+- Agenda PJN con búsqueda por palabras sin distinguir tildes ni mayúsculas. 50 contactos institucionales: 31 juzgados, Cámara, 6 salas y 12 dependencias generales. Transcritos de la guía oficial el 16/09/2026; no se actualizan automáticamente. Se respetan las direcciones oficiales, incluso M.T. Alvear 1840, fuera de los tres edificios propios.
+- **Pendiente: fiscalías comerciales.** La búsqueda «Fiscalía» en la guía PJN no devolvió resultados y «Fiscal» mostró dependencias ajenas al fuero solicitado. No se incorporaron datos de fiscalías sin verificar. Pueden cargarse manualmente desde Contactos.
+- En instalaciones existentes, pulsar «Cargar contactos oficiales PJN» en Contactos. Agrega faltantes por ID/correo, sin reemplazar registros existentes; volver a pulsarlo puede recuperar contactos oficiales eliminados.
+
+### Actualizar una instalación existente
+
+1. Guardar una copia de los archivos actuales del repositorio.
+2. Reemplazar `index.html`, `app.js`, `workflow.css` y `README.md`; agregar `contacts-data.js`. Los tests son opcionales para publicar.
+3. **Conservar el `config.js` ya configurado.** El incluido aquí es únicamente una plantilla.
+4. Confirmar los cambios en GitHub y esperar que finalice la publicación de Pages.
+5. Abrir la aplicación y recargar sin caché. En Contactos, importar el catálogo oficial si ya existían datos.
+
+No ejecutar nuevamente `supabase-setup.sql` ni `supabase-master.sql` para esta actualización: los nuevos datos se guardan en el JSON compartido existente. No se modificó una base ni un repositorio remoto al preparar este paquete.
+
+Pruebas: `node tests/search.test.cjs`, `node tests/modules.test.cjs` y `node tests/workflow.test.cjs`.
+
 ## Versión 9: Obras, Guías, Recordatorios y acceso Master
 
 - Buscador de órdenes ampliado: descripción, dependencia, edificio, categoría, sector, responsable y especialidad, ignorando tildes.
@@ -27,9 +50,9 @@ Aplicación web interna para gestionar mantenimiento y servicios en los tres edi
 - Asignación a empleados, edificio, ubicación, categoría, prioridad y fecha límite.
 - Filtros por texto, estado y edificio.
 - Filtro adicional de órdenes por especialidad del responsable.
-- Cada orden conserva su especialidad requerida aunque se cambie o elimine el responsable.
+- Cada orden conserva su especialidad calculada; al editarla se recalcula desde el responsable o categoría.
 - Finalización directa y eliminación confirmada de órdenes cargadas por error.
-- Especialidades limitadas a Carpintería, Aires Acondicionados, Albañilería, Ayudante, Electricidad, Plomería, Tapicería y Pintura.
+- Especialidades limitadas a Carpintería, Aires Acondicionados, Albañilería, Ayudante, Electricidad, Plomería, Tapicería, Pintura y Administrativo.
 - Gestión básica del personal.
 - Alta y eliminación de empleados, incluyendo número de WhatsApp.
 - Reparaciones cotidianas predeterminadas para completar órdenes más rápido.

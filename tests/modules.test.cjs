@@ -1,0 +1,18 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+const context = vm.createContext({Intl,Date,console});
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../modules.js'),'utf8'),context);
+const occurrence=(dueDate,repeat,date)=>context.isReminderOccurrence({dueDate,repeat},date);
+assert.equal(occurrence('2026-09-16','No repetir','2026-09-16'),true);
+assert.equal(occurrence('2026-09-16','No repetir','2026-09-15'),false);
+assert.equal(occurrence('2026-09-16','Semanal','2026-09-23'),true);
+assert.equal(occurrence('2026-09-16','Semanal','2026-09-22'),false);
+assert.equal(occurrence('2026-01-31','Mensual','2026-02-28'),true);
+assert.equal(occurrence('2024-02-29','Anual','2025-02-28'),true);
+assert.equal(occurrence('2026-09-16','Semanal','2026-09-09'),false);
+assert.equal(occurrence('','No repetir','2026-09-16'),false);
+assert.equal(context.localDate(new Date(2026,8,16)),'2026-09-16');
+assert.match(vm.runInContext('money(1500)',context),/1.500/);
+console.log('10 pruebas de calendario y formato: OK');

@@ -1,0 +1,60 @@
+// Transcripción de los datos institucionales visibles en la Guía Judicial del PJN.
+// Consulta: 16/09/2026. No implica actualización automática ni validación telefónica.
+const OFFICIAL_CONTACTS = [
+  ...[
+    [1,'Av. Roque S. Peña 1211, 5º piso','4379-2018/2064'],
+    [2,'M.T. Alvear 1840, 2º piso','4816-0420'],
+    [3,'Callao 635, 6º piso','4371-6861'],
+    [4,'Av. Roque S. Peña 1211, 1º piso','4379-2044/2079'],
+    [5,'Av. Roque S. Peña 1211, 8º piso','4379-2087/2005'],
+    [6,'Av. Roque S. Peña 1211, 2º piso','4379-2040/2117'],
+    [7,'Av. Roque S. Peña 1211, 2º piso','4379-2041/2095'],
+    [8,'Av. Roque S. Peña 1211, 7º piso','4379-2126'],
+    [9,'M.T. Alvear 1840, 4º piso','4819-6630/6631'],
+    [10,'Callao 635, entrepiso','4373-2229'],
+    [11,'Callao 635, 5º piso','4372-4315'],
+    [12,'M.T. Alvear 1840, 2º piso, oficina 207','4819-6871/6872'],
+    [13,'M.T. Alvear 1840, 4º piso','4819-6640/6641'],
+    [14,'Callao 635, 2º piso','4371-2911'],
+    [15,'Callao 635, 3º piso','4372-7459'],
+    [16,'Callao 635, entrepiso','4372-5088'],
+    [17,'M.T. Alvear 1840, 3º piso','4819-6608'],
+    [18,'M.T. Alvear 1840, 3º piso','4819-6660/6661'],
+    [19,'M.T. Alvear 1840, 2º piso','4819-6881 y 4819-6882 al 6887'],
+    [20,'M.T. Alvear 1840, 4º piso','4819-6610/6611'],
+    [21,'M.T. Alvear 1840, 3º piso','4819-6620'],
+    [22,'M.T. Alvear 1840, 3º piso','4819-6651'],
+    [23,'M.T. Alvear 1840, 2º piso','4819-6893'],
+    [24,'M.T. Alvear 1840, 2º piso','4813-0066'],
+    [25,'Callao 635, 4º piso','4371-9415'],
+    [26,'Callao 635, 1º piso','4371-4285'],
+    [27,'Montevideo 546, 2º piso','4124-6691'],
+    [28,'Montevideo 546, 4º piso','4124-6681'],
+    [29,'Montevideo 546, 5º piso','4124-6671'],
+    [30,'Montevideo 546, 7º piso','4124-6661'],
+    [31,'Montevideo 546, 8º piso','4124-6651']
+  ].map(([number,address,phone])=>({id:`PJN-COM-J${number}`,name:`Juzgado Comercial N.º ${number}`,organization:'Justicia Nacional en lo Comercial',role:'Juzgado comercial',building:address,phone,email:`jncomercial${number}@pjn.gov.ar`,notes:'Ciudad Autónoma de Buenos Aires. Fuente: Guía Judicial PJN, consulta 16/09/2026.',source:'https://www.pjn.gov.ar/guia',verifiedAt:'2026-09-16'})),
+  {id:'PJN-COM-CAMARA',name:'Cámara Nacional de Apelaciones en lo Comercial',organization:'Justicia Nacional en lo Comercial',role:'Cámara Comercial',building:'Av. Roque S. Peña 1211',phone:'4379-2047/2048',email:'cncomercial.secgeneral@pjn.gov.ar',notes:'Ciudad Autónoma de Buenos Aires. Fuente: Guía Judicial PJN, consulta 16/09/2026.',source:'https://www.pjn.gov.ar/guia',verifiedAt:'2026-09-16'},
+  ...[
+    ['SECGENERAL','Secretaría General','Av. Roque S. Peña 1211','43792030',''],
+    ['JURISPRUDENCIA','Jurisprudencia','Av. Roque S. Peña 1211, 1º piso','4379-2179','cncomercial.jurisprudencia@pjn.gov.ar'],
+    ['SUPERINTENDENCIA','Superintendencia','Av. Roque S. Peña 1211, 9º piso','4379-2053/2045','cncomercial.superintendencia@pjn.gov.ar'],
+    ['AUXILIARES','Oficina de Auxiliares para la Justicia','Av. Roque S. Peña 1211, 9º piso, oficina 906','4379-2178','cncomercial.auxiliares@pjn.gov.ar'],
+    ['HABILITACION','Habilitación','Av. Roque S. Peña 1211, 9º piso','4379-2031/2057','cncomercial.habilitacion@pjn.gov.ar'],
+    ['BIBLIOTECA','Biblioteca','Av. Roque S. Peña 1211, 4º piso','4379-2027','cncomercial.biblioteca@pjn.gov.ar'],
+    ['INTENDENCIA','Intendencia','Av. Roque S. Peña 1211, 9º piso','4379-2002','cncomercial.intendencia@pjn.gov.ar'],
+    ['MESA-GENERAL','Mesa General de Entradas','Av. Roque S. Peña 1211, planta baja','4379-2059','cncomercial.mesadeentradas@pjn.gov.ar'],
+    ['MESA-CALLAO','Mesa Receptora de Callao','Callao 635','4372-4583','cncomercial.mesareceptora.c635@pjn.gov.ar'],
+    ['MESA-ALVEAR','Mesa Receptora Marcelo T. de Alvear','M.T. Alvear 1840','4812-5689','cncomercial.mesareceptora.mt1840@pjn.gov.ar'],
+    ['MESA-DIAGONAL','Mesa Receptora Diagonal','Av. Roque S. Peña 1211','4379-2059','cncomercial.mesadeentradas@pjn.gov.ar'],
+    ['MESA-MONTEVIDEO','Mesa Receptora Montevideo','Montevideo 546','4124-6699','cncomercial.mesareceptora.m546@pjn.gov.ar']
+  ].map(([key,name,building,phone,email])=>({id:`PJN-COM-${key}`,name,organization:'Cámara Nacional de Apelaciones en lo Comercial',role:'Dependencia de Cámara Comercial',building,phone,email,notes:'Ciudad Autónoma de Buenos Aires. Fuente: Guía Judicial PJN, consulta 16/09/2026.',source:'https://www.pjn.gov.ar/guia',verifiedAt:'2026-09-16'})),
+  ...[
+    ['A','8º piso','4379-2006/2062','cncomercial.salaa@pjn.gov.ar'],
+    ['B','5º piso','4379-2024','cncomercial.salab@pjn.gov.ar'],
+    ['C','4º piso','4379-2051/2177','cncomercial.salac@pjn.gov.ar'],
+    ['D','4º piso','4379-3055','cncomercial.salad@pjn.gov.ar'],
+    ['E','6º piso','4379-2014','cncomercial.salae@pjn.gov.ar'],
+    ['F','3º piso','4379-0134','cncomercial.salaf@pjn.gov.ar']
+  ].map(([letter,floor,phone,email])=>({id:`PJN-COM-SALA-${letter}`,name:`Sala ${letter} - Comercial`,organization:'Cámara Nacional de Apelaciones en lo Comercial',role:'Sala de Cámara Comercial',building:`Av. Roque S. Peña 1211, ${floor}`,phone,email,notes:'Ciudad Autónoma de Buenos Aires. Fuente: Guía Judicial PJN, consulta 16/09/2026.',source:'https://www.pjn.gov.ar/guia',verifiedAt:'2026-09-16'}))
+];

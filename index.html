@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="enhancements.css?v=7">
   <link rel="stylesheet" href="actions.css?v=7">
   <link rel="stylesheet" href="services.css?v=7">
-  <link rel="stylesheet" href="workflow.css?v=8">
+  <link rel="stylesheet" href="workflow.css?v=10">
   <link rel="stylesheet" href="auth.css?v=8">
   <link rel="stylesheet" href="modules.css?v=9">
 </head>
@@ -34,7 +34,7 @@
     <main>
       <header class="topbar">
         <div><p class="eyebrow">GESTIÓN OPERATIVA</p><h1 id="pageTitle">Panel general</h1></div>
-        <div class="top-actions"><div class="session-user"><small>Sesión activa</small><strong id="sessionEmail"></strong></div><button class="secondary" id="logoutBtn">Cerrar sesión</button><button class="primary" id="newOrderBtn">+ Nueva orden</button></div>
+        <div class="top-actions"><div class="session-user"><small>Sesión activa</small><strong id="sessionEmail"></strong></div><button class="secondary" id="logoutBtn">Cerrar sesión</button></div>
       </header>
 
       <section id="dashboardView" class="view active">
@@ -47,6 +47,7 @@
       </section>
 
       <section id="ordersView" class="view">
+        <div class="people-header"><p>Creá y consultá las tareas del equipo.</p><button class="primary" id="newOrderBtn">+ Nueva orden</button></div>
         <div class="toolbar panel">
           <input id="searchInput" type="search" placeholder="Buscar por número, tarea, sector o responsable">
           <select id="statusFilter"><option value="">Todos los estados</option></select>
@@ -77,8 +78,8 @@
       </section>
 
       <section id="contactsView" class="view">
-        <div class="people-header"><p>Agenda centralizada de proveedores, organismos y contactos operativos.</p><button class="secondary" id="newContactBtn">+ Agregar contacto</button></div>
-        <div class="toolbar panel contact-toolbar"><input id="contactSearch" type="search" placeholder="Buscar nombre, entidad, función, teléfono o correo"></div>
+        <div class="people-header"><p>Agenda centralizada de proveedores, organismos y contactos operativos.</p><div><button class="secondary" id="importContactsBtn">Cargar contactos oficiales PJN</button> <button class="secondary" id="newContactBtn">+ Agregar contacto</button></div></div>
+        <div class="toolbar panel contact-toolbar"><input id="contactSearch" type="search" aria-label="Buscar contactos" placeholder="Buscar juzgado, dependencia, nombre, teléfono o correo"></div>
         <div class="panel"><div class="panel-head"><div><h2>Contactos de utilidad</h2><p id="contactsCount"></p></div></div><div id="contactsTable"></div></div>
       </section>
     </main>
@@ -89,13 +90,12 @@
       <div class="modal-head"><div><p class="eyebrow">ORDEN DE TRABAJO</p><h2 id="orderModalTitle">Nueva orden</h2></div><button type="button" class="icon-btn close-modal">×</button></div>
       <input type="hidden" name="id">
       <div class="form-grid">
-        <label class="wide">Reparación predeterminada<select name="template"><option value="">Seleccionar o escribir manualmente</option></select></label>
-        <label class="wide">Título del trabajo<input name="title" required maxlength="90" placeholder="Ej.: Reparar pérdida de agua"></label>
+        <label class="wide">Tarea o reparación<select name="template" required></select></label>
+        <label class="wide" id="customTaskLabel" hidden>Otra tarea<input name="customTask" maxlength="90" placeholder="Indicá qué hay que hacer"></label>
         <label>Edificio<select name="building" required></select></label>
         <label>Dependencia<select name="dependency" required></select></label>
         <label class="wide">Detalle del sector, oficina o puerta<input name="location" required placeholder="Ej.: 9.º piso, oficina 914, puerta 22"></label>
         <label>Categoría<select name="category" required></select></label>
-        <label>Especialidad requerida<select name="specialty" required></select></label>
         <label>Prioridad<select name="priority" required></select></label>
         <label>Estado<select name="status" required></select></label>
         <label>Responsable<select name="assignee"></select></label>
@@ -141,7 +141,8 @@
         <label>Fecha de entrega<input name="assignedDate" type="date"></label>
         <label class="wide">Observaciones<textarea name="notes" rows="3" placeholder="Estado, accesorios incluidos o aclaraciones"></textarea></label>
       </div>
-      <div class="modal-actions"><button type="button" class="danger" id="deleteToolBtn">Eliminar</button><span class="action-spacer"></span><button type="button" class="secondary close-tool">Cancelar</button><button class="primary" type="submit">Guardar herramienta</button></div>
+      <div id="toolReturnHistory"></div>
+      <div class="modal-actions"><button type="button" class="danger" id="deleteToolBtn">Eliminar</button><button type="button" class="finish-button" id="returnToolBtn">Ya la devolvió</button><span class="action-spacer"></span><button type="button" class="secondary close-tool">Cancelar</button><button class="primary" type="submit">Guardar herramienta</button></div>
     </form>
   </dialog>
 
@@ -160,6 +161,7 @@
   <script src="config.js?v=9"></script>
   <script src="supabase-api.js?v=9"></script>
   <script src="modules.js?v=9"></script>
-  <script src="app.js?v=9"></script>
+  <script src="contacts-data.js?v=10"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
