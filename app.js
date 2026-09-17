@@ -96,14 +96,15 @@ function init(){
   ['toolSearch','toolStatusFilter'].forEach(id=>$('#'+id).addEventListener('input',renderTools));
   $('#contactSearch').addEventListener('input',renderContacts);
   fillSelect($('#statusFilter'),STATUSES,'Todos los estados'); fillSelect($('#buildingFilter'),BUILDINGS,'Todos los edificios');
-  fillSelect($('#orderForm [name=building]'),BUILDINGS); fillSelect($('#orderForm [name=category]'),CATEGORIES); fillSelect($('#orderForm [name=priority]'),PRIORITIES); fillSelect($('#orderForm [name=status]'),STATUSES);
+  fillSelect($('#orderForm [name=building]'),BUILDINGS); fillSelect($('#orderForm [name=priority]'),PRIORITIES); fillSelect($('#orderForm [name=status]'),STATUSES);
   fillSelect($('#personForm [name=building]'),BUILDINGS); renderAll();
   fillSelect($('#personForm [name=role]'),SPECIALTIES); fillSelect($('#specialtyFilter'),SPECIALTIES,'Todas las especialidades');
   fillSelect($('#serviceForm [name=building]'),BUILDINGS); fillSelect($('#serviceForm [name=serviceType]'),SERVICE_TYPES);
   fillSelect($('#contactForm [name=building]'),BUILDINGS,'Todos / sin edificio específico');
-  fillSelect($('#orderForm [name=dependency]'),DEPENDENCIES);
-  fillSelect($('#orderForm [name=category]'),CATEGORIES,'Seleccionar categoría');
-  $('#orderForm [name=category]').onchange=()=>refreshTaskOptions();
+  $('#orderForm [name=building]').onchange=()=>refreshDependencies();
+  refreshDependencies();
+  fillSelect($('#orderForm [name=specialty]'),SPECIALTIES,'Seleccionar especialidad');
+  $('#orderForm [name=specialty]').onchange=()=>refreshTaskOptions();
   refreshTaskOptions();
   $('#orderForm [name=template]').onchange=applyTemplate;
   $('#copyMessageBtn').onclick=copyMessage;
@@ -125,18 +126,25 @@ function fillPeopleSelect(s,empty){const value=s.value;s.replaceChildren();const
 function fillAssignees(){fillPeopleSelect($('#orderForm [name=assignee]'),'Sin asignar')}
 function fillToolHolders(){fillPeopleSelect($('#toolForm [name=holder]'),'Sin entregar')}
 function toggleCustomTask(){const f=$('#orderForm'),custom=f.elements.template.value==='Otra tarea';$('#customTaskLabel').hidden=!custom;f.elements.customTask.required=custom;f.elements.customTask.disabled=!custom}
-function tasksForCategory(category){return TEMPLATES.filter(t=>t.category===category)}
-function refreshTaskOptions(title=''){const f=$('#orderForm'),category=f.elements.category.value,select=f.elements.template;fillSelect(select,category?[...tasksForCategory(category).map(t=>t.name),'Otra tarea']:[],category?'Seleccionar tarea':'Elegí primero una categoría');select.value='';select.disabled=!category;if(title){select.value=tasksForCategory(category).some(t=>t.name===title)?title:'Otra tarea';f.elements.customTask.value=title}toggleCustomTask()}
-function openOrder(id){const f=$('#orderForm');f.reset();fillAssignees();f.elements.id.value='';f.elements.category.value='';f.elements.status.value='Pendiente';f.elements.priority.value='Media';$('#orderModalTitle').textContent='Nueva orden';$('#deleteOrderBtn').style.display='none';$('#finishOrderBtn').style.display='none';let title='';if(id){const o=state.orders.find(x=>x.id===id);if(!o)return;if(o.category&&!CATEGORIES.includes(o.category)){const option=document.createElement('option');option.value=o.category;option.textContent=o.category;f.elements.category.append(option)}Object.entries(o).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});title=o.title||'';$('#orderModalTitle').textContent=`Editar ${o.id}`;$('#deleteOrderBtn').style.display='inline-block';$('#finishOrderBtn').style.display=o.status==='Resuelto'?'none':'inline-block'}refreshTaskOptions(title);$('#orderDialog').showModal()}
-function orderSpecialty(data){return CATEGORY_SPECIALTY[data.category]||person(data.assignee)?.role||'Ayudante'}
+function tasksForSpecialty(specialty){return TEMPLATES.filter(t=>(t.specialty||CATEGORY_SPECIALTY[t.category])===specialty)}
+function refreshTaskOptions(title=''){const f=$('#orderForm'),specialty=f.elements.specialty.value,select=f.elements.template;fillSelect(select,specialty?[...tasksForSpecialty(specialty).map(t=>t.name),'Otra tarea']:[],specialty?'Seleccionar tarea':'Elegí primero una especialidad');select.value='';select.disabled=!specialty;if(title){select.value=tasksForSpecialty(specialty).some(t=>t.name===title)?title:'Otra tarea';f.elements.customTask.value=title}toggleCustomTask()}
+function buildingForAddress(address){const s=String(address||'');if(/(?:Roque|Diagonal).*1211/i.test(s))return BUILDINGS[0];if(/Callao\s+635/i.test(s))return BUILDINGS[1];if(/Montevideo\s+546/i.test(s))return BUILDINGS[2];return ''}
+function dependenciesForBuilding(building){if(!BUILDINGS.includes(building))return [];const catalog=typeof OFFICIAL_CONTACTS==='undefined'?[]:OFFICIAL_CONTACTS;const list=catalog.filter(c=>buildingForAddress(c.building)===building).map(c=>/^PJN-COM-J\d+$/.test(c.id)?`Juzgado N.º ${c.id.match(/\d+$/)[0]}`:c.id.startsWith('PJN-COM-SALA-')?`Sala ${c.id.slice(-1)}`:c.id==='PJN-COM-MESA-DIAGONAL'?null:c.id==='PJN-COM-AUXILIARES'?'Auxiliares de Justicia':c.name).filter(Boolean);return [...new Set([...list,'Portería','Otra dependencia'])]}
+function canonicalDependency(value){return shortDependency(value)}
+function refreshDependencies(previous=''){const f=$('#orderForm'),select=f.elements.dependency,list=dependenciesForBuilding(f.elements.building.value),value=canonicalDependency(previous);fillSelect(select,list,'Seleccionar dependencia');select.value='';select.disabled=!BUILDINGS.includes(f.elements.building.value);$('#dependencyWarning').hidden=true;if(value){if(!list.includes(value)){const option=document.createElement('option');option.value=value;option.textContent=`${value} (ubicación anterior: revisar)`;select.append(option);$('#dependencyWarning').hidden=false}select.value=value}}
+function openOrder(id){const f=$('#orderForm');f.reset();fillAssignees();f.elements.id.value='';f.elements.specialty.value='';f.elements.status.value='Pendiente';f.elements.priority.value='Media';$('#orderModalTitle').textContent='Nueva orden';$('#deleteOrderBtn').style.display='none';$('#finishOrderBtn').style.display='none';let title='',dependency='';if(id){const o=state.orders.find(x=>x.id===id);if(!o)return;Object.entries(o).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});f.elements.specialty.value=SPECIALTIES.includes(o.specialty)?o.specialty:orderSpecialty(o);title=o.title||'';dependency=o.dependency||'';$('#orderModalTitle').textContent=`Editar ${o.id}`;$('#deleteOrderBtn').style.display='inline-block';$('#finishOrderBtn').style.display=o.status==='Resuelto'?'none':'inline-block'}refreshTaskOptions(title);refreshDependencies(dependency);$('#orderDialog').showModal()}
+function orderSpecialty(data){return SPECIALTIES.includes(data.specialty)?data.specialty:CATEGORY_SPECIALTY[data.category]||person(data.assignee)?.role||'Ayudante'}
 function submitOrder(e){
   e.preventDefault();
   const data=Object.fromEntries(new FormData(e.target)),now=new Date().toISOString();
-  if(!data.category){toast('Seleccioná una categoría');return}
-  if(data.template!=='Otra tarea'&&!tasksForCategory(data.category).some(t=>t.name===data.template)){toast('Seleccioná una tarea de esa categoría');return}
+  if(!SPECIALTIES.includes(data.specialty)){toast('Seleccioná una especialidad');return}
+  if(data.template!=='Otra tarea'&&!tasksForSpecialty(data.specialty).some(t=>t.name===data.template)){toast('Seleccioná una tarea de esa especialidad');return}
+  const previous=state.orders.find(o=>o.id===data.id),legacyMatch=previous&&previous.building===data.building&&canonicalDependency(previous.dependency)===data.dependency;
+  if(!dependenciesForBuilding(data.building).includes(data.dependency)&&!legacyMatch){toast('Elegí una dependencia del edificio seleccionado');return}
   data.title=data.template==='Otra tarea'?(data.customTask||'').trim():data.template;
   if(!data.title){toast('Seleccioná una tarea');return}
   data.specialty=orderSpecialty(data);
+  data.category=TEMPLATES.find(t=>t.name===data.template)?.category||Object.keys(CATEGORY_SPECIALTY).find(c=>CATEGORY_SPECIALTY[c]===data.specialty)||'Mantenimiento general';
   delete data.template;delete data.customTask;delete data.taskSpecialty;
   if(data.id){const i=state.orders.findIndex(o=>o.id===data.id);state.orders[i]={...state.orders[i],...data,updatedAt:now}}
   else{const n=Math.max(0,...state.orders.map(o=>Number(o.id.split('-')[1])))+1;data.id=`OT-${String(n).padStart(4,'0')}`;data.createdAt=now;data.updatedAt=now;state.orders.push(data)}
@@ -144,7 +152,7 @@ function submitOrder(e){
 }
 function submitPerson(e){e.preventDefault();const data=Object.fromEntries(new FormData(e.target));data.id='p'+Date.now();state.people.push(data);save();e.target.reset();$('#personDialog').close();toast('Empleado agregado')}
 function deletePerson(id){const p=person(id);if(!p||!confirm(`Eliminar a ${p.name}? Sus órdenes y herramientas quedarán sin asignar.`))return;state.orders.forEach(o=>{if(o.assignee===id){o.assignee='';o.status=o.status==='Resuelto'?'Resuelto':'Sin asignar';o.updatedAt=new Date().toISOString()}});state.tools.forEach(t=>{if(t.holder===id){t.holder='';t.assignedDate='';t.toolStatus='Disponible';t.updatedAt=new Date().toISOString()}});state.people=state.people.filter(x=>x.id!==id);save();toast('Empleado eliminado')}
-function applyTemplate(e){toggleCustomTask();const f=$('#orderForm'),t=tasksForCategory(f.elements.category.value).find(x=>x.name===e.target.value);if(!t)return;f.elements.description.value=t.description}
+function applyTemplate(e){toggleCustomTask();const f=$('#orderForm'),t=tasksForSpecialty(f.elements.specialty.value).find(x=>x.name===e.target.value);if(!t)return;f.elements.description.value=t.description}
 function finishCurrentOrder(){const id=$('#orderForm [name=id]').value,o=state.orders.find(x=>x.id===id);if(!o||!confirm(`Marcar ${o.id} como finalizada?`))return;o.status='Resuelto';o.completedAt=new Date().toISOString();o.updatedAt=o.completedAt;save();$('#orderDialog').close();toast('Orden finalizada')}
 function deleteCurrentOrder(){const id=$('#orderForm [name=id]').value,o=state.orders.find(x=>x.id===id);if(!o||!confirm(`Eliminar definitivamente la orden ${o.id}?`))return;state.orders=state.orders.filter(x=>x.id!==id);save();$('#orderDialog').close();toast('Orden eliminada')}
 function shortDependency(value){const text=String(value||''),match=text.match(/juzgado.*?(?:N\.?\s*[.º°]*\s*|número\s*)(\d+)/i)||text.match(/juzgado\s+(\d+)/i);return match?`Juzgado N.º ${match[1]}`:text}

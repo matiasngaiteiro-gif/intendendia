@@ -1,5 +1,20 @@
 # Sistema de órdenes de trabajo — Intendencia + Supabase
 
+## Versión 13: especialidad y dependencias por sede
+
+El formulario muestra solo Especialidad (sin Categoría), seguida de sus tareas y «Otra tarea». La especialidad elegida se guarda y sirve para filtrar órdenes. La categoría histórica se mantiene únicamente como metadato interno compatible con versiones anteriores.
+
+Las dependencias se generan desde el catálogo institucional `contacts-data.js`, transcrito de la Guía Judicial PJN el 16/09/2026 (https://www.pjn.gov.ar/guia). No hay actualización automática:
+
+- Diagonal 1211: juzgados 1, 4, 5, 6, 7 y 8; Cámara, salas A–F y oficinas generales publicadas allí.
+- Callao 635: juzgados 3, 10, 11, 14, 15, 16, 25 y 26; Mesa Receptora de Callao.
+- Montevideo 546: juzgados 27, 28, 29, 30 y 31; Mesa Receptora Montevideo.
+- Los juzgados 2, 9, 12, 13 y 17–24 figuran en M.T. Alvear 1840 y no se asignan a las tres sedes disponibles.
+
+«Portería» y «Otra dependencia» son opciones operativas de cada sede, no datos de ubicación extraídos de la guía. El detalle libre de sector/oficina/puerta se conserva. Cambiar el edificio reinicia la dependencia; se rechazan nuevas combinaciones incorrectas. Las órdenes antiguas con ubicaciones incompatibles no se eliminan: al editarlas se conserva el dato con un aviso para revisarlo y puede mantenerse si no se cambia la sede.
+
+Actualizar reemplazando `index.html`, `app.js`, `workflow.css`, `contacts-data.js` y `README.md`. Los tests son opcionales para publicar. Conservar `config.js` y demás archivos. No ejecutar SQL. Esperar la publicación de Pages y recargar sin caché (Cmd+Shift+R en Mac). Se mantiene «Faltan insumos».
+
 ## Versión 12: categoría primero y tareas exclusivas
 
 El primer campo de Nueva orden es Categoría y el segundo es Tarea o reparación. No se muestra el selector de especialidad. Las tareas se filtran por igualdad exacta de categoría, sin mezclar categorías que comparten especialidad: Electricidad no incluye Ascensores; Mantenimiento general no incluye Limpieza ni Movimiento interno. Cada categoría tiene tareas propias. «Otra tarea» permite escribir un trabajo de la categoría seleccionada.
