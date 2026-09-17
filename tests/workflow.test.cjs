@@ -18,6 +18,14 @@ const message=context.assignmentText({id:'OT-1',assignee:'p1',title:'Cambio de t
 assert.match(message,/Hola Carlos/);assert.match(message,/Juzgado N.º 10/);
 assert.doesNotMatch(message,/Benítez|DESCRIPCION|Especialidad|Te asignaron/);
 assert.ok(message.length<230);
+const messageOrder={id:'OT-0999',assignee:'p1',title:'Cambio de tubo de luz',building:'Av. Callao 635',dependency:'Juzgado 10',location:'Puerta 8',dueDate:'2026-09-30',description:'Detalle que no se envía'};
+for(const priority of ['Urgente','Alta','Media','Baja']){
+ const text=context.assignmentText({...messageOrder,priority});
+ assert.doesNotMatch(text,/[¿¡]|OT-0999|orden de trabajo|2026|30|sept|fecha|Detalle que no se envía/i);
+ assert.equal(text.includes('Darle prioridad.'),priority==='Urgente');
+ assert.doesNotMatch(text,/Tiene prioridad|Es urgente/);
+}
+assert.doesNotMatch(context.assignmentText({...messageOrder,title:'¡Revisar luz!',location:'¿Oficina 8?'}),/[¿¡]/);
 const tool={holder:'p1',assignedDate:'2026-09-10',toolStatus:'Entregada'};
 assert.equal(context.registerToolReturn(tool,'2026-09-16T12:00:00Z'),true);
 assert.equal(tool.holder,'');assert.equal(tool.toolStatus,'Disponible');

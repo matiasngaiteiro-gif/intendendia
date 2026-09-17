@@ -156,7 +156,13 @@ function applyTemplate(e){toggleCustomTask();const f=$('#orderForm'),t=tasksForS
 function finishCurrentOrder(){const id=$('#orderForm [name=id]').value,o=state.orders.find(x=>x.id===id);if(!o||!confirm(`Marcar ${o.id} como finalizada?`))return;o.status='Resuelto';o.completedAt=new Date().toISOString();o.updatedAt=o.completedAt;save();$('#orderDialog').close();toast('Orden finalizada')}
 function deleteCurrentOrder(){const id=$('#orderForm [name=id]').value,o=state.orders.find(x=>x.id===id);if(!o||!confirm(`Eliminar definitivamente la orden ${o.id}?`))return;state.orders=state.orders.filter(x=>x.id!==id);save();$('#orderDialog').close();toast('Orden eliminada')}
 function shortDependency(value){const text=String(value||''),match=text.match(/juzgado.*?(?:N\.?\s*[.º°]*\s*|número\s*)(\d+)/i)||text.match(/juzgado\s+(\d+)/i);return match?`Juzgado N.º ${match[1]}`:text}
-function assignmentText(o){const first=(person(o.assignee)?.name||'').trim().split(/\s+/)[0],building=String(o.building||'').replace('Diagonal Roque Sáenz Peña','Diagonal').replace('Av. Callao','Callao'),place=[building,shortDependency(o.dependency),o.location].filter(Boolean).join(', ');return `Hola${first?' '+first:''}, ¿podés encargarte de ${String(o.title||'esta tarea').replace(/^./,c=>c.toLowerCase())}?\n${place}.${o.dueDate?' Para el '+fmt(o.dueDate)+'.':''}${['Urgente','Alta'].includes(o.priority)?' '+(o.priority==='Urgente'?'Es urgente.':'Tiene prioridad.') :''}\nAvisame cuando esté listo. ¡Gracias! (${o.id})`}
+function assignmentText(o){
+  const first=(person(o.assignee)?.name||'').trim().split(/\s+/)[0];
+  const building=String(o.building||'').replace('Diagonal Roque Sáenz Peña','Diagonal').replace('Av. Callao','Callao');
+  const place=[building,shortDependency(o.dependency),o.location].filter(Boolean).join(', ');
+  const task=String(o.title||'esta tarea').replace(/^./,c=>c.toLowerCase());
+  return [`Hola${first?' '+first:''}, podés encargarte de ${task}?`,place?`${place}.`:'',o.priority==='Urgente'?'Darle prioridad.':'','Avisame cuando esté listo. Gracias!'].filter(Boolean).join('\n').replace(/[¿¡]/g,'');
+}
 function showAssignmentMessage(o){currentMessageOrderId=o.id;const msg=assignmentText(o),p=person(o.assignee),phone=(p?.phone||'').replace(/\D/g,''),button=$('#openWhatsappBtn');$('#whatsappMessage').value=msg;button.href=o.assignee?`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`:'#';button.classList.toggle('disabled',!o.assignee);button.setAttribute('aria-disabled',String(!o.assignee));$('#messageDialog').showModal()}
 async function copyMessage(){await navigator.clipboard.writeText($('#whatsappMessage').value);toast('Mensaje copiado')}
 function esc(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}

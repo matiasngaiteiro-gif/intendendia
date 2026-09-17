@@ -1,5 +1,11 @@
 # Sistema de órdenes de trabajo — Intendencia + Supabase
 
+## Versión 14: mensaje WhatsApp simplificado
+
+El mensaje incluye primer nombre, tarea y ubicación. No incluye número/referencia de orden, descripción ni fecha límite; se eliminan los signos de apertura ¿ y ¡. Solo cuando la prioridad es Urgente agrega «Darle prioridad.». Alta, Media y Baja no agregan frases de prioridad. Los datos completos siguen guardados y disponibles para imprimir.
+
+Actualizar reemplazando `index.html`, `app.js` y `README.md`. La carpeta `tests` es opcional para publicar. Conservar `config.js` y el resto de los archivos; no ejecutar SQL. Esperar la publicación de GitHub Pages y recargar con Cmd+Shift+R en Mac. No se envían mensajes automáticamente: WhatsApp abre el borrador y el usuario decide enviarlo.
+
 ## Versión 13: especialidad y dependencias por sede
 
 El formulario muestra solo Especialidad (sin Categoría), seguida de sus tareas y «Otra tarea». La especialidad elegida se guarda y sirve para filtrar órdenes. La categoría histórica se mantiene únicamente como metadato interno compatible con versiones anteriores.
