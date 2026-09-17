@@ -1,5 +1,13 @@
 # Sistema de órdenes de trabajo — Intendencia + Supabase
 
+## Versión 12: categoría primero y tareas exclusivas
+
+El primer campo de Nueva orden es Categoría y el segundo es Tarea o reparación. No se muestra el selector de especialidad. Las tareas se filtran por igualdad exacta de categoría, sin mezclar categorías que comparten especialidad: Electricidad no incluye Ascensores; Mantenimiento general no incluye Limpieza ni Movimiento interno. Cada categoría tiene tareas propias. «Otra tarea» permite escribir un trabajo de la categoría seleccionada.
+
+Al cambiar de categoría se reinicia la selección de tarea para evitar combinaciones incorrectas. Al guardar se valida que la tarea pertenezca a la categoría. La especialidad interna para el filtro se deriva de la categoría; el responsable puede asignarse libremente. Las órdenes anteriores se conservan y los títulos fuera del catálogo se muestran como «Otra tarea» al editar. Se mantiene el estado «Faltan insumos».
+
+Actualización desde v10/v11: reemplazar `index.html`, `app.js`, `workflow.css` y `README.md`; la carpeta `tests` es opcional para publicar. Mantener `config.js`, `contacts-data.js` y todos los demás archivos existentes. No ejecutar SQL. Esperar la publicación de GitHub Pages y recargar sin caché (Ctrl+Shift+R en Windows; Cmd+Shift+R en Mac). El paquete v12 no contiene credenciales ni archivos de configuración.
+
 ## Versión 11: especialidad antes de tarea
 
 - Al crear una orden, elegir primero Especialidad. El desplegable de tareas muestra solo las de esa especialidad; «Otra tarea» sigue permitiendo escribir un trabajo propio.

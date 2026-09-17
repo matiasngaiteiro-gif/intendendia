@@ -37,7 +37,8 @@ const TEMPLATES = [
     ['Ajuste de bisagras','Carpintería'],['Cambio de picaporte','Carpintería'],['Reparación de cajón','Carpintería'],['Reparación de escritorio','Carpintería'],['Colocación de estante','Carpintería'],
     ['Reparación de revoque','Albañilería'],['Reposición de baldosa','Albañilería'],['Sellado de filtración','Albañilería'],['Pintura de pared','Pintura'],['Pintura de puerta','Pintura'],
     ['Limpieza de filtros de aire','Aire acondicionado'],['Revisión de desagote de aire','Aire acondicionado'],['Reparación de silla','Tapicería'],['Retapizado de asiento','Tapicería'],
-    ['Retiro de materiales','Movimiento interno'],['Colocación de cartelería','Mantenimiento general'],['Control de inventario','Administrativo'],['Carga de documentación','Administrativo'],['Seguimiento de proveedor','Administrativo'],['Preparación de pedido de insumos','Administrativo']
+    ['Retiro de materiales','Movimiento interno'],['Colocación de cartelería','Mantenimiento general'],['Control de inventario','Administrativo'],['Carga de documentación','Administrativo'],['Seguimiento de proveedor','Administrativo'],['Preparación de pedido de insumos','Administrativo'],
+    ['Coordinar visita del servicio de ascensores','Ascensores'],['Registrar falla de ascensor','Ascensores'],['Control de señalización de evacuación','Seguridad'],['Coordinar revisión del sistema de incendio','Seguridad']
   ].map(([name,category])=>({name,category,description:''}))
 ];
 const seed = {people:[
@@ -101,8 +102,8 @@ function init(){
   fillSelect($('#serviceForm [name=building]'),BUILDINGS); fillSelect($('#serviceForm [name=serviceType]'),SERVICE_TYPES);
   fillSelect($('#contactForm [name=building]'),BUILDINGS,'Todos / sin edificio específico');
   fillSelect($('#orderForm [name=dependency]'),DEPENDENCIES);
-  fillSelect($('#orderForm [name=taskSpecialty]'),SPECIALTIES,'Seleccionar especialidad');
-  $('#orderForm [name=taskSpecialty]').onchange=()=>refreshTaskOptions();
+  fillSelect($('#orderForm [name=category]'),CATEGORIES,'Seleccionar categoría');
+  $('#orderForm [name=category]').onchange=()=>refreshTaskOptions();
   refreshTaskOptions();
   $('#orderForm [name=template]').onchange=applyTemplate;
   $('#copyMessageBtn').onclick=copyMessage;
@@ -124,15 +125,15 @@ function fillPeopleSelect(s,empty){const value=s.value;s.replaceChildren();const
 function fillAssignees(){fillPeopleSelect($('#orderForm [name=assignee]'),'Sin asignar')}
 function fillToolHolders(){fillPeopleSelect($('#toolForm [name=holder]'),'Sin entregar')}
 function toggleCustomTask(){const f=$('#orderForm'),custom=f.elements.template.value==='Otra tarea';$('#customTaskLabel').hidden=!custom;f.elements.customTask.required=custom;f.elements.customTask.disabled=!custom}
-function tasksForSpecialty(specialty){return TEMPLATES.filter(t=>(t.specialty||CATEGORY_SPECIALTY[t.category]||'Ayudante')===specialty)}
-function refreshTaskOptions(title=''){const f=$('#orderForm'),specialty=f.elements.taskSpecialty.value,select=f.elements.template;fillSelect(select,specialty?[...tasksForSpecialty(specialty).map(t=>t.name),'Otra tarea']:[],specialty?'Seleccionar tarea':'Elegí primero una especialidad');select.disabled=!specialty;if(title){select.value=tasksForSpecialty(specialty).some(t=>t.name===title)?title:'Otra tarea';f.elements.customTask.value=title}toggleCustomTask()}
-function openOrder(id){const f=$('#orderForm');f.reset();fillAssignees();f.elements.id.value='';f.elements.taskSpecialty.value='';f.elements.status.value='Pendiente';f.elements.priority.value='Media';$('#orderModalTitle').textContent='Nueva orden';$('#deleteOrderBtn').style.display='none';$('#finishOrderBtn').style.display='none';let title='';if(id){const o=state.orders.find(x=>x.id===id);if(!o)return;Object.entries(o).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});f.elements.taskSpecialty.value=SPECIALTIES.includes(o.specialty)?o.specialty:orderSpecialty(o);title=o.title||'';$('#orderModalTitle').textContent=`Editar ${o.id}`;$('#deleteOrderBtn').style.display='inline-block';$('#finishOrderBtn').style.display=o.status==='Resuelto'?'none':'inline-block'}refreshTaskOptions(title);$('#orderDialog').showModal()}
-function orderSpecialty(data){return SPECIALTIES.includes(data.taskSpecialty)?data.taskSpecialty:person(data.assignee)?.role||CATEGORY_SPECIALTY[data.category]||'Ayudante'}
+function tasksForCategory(category){return TEMPLATES.filter(t=>t.category===category)}
+function refreshTaskOptions(title=''){const f=$('#orderForm'),category=f.elements.category.value,select=f.elements.template;fillSelect(select,category?[...tasksForCategory(category).map(t=>t.name),'Otra tarea']:[],category?'Seleccionar tarea':'Elegí primero una categoría');select.value='';select.disabled=!category;if(title){select.value=tasksForCategory(category).some(t=>t.name===title)?title:'Otra tarea';f.elements.customTask.value=title}toggleCustomTask()}
+function openOrder(id){const f=$('#orderForm');f.reset();fillAssignees();f.elements.id.value='';f.elements.category.value='';f.elements.status.value='Pendiente';f.elements.priority.value='Media';$('#orderModalTitle').textContent='Nueva orden';$('#deleteOrderBtn').style.display='none';$('#finishOrderBtn').style.display='none';let title='';if(id){const o=state.orders.find(x=>x.id===id);if(!o)return;if(o.category&&!CATEGORIES.includes(o.category)){const option=document.createElement('option');option.value=o.category;option.textContent=o.category;f.elements.category.append(option)}Object.entries(o).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});title=o.title||'';$('#orderModalTitle').textContent=`Editar ${o.id}`;$('#deleteOrderBtn').style.display='inline-block';$('#finishOrderBtn').style.display=o.status==='Resuelto'?'none':'inline-block'}refreshTaskOptions(title);$('#orderDialog').showModal()}
+function orderSpecialty(data){return CATEGORY_SPECIALTY[data.category]||person(data.assignee)?.role||'Ayudante'}
 function submitOrder(e){
   e.preventDefault();
   const data=Object.fromEntries(new FormData(e.target)),now=new Date().toISOString();
-  if(!SPECIALTIES.includes(data.taskSpecialty)){toast('Seleccioná una especialidad');return}
-  if(data.template!=='Otra tarea'&&!tasksForSpecialty(data.taskSpecialty).some(t=>t.name===data.template)){toast('Seleccioná una tarea de esa especialidad');return}
+  if(!data.category){toast('Seleccioná una categoría');return}
+  if(data.template!=='Otra tarea'&&!tasksForCategory(data.category).some(t=>t.name===data.template)){toast('Seleccioná una tarea de esa categoría');return}
   data.title=data.template==='Otra tarea'?(data.customTask||'').trim():data.template;
   if(!data.title){toast('Seleccioná una tarea');return}
   data.specialty=orderSpecialty(data);
@@ -143,7 +144,7 @@ function submitOrder(e){
 }
 function submitPerson(e){e.preventDefault();const data=Object.fromEntries(new FormData(e.target));data.id='p'+Date.now();state.people.push(data);save();e.target.reset();$('#personDialog').close();toast('Empleado agregado')}
 function deletePerson(id){const p=person(id);if(!p||!confirm(`Eliminar a ${p.name}? Sus órdenes y herramientas quedarán sin asignar.`))return;state.orders.forEach(o=>{if(o.assignee===id){o.assignee='';o.status=o.status==='Resuelto'?'Resuelto':'Sin asignar';o.updatedAt=new Date().toISOString()}});state.tools.forEach(t=>{if(t.holder===id){t.holder='';t.assignedDate='';t.toolStatus='Disponible';t.updatedAt=new Date().toISOString()}});state.people=state.people.filter(x=>x.id!==id);save();toast('Empleado eliminado')}
-function applyTemplate(e){toggleCustomTask();const t=TEMPLATES.find(x=>x.name===e.target.value);if(!t)return;const f=$('#orderForm');f.elements.category.value=t.category;f.elements.description.value=t.description}
+function applyTemplate(e){toggleCustomTask();const f=$('#orderForm'),t=tasksForCategory(f.elements.category.value).find(x=>x.name===e.target.value);if(!t)return;f.elements.description.value=t.description}
 function finishCurrentOrder(){const id=$('#orderForm [name=id]').value,o=state.orders.find(x=>x.id===id);if(!o||!confirm(`Marcar ${o.id} como finalizada?`))return;o.status='Resuelto';o.completedAt=new Date().toISOString();o.updatedAt=o.completedAt;save();$('#orderDialog').close();toast('Orden finalizada')}
 function deleteCurrentOrder(){const id=$('#orderForm [name=id]').value,o=state.orders.find(x=>x.id===id);if(!o||!confirm(`Eliminar definitivamente la orden ${o.id}?`))return;state.orders=state.orders.filter(x=>x.id!==id);save();$('#orderDialog').close();toast('Orden eliminada')}
 function shortDependency(value){const text=String(value||''),match=text.match(/juzgado.*?(?:N\.?\s*[.º°]*\s*|número\s*)(\d+)/i)||text.match(/juzgado\s+(\d+)/i);return match?`Juzgado N.º ${match[1]}`:text}
