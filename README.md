@@ -1,5 +1,17 @@
 # Sistema de órdenes de trabajo — Intendencia + Supabase
 
+## Versión 15: editar personal, registro de creación y servicios base
+
+- Personal: botón Editar para cambiar nombre, especialidad, sede y WhatsApp. Conserva el ID del empleado y las asignaciones a órdenes/herramientas.
+- Órdenes: fecha y hora automáticas al guardar, visibles en el listado, edición, confirmación y orden impresa. Se conserva la creación original al editar. Hora mostrada en Argentina, con segundos. El registro usa el reloj del dispositivo; no constituye un sellado de tiempo certificado. Las órdenes antiguas que solo tenían fecha muestran «hora no registrada», sin inventarla. WhatsApp continúa sin fecha ni referencia de orden.
+- Al primer ingreso con esta versión se agregan automáticamente los servicios faltantes y se guardan en Supabase sin sobrescribir empresas ni contactos existentes: Diagonal tiene Limpieza, Tanques, Caldera, Fumigación, Ascensores, Hidrantes y Matafuegos; Callao, los mismos sin Hidrantes; Montevideo, los mismos sin Caldera y con Detección de incendios. Son 20 casilleros en total. Las empresas quedan pendientes de completar con Editar.
+- La precarga se ejecuta una sola vez por base compartida. Eliminar luego un servicio no lo recrea automáticamente. No se borran servicios cargados anteriormente, aunque no coincidan con las excepciones indicadas.
+- Contactos: búsqueda parcial por letras, sin tildes ni mayúsculas. Un número solo (o «juzgado 1») busca únicamente números de juzgado y prioriza los que empiezan con ese número, ordenados numéricamente: 1, 10, 11, 12, 13…; coincidencias como 21 y 31 quedan después, sin resultados espurios por teléfonos o direcciones.
+
+Actualizar reemplazando `index.html`, `app.js`, `enhancements.css` y `README.md`. La carpeta `tests` es opcional para publicar. Conservar `config.js`, `contacts-data.js` y todos los demás archivos. No ejecutar SQL. Esperar que finalice GitHub Pages, recargar con Cmd+Shift+R e ingresar para aplicar la precarga.
+
+Pruebas adicionales: `node tests/admin-v15.test.cjs`.
+
 ## Versión 14: mensaje WhatsApp simplificado
 
 El mensaje incluye primer nombre, tarea y ubicación. No incluye número/referencia de orden, descripción ni fecha límite; se eliminan los signos de apertura ¿ y ¡. Solo cuando la prioridad es Urgente agrega «Darle prioridad.». Alta, Media y Baja no agregan frases de prioridad. Los datos completos siguen guardados y disponibles para imprimir.

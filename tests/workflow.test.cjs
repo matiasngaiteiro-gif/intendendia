@@ -48,7 +48,7 @@ assert.ok(html.indexOf('id="newOrderBtn"')>html.indexOf('id="ordersView"'));
 const control=()=>({value:'',hidden:false,required:false,disabled:false,style:{},children:[],replaceChildren(){this.children=[]},append(option){this.children.push(option)}});
 const form={elements:Object.fromEntries(['id','template','customTask','status','priority','assignee','specialty','description','building','dependency','location','dueDate'].map(key=>[key,control()])),reset(){Object.values(this.elements).forEach(c=>c.value='')}};
 const nodes={'#orderForm':form,'#orderForm [name=assignee]':form.elements.assignee};
-for(const name of ['customTaskLabel','dependencyWarning','orderModalTitle','deleteOrderBtn','finishOrderBtn','orderDialog'])nodes['#'+name]=control();
+for(const name of ['customTaskLabel','dependencyWarning','orderCreatedAt','orderModalTitle','deleteOrderBtn','finishOrderBtn','orderDialog'])nodes['#'+name]=control();
 nodes['#orderDialog'].showModal=()=>{};
 context.document={querySelector:selector=>nodes[selector],createElement:()=>control()};
 context.openOrder();assert.equal(form.elements.customTask.disabled,true);

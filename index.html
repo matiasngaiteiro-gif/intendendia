@@ -9,7 +9,7 @@
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=()">
   <title>Intendencia | Órdenes de trabajo</title>
   <link rel="stylesheet" href="styles.css?v=7">
-  <link rel="stylesheet" href="enhancements.css?v=7">
+  <link rel="stylesheet" href="enhancements.css?v=15">
   <link rel="stylesheet" href="actions.css?v=7">
   <link rel="stylesheet" href="services.css?v=7">
   <link rel="stylesheet" href="workflow.css?v=11">
@@ -89,6 +89,7 @@
     <form id="orderForm" method="dialog">
       <div class="modal-head"><div><p class="eyebrow">ORDEN DE TRABAJO</p><h2 id="orderModalTitle">Nueva orden</h2></div><button type="button" class="icon-btn close-modal">×</button></div>
       <input type="hidden" name="id">
+      <p class="security-note" id="orderCreatedAt" style="padding:0 24px">La fecha y hora de creación se registran al guardar.</p>
       <div class="form-grid">
         <label class="wide">Especialidad<select name="specialty" required></select></label>
         <label class="wide">Tarea o reparación<select name="template" required disabled></select></label>
@@ -109,9 +110,10 @@
 
   <dialog id="personDialog">
     <form id="personForm" method="dialog">
-      <div class="modal-head"><h2>Agregar empleado</h2><button type="button" class="icon-btn close-person">×</button></div>
+      <div class="modal-head"><h2 id="personModalTitle">Agregar empleado</h2><button type="button" class="icon-btn close-person">×</button></div>
+      <input type="hidden" name="id">
       <div class="form-grid"><label class="wide">Nombre y apellido<input name="name" required></label><label>Especialidad<select name="role" required></select></label><label>Edificio base<select name="building" required></select></label><label class="wide">WhatsApp<input name="phone" inputmode="tel" placeholder="Ej.: 1155551234"></label></div>
-      <div class="modal-actions"><button type="button" class="secondary close-person">Cancelar</button><button class="primary" type="submit">Agregar</button></div>
+      <div class="modal-actions"><button type="button" class="secondary close-person">Cancelar</button><button class="primary" id="savePersonBtn" type="submit">Agregar</button></div>
     </form>
   </dialog>
 
@@ -123,7 +125,7 @@
 
   <dialog id="messageDialog">
     <div class="modal-head"><div><p class="eyebrow">ASIGNACIÓN GENERADA</p><h2>Mensaje para WhatsApp</h2></div><button type="button" class="icon-btn close-message">×</button></div>
-    <div class="message-body"><textarea id="whatsappMessage" rows="11" readonly></textarea></div>
+    <div class="message-body"><p id="messageCreatedAt" class="security-note"></p><textarea id="whatsappMessage" rows="11" readonly></textarea></div>
     <div class="modal-actions order-actions"><a class="primary whatsapp-link" id="openWhatsappBtn" target="_blank" rel="noopener">Enviar por WhatsApp</a><button type="button" class="secondary" id="copyMessageBtn">Copiar orden</button><button type="button" class="secondary" id="printOrderBtn">Imprimir orden</button></div>
   </dialog>
 
@@ -163,6 +165,6 @@
   <script src="supabase-api.js?v=9"></script>
   <script src="modules.js?v=9"></script>
   <script src="contacts-data.js?v=10"></script>
-  <script src="app.js?v=14"></script>
+  <script src="app.js?v=15"></script>
 </body>
 </html>
