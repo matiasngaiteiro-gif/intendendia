@@ -1,5 +1,18 @@
 # Sistema de órdenes de trabajo — Intendencia + Supabase
 
+## Versión 11: especialidad antes de tarea
+
+- Al crear una orden, elegir primero Especialidad. El desplegable de tareas muestra solo las de esa especialidad; «Otra tarea» sigue permitiendo escribir un trabajo propio.
+- La especialidad elegida se conserva en la orden y controla el filtro, aunque el responsable tenga otra especialidad. No hay un segundo campo «Especialidad requerida».
+- Nuevo estado «Faltan insumos», disponible al crear/editar y en el filtro de estados; sigue siendo una orden activa y puede finalizarse después.
+- Al editar órdenes anteriores se conservan especialidad, título y descripción. Si el trabajo no corresponde al catálogo de esa especialidad, aparece como «Otra tarea» con el texto original.
+
+### Actualización segura desde la versión 10
+
+Reemplazar únicamente `index.html`, `app.js`, `workflow.css` y `README.md` con el paquete de actualización. Conservar `config.js`, `contacts-data.js` y el resto de los archivos existentes. No ejecutar SQL ni cambiar la contraseña por esta actualización. Esperar la publicación de GitHub Pages y recargar sin caché. El paquete de actualización no incluye `config.js`, para evitar reemplazar la conexión real por una plantilla.
+
+Estas modificaciones no resuelven por sí solas un error previo de autenticación: debe revisarse la configuración del proyecto y la cuenta Master.
+
 ## Versión 10: formulario simplificado y contactos PJN
 
 - Nueva especialidad Administrativo y 40 tareas predeterminadas (30 incorporaciones).

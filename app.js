@@ -1,6 +1,6 @@
 const STORE = 'intendencia-ordenes-v1';
 const BUILDINGS = ['Diagonal Roque Sáenz Peña 1211','Av. Callao 635','Montevideo 546'];
-const STATUSES = ['Pendiente','En proceso','Resuelto','Sin asignar'];
+const STATUSES = ['Pendiente','En proceso','Faltan insumos','Resuelto','Sin asignar'];
 const PRIORITIES = ['Urgente','Alta','Media','Baja'];
 const CATEGORIES = ['Mantenimiento general','Electricidad','Sanitarios','Pintura','Carpintería','Aire acondicionado','Ascensores','Limpieza','Movimiento interno','Seguridad','Albañilería','Tapicería','Administrativo'];
 const SPECIALTIES = ['Carpintería','Aires Acondicionados','Albañilería','Ayudante','Electricidad','Plomería','Tapicería','Pintura','Administrativo'];
@@ -101,7 +101,9 @@ function init(){
   fillSelect($('#serviceForm [name=building]'),BUILDINGS); fillSelect($('#serviceForm [name=serviceType]'),SERVICE_TYPES);
   fillSelect($('#contactForm [name=building]'),BUILDINGS,'Todos / sin edificio específico');
   fillSelect($('#orderForm [name=dependency]'),DEPENDENCIES);
-  fillSelect($('#orderForm [name=template]'),[...TEMPLATES.map(t=>t.name),'Otra tarea'],'Seleccionar tarea');
+  fillSelect($('#orderForm [name=taskSpecialty]'),SPECIALTIES,'Seleccionar especialidad');
+  $('#orderForm [name=taskSpecialty]').onchange=()=>refreshTaskOptions();
+  refreshTaskOptions();
   $('#orderForm [name=template]').onchange=applyTemplate;
   $('#copyMessageBtn').onclick=copyMessage;
   $('#printOrderBtn').onclick=printCurrentOrder;
@@ -122,9 +124,23 @@ function fillPeopleSelect(s,empty){const value=s.value;s.replaceChildren();const
 function fillAssignees(){fillPeopleSelect($('#orderForm [name=assignee]'),'Sin asignar')}
 function fillToolHolders(){fillPeopleSelect($('#toolForm [name=holder]'),'Sin entregar')}
 function toggleCustomTask(){const f=$('#orderForm'),custom=f.elements.template.value==='Otra tarea';$('#customTaskLabel').hidden=!custom;f.elements.customTask.required=custom;f.elements.customTask.disabled=!custom}
-function openOrder(id){const f=$('#orderForm');f.reset();fillAssignees();f.elements.id.value='';f.elements.status.value='Pendiente';f.elements.priority.value='Media';$('#orderModalTitle').textContent='Nueva orden';$('#deleteOrderBtn').style.display='none';$('#finishOrderBtn').style.display='none';if(id){const o=state.orders.find(x=>x.id===id);if(!o)return;Object.entries(o).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});f.elements.template.value=TEMPLATES.some(t=>t.name===o.title)?o.title:'Otra tarea';f.elements.customTask.value=o.title||'';$('#orderModalTitle').textContent=`Editar ${o.id}`;$('#deleteOrderBtn').style.display='inline-block';$('#finishOrderBtn').style.display=o.status==='Resuelto'?'none':'inline-block'}toggleCustomTask();$('#orderDialog').showModal()}
-function orderSpecialty(data){return person(data.assignee)?.role||CATEGORY_SPECIALTY[data.category]||'Ayudante'}
-function submitOrder(e){e.preventDefault();const data=Object.fromEntries(new FormData(e.target)),now=new Date().toISOString();data.title=data.template==='Otra tarea'?(data.customTask||'').trim():data.template;if(!data.title){toast('Seleccioná una tarea');return}data.specialty=orderSpecialty(data);delete data.template;delete data.customTask;if(data.id){const i=state.orders.findIndex(o=>o.id===data.id);state.orders[i]={...state.orders[i],...data,updatedAt:now}}else{const n=Math.max(0,...state.orders.map(o=>Number(o.id.split('-')[1])))+1;data.id=`OT-${String(n).padStart(4,'0')}`;data.createdAt=now;data.updatedAt=now;state.orders.push(data)}save();$('#orderDialog').close();showAssignmentMessage(data);toast('Orden guardada correctamente')}
+function tasksForSpecialty(specialty){return TEMPLATES.filter(t=>(t.specialty||CATEGORY_SPECIALTY[t.category]||'Ayudante')===specialty)}
+function refreshTaskOptions(title=''){const f=$('#orderForm'),specialty=f.elements.taskSpecialty.value,select=f.elements.template;fillSelect(select,specialty?[...tasksForSpecialty(specialty).map(t=>t.name),'Otra tarea']:[],specialty?'Seleccionar tarea':'Elegí primero una especialidad');select.disabled=!specialty;if(title){select.value=tasksForSpecialty(specialty).some(t=>t.name===title)?title:'Otra tarea';f.elements.customTask.value=title}toggleCustomTask()}
+function openOrder(id){const f=$('#orderForm');f.reset();fillAssignees();f.elements.id.value='';f.elements.taskSpecialty.value='';f.elements.status.value='Pendiente';f.elements.priority.value='Media';$('#orderModalTitle').textContent='Nueva orden';$('#deleteOrderBtn').style.display='none';$('#finishOrderBtn').style.display='none';let title='';if(id){const o=state.orders.find(x=>x.id===id);if(!o)return;Object.entries(o).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});f.elements.taskSpecialty.value=SPECIALTIES.includes(o.specialty)?o.specialty:orderSpecialty(o);title=o.title||'';$('#orderModalTitle').textContent=`Editar ${o.id}`;$('#deleteOrderBtn').style.display='inline-block';$('#finishOrderBtn').style.display=o.status==='Resuelto'?'none':'inline-block'}refreshTaskOptions(title);$('#orderDialog').showModal()}
+function orderSpecialty(data){return SPECIALTIES.includes(data.taskSpecialty)?data.taskSpecialty:person(data.assignee)?.role||CATEGORY_SPECIALTY[data.category]||'Ayudante'}
+function submitOrder(e){
+  e.preventDefault();
+  const data=Object.fromEntries(new FormData(e.target)),now=new Date().toISOString();
+  if(!SPECIALTIES.includes(data.taskSpecialty)){toast('Seleccioná una especialidad');return}
+  if(data.template!=='Otra tarea'&&!tasksForSpecialty(data.taskSpecialty).some(t=>t.name===data.template)){toast('Seleccioná una tarea de esa especialidad');return}
+  data.title=data.template==='Otra tarea'?(data.customTask||'').trim():data.template;
+  if(!data.title){toast('Seleccioná una tarea');return}
+  data.specialty=orderSpecialty(data);
+  delete data.template;delete data.customTask;delete data.taskSpecialty;
+  if(data.id){const i=state.orders.findIndex(o=>o.id===data.id);state.orders[i]={...state.orders[i],...data,updatedAt:now}}
+  else{const n=Math.max(0,...state.orders.map(o=>Number(o.id.split('-')[1])))+1;data.id=`OT-${String(n).padStart(4,'0')}`;data.createdAt=now;data.updatedAt=now;state.orders.push(data)}
+  save();$('#orderDialog').close();showAssignmentMessage(data);toast('Orden guardada correctamente');
+}
 function submitPerson(e){e.preventDefault();const data=Object.fromEntries(new FormData(e.target));data.id='p'+Date.now();state.people.push(data);save();e.target.reset();$('#personDialog').close();toast('Empleado agregado')}
 function deletePerson(id){const p=person(id);if(!p||!confirm(`Eliminar a ${p.name}? Sus órdenes y herramientas quedarán sin asignar.`))return;state.orders.forEach(o=>{if(o.assignee===id){o.assignee='';o.status=o.status==='Resuelto'?'Resuelto':'Sin asignar';o.updatedAt=new Date().toISOString()}});state.tools.forEach(t=>{if(t.holder===id){t.holder='';t.assignedDate='';t.toolStatus='Disponible';t.updatedAt=new Date().toISOString()}});state.people=state.people.filter(x=>x.id!==id);save();toast('Empleado eliminado')}
 function applyTemplate(e){toggleCustomTask();const t=TEMPLATES.find(x=>x.name===e.target.value);if(!t)return;const f=$('#orderForm');f.elements.category.value=t.category;f.elements.description.value=t.description}

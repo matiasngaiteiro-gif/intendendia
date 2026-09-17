@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="enhancements.css?v=7">
   <link rel="stylesheet" href="actions.css?v=7">
   <link rel="stylesheet" href="services.css?v=7">
-  <link rel="stylesheet" href="workflow.css?v=10">
+  <link rel="stylesheet" href="workflow.css?v=11">
   <link rel="stylesheet" href="auth.css?v=8">
   <link rel="stylesheet" href="modules.css?v=9">
 </head>
@@ -90,7 +90,8 @@
       <div class="modal-head"><div><p class="eyebrow">ORDEN DE TRABAJO</p><h2 id="orderModalTitle">Nueva orden</h2></div><button type="button" class="icon-btn close-modal">×</button></div>
       <input type="hidden" name="id">
       <div class="form-grid">
-        <label class="wide">Tarea o reparación<select name="template" required></select></label>
+        <label class="wide">Especialidad<select name="taskSpecialty" required></select></label>
+        <label class="wide">Tarea o reparación<select name="template" required disabled></select></label>
         <label class="wide" id="customTaskLabel" hidden>Otra tarea<input name="customTask" maxlength="90" placeholder="Indicá qué hay que hacer"></label>
         <label>Edificio<select name="building" required></select></label>
         <label>Dependencia<select name="dependency" required></select></label>
@@ -162,6 +163,6 @@
   <script src="supabase-api.js?v=9"></script>
   <script src="modules.js?v=9"></script>
   <script src="contacts-data.js?v=10"></script>
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>
