@@ -1,5 +1,29 @@
 # Sistema de órdenes de trabajo — Intendencia + Supabase
 
+## Versión 16: Insumos, depósitos y retiros de los miércoles
+
+Nueva sección Insumos con depósitos Diagonal, Callao y Montevideo. Cada uno permite seleccionar un empleado referente (puede ser cualquiera de la dotación) y conserva su propio stock. Catálogo inicial: resmas de papel A4, carátulas amarillas, carátulas azules, carpetas verdes, sobres chicos y sobres grandes. Se pueden agregar insumos con unidad y cantidad sugerida; quedan disponibles en los tres depósitos, inicialmente en cero.
+
+### Primer uso y semana de entregas
+
+1. Elegir el referente de cada depósito; editar su teléfono en Personal para habilitar el enlace de WhatsApp.
+2. Pulsar Stock junto a cada producto: cargar las existencias reales con Ingreso/reposición y un motivo. El stock inicial es cero, sin cantidades ficticias. Papel se cuenta por resmas: 1 caja = 10 resmas; 5 cajas = 50 resmas.
+3. Asignar entrega a una dependencia de ese edificio, elegir insumo/cantidad y un miércoles de retiro. Las resmas sugieren 10, pero puede modificarse. Se valida stock suficiente y cantidades enteras positivas. La asignación descuenta inmediatamente y reserva esos insumos. El stock mostrado es el disponible, excluyendo lo reservado.
+4. La fecha sugerida es el próximo miércoles. El mismo miércoles antes de las 08:00 de Argentina sugiere ese día; desde las 08:00 sugiere el miércoles siguiente. Puede cambiarse manualmente a otro miércoles.
+5. El miércoles, seleccionar la fecha en «Miércoles a informar» y pulsar «Informar los que retiran». Agrupa las dependencias con asignaciones pendientes hasta ese día, incluyendo atrasadas, sin duplicarlas ni incluir retiros completados o cancelados. No incluye pedidos de semanas futuras.
+6. Copiar el mensaje o abrir WhatsApp al referente. El borrador usa «hoy», no menciona el edificio y pide «Avisame mañana los que retiraron». Para salas utiliza A–F y para juzgados solo el número. El contexto indica la fecha prevista; enviar el texto ese miércoles. Generar un informe no lo envía ni marca entregas como retiradas. El informe generado y sus asignaciones se conservan en el historial.
+7. Tras la confirmación, marcar cada entrega Retirado: no hay un segundo descuento. Cancelar devuelve las unidades al stock, una sola vez. Los pendientes no retirados quedan disponibles para el próximo informe.
+
+Reposiciones y correcciones conservan movimientos con fecha/hora, cantidad, saldo y motivo. «Corregir stock disponible» establece un saldo absoluto de las existencias libres; no debe incluir los insumos ya reservados. Se muestran los últimos 100 movimientos y 5 informes por depósito, pero los anteriores permanecen guardados. El historial de entregas incluye todos los estados.
+
+Los datos se guardan en el JSON compartido existente de Supabase y usan el control de concurrencia de la aplicación. No son datos locales independientes por dispositivo. No se requieren tablas nuevas ni ejecutar SQL. Para evitar mezclar versiones, actualizar todos los dispositivos y recargar la página; no mantener pestañas antiguas guardando sobre la misma base.
+
+### Actualización desde la versión 15
+
+Reemplazar `index.html`, `app.js` y `README.md`; agregar `supplies.js` y `supplies.css`. Conservar `config.js`, `contacts-data.js`, `modules.js`, todas las hojas de estilo anteriores y los demás archivos. La carpeta tests es opcional para publicar. No ejecutar SQL. Esperar la publicación de Pages y recargar con Cmd+Shift+R en Mac. El paquete de actualización no incluye configuración ni credenciales.
+
+Prueba adicional: `node tests/supplies.test.cjs`. No se envían mensajes, crean avisos externos ni tareas programadas con la aplicación cerrada: el informe del miércoles se genera manualmente al pulsar el botón.
+
 ## Versión 15: editar personal, registro de creación y servicios base
 
 - Personal: botón Editar para cambiar nombre, especialidad, sede y WhatsApp. Conserva el ID del empleado y las asignaciones a órdenes/herramientas.
