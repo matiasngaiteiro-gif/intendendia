@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const c=vm.createContext({Date,Intl,console,structuredClone});
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../app.js'),'utf8').replace(/bootstrap\(\);\s*$/,''),c);
+assert.equal(c.formatServiceDate('2026-12-31'),'31/12/2026');
+assert.equal(c.formatServiceDate('2026-01-07'),'07/01/2026');
+assert.equal(c.formatServiceDate(''),'Sin vencimiento');
+const html=c.serviceCard({id:'S-1',serviceType:'Limpieza',endDate:'2026-12-31'});
+assert.match(html,/31\/12\/2026/);assert.doesNotMatch(html,/Hasta |de dic/);
+assert.match(html,/service-expiry/);
+console.log('Fecha numérica de servicios: OK');

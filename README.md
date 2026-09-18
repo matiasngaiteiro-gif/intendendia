@@ -198,3 +198,13 @@ Luego ingresar a `http://localhost:8080`.
 ## Seguridad
 
 La aplicación no utiliza librerías externas ni analítica. Incluye política CSP restrictiva, bloqueo de permisos innecesarios, ausencia de referer y escape del contenido cargado. La base bloquea el rol anónimo y permite acceder únicamente a usuarios autenticados mediante políticas RLS. La clave publicable identifica a la aplicación pero no concede acceso anónimo. La sesión se conserva en el navegador; los datos operativos permanecen en Supabase.
+## Actualización v17 — Insumos
+
+Reemplazar `index.html`, `supplies.js`, `supplies.css` y este README en el repositorio. No cambiar `config.js` ni ejecutar SQL. Los demás archivos de la aplicación deben conservarse. Después de publicar, recargar la página; si se ve la versión anterior, usar recarga forzada.
+
+El catálogo permite editar nombre, unidad y cantidad sugerida. Las unidades no pueden cambiarse si hay stock o movimientos para evitar alterar su significado. «Dar de baja» oculta el insumo en los tres depósitos, conserva stock e historial y permite restaurarlo activando «Ver dados de baja». Primero deben resolverse sus entregas pendientes.
+
+Cada depósito tiene su pestaña, buscador, resumen de stock y entregas pendientes; las entregas resueltas se consultan en el historial. Los cambios se guardan en el estado compartido existente de Supabase.
+## Actualización v18 — Fecha de servicios
+
+La fecha de vencimiento se muestra como `31/12/2026`, sin texto adicional, conservando los colores de alerta. El paquete incluye también las mejoras de Insumos de v17. Reemplazar index.html, app.js, services.css, supplies.js, supplies.css y README.md. Conservar config.js y los demás archivos. No ejecutar SQL.
