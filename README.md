@@ -208,3 +208,8 @@ Cada depósito tiene su pestaña, buscador, resumen de stock y entregas pendient
 ## Actualización v18 — Fecha de servicios
 
 La fecha de vencimiento se muestra como `31/12/2026`, sin texto adicional, conservando los colores de alerta. El paquete incluye también las mejoras de Insumos de v17. Reemplazar index.html, app.js, services.css, supplies.js, supplies.css y README.md. Conservar config.js y los demás archivos. No ejecutar SQL.
+## Actualización v19
+
+Fechas de órdenes numéricas y centradas: Fecha de creación y Hasta (fecha límite). Insumos permite asignar cualquier dependencia a cualquier depósito, descontando únicamente del depósito elegido. Dar de baja o restaurar se hace dentro de Editar insumo; se conserva el historial.
+
+Reemplazar index.html, app.js, enhancements.css, services.css, supplies.js, supplies.css y README.md. Conservar config.js y los demás archivos. No ejecutar SQL. Este paquete incluye v17 y v18.
