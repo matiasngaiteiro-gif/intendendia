@@ -44,8 +44,6 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .sidebar-footer{display:flex;align-items:flex-start;gap:8px;line-height:1.4}
 .sidebar-footer .online-dot{margin:5px 0 0;flex:none;transition:background-color .2s}
 .sidebar-footer[data-state=saving] .online-dot{background:#f5b94c;animation:pulse 1s infinite}
-.sidebar-footer[data-state=offline] .online-dot{background:#ff7a7a}
-.sidebar-footer[data-state=offline]{color:#ffc2c2}
 @keyframes pulse{50%{opacity:.35}}
 
 /* Encabezado */
@@ -112,13 +110,8 @@ dialog[open]::backdrop{animation:fade-in .18s ease;backdrop-filter:blur(2px)}
 .toast.toast-error{background:#8f2323}
 .toast.toast-error::before{content:"!";background:#fff;color:#8f2323}
 
-/* Acceso */
-.password-field{position:relative;display:block}
-.password-field input{padding-right:84px}
-.password-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);margin-top:3.5px;border:0;background:transparent;color:var(--blue);font-weight:700;font-size:12px;padding:8px 10px;border-radius:7px;cursor:pointer}
-.password-toggle:hover{background:var(--blue-soft)}
-.login-user{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;margin:0}
-.login-user small{color:var(--muted)}
+.backup-text{display:block;opacity:.7;margin-top:2px}
+.load-error{margin:0 0 18px;padding:12px 14px;border-radius:var(--radius-sm);background:#ffe5e5;color:#8f2323;font-weight:600}
 
 /* Insumos: pestañas coherentes con el resto de la interfaz */
 .supply-tabs .active{background:var(--blue);border-color:var(--blue)}
@@ -198,3 +191,5 @@ dialog[open]::backdrop{animation:fade-in .18s ease;backdrop-filter:blur(2px)}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 @media print{.clear-filters{display:none!important}}
+.top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:720px){.top-actions .secondary{padding:8px 10px;font-size:12px;min-height:36px}}

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#17233d">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://*.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'">
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=(), usb=()">
   <title>Intendencia | Órdenes de trabajo</title>
   <link rel="stylesheet" href="styles.css?v=7">
@@ -13,10 +13,9 @@
   <link rel="stylesheet" href="actions.css?v=7">
   <link rel="stylesheet" href="services.css?v=18">
   <link rel="stylesheet" href="workflow.css?v=11">
-  <link rel="stylesheet" href="auth.css?v=8">
   <link rel="stylesheet" href="modules.css?v=9">
   <link rel="stylesheet" href="supplies.css?v=17">
-  <link rel="stylesheet" href="ux.css?v=1">
+  <link rel="stylesheet" href="ux.css?v=2">
 </head>
 <body>
   <div class="app-shell">
@@ -30,14 +29,15 @@
         <button class="nav-item" data-view="services">Servicios</button>
         <button class="nav-item" data-view="contacts">Contactos de utilidad</button>
       </nav>
-      <div class="sidebar-footer"><span class="online-dot"></span> Datos compartidos en Supabase</div>
+      <div class="sidebar-footer"><span class="online-dot"></span> Guardado en este navegador</div>
     </aside>
 
     <main>
       <header class="topbar">
         <div><p class="eyebrow">GESTIÓN OPERATIVA</p><h1 id="pageTitle">Panel general</h1></div>
-        <div class="top-actions"><div class="session-user"><small>Sesión activa</small><strong id="sessionEmail"></strong></div><button class="secondary" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="top-actions"><button class="secondary" id="exportBackupBtn" title="Descargar todos los datos en un archivo">Exportar copia</button><button class="secondary" id="importBackupBtn" title="Cargar datos desde un archivo de copia">Importar copia</button><input type="file" id="importBackupFile" accept="application/json,.json" hidden></div>
       </header>
+      <p class="load-error" id="loadError" role="alert" hidden></p>
 
       <section id="dashboardView" class="view active">
         <div class="metrics" id="metrics"></div>
@@ -155,23 +155,12 @@
   </dialog>
 
   <section id="printSheet" class="print-sheet" aria-hidden="true"></section>
-  <section id="authScreen" class="auth-screen">
-    <form id="loginForm" class="login-card">
-      <div class="brand auth-brand"><span class="brand-mark">IC</span><div><strong>Intendencia</strong><small>Cámara Comercial</small></div></div>
-      <p class="eyebrow">ACCESO RESTRINGIDO</p><h1>Sistema de gestión</h1><p class="login-copy">Ingresá con el usuario autorizado por la Intendencia.</p>
-      <p class="login-user"><small>Usuario</small><strong>Master</strong></p>
-      <label>Contraseña<span class="password-field"><input name="password" type="password" autocomplete="current-password" minlength="8" required><button type="button" class="password-toggle" id="togglePassword" aria-pressed="false" aria-label="Mostrar u ocultar contraseña">Mostrar</button></span></label>
-      <p id="loginError" class="login-error" role="alert"></p><button class="primary login-submit" type="submit">Ingresar</button>
-      <p class="config-warning" id="configWarning">Primero completá la configuración de Supabase en <strong>config.js</strong>.</p>
-    </form>
-  </section>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="config.js?v=9"></script>
-  <script src="supabase-api.js?v=9"></script>
-  <script src="modules.js?v=9"></script>
+  <script src="local-store.js?v=1"></script>
+  <script src="modules.js?v=10"></script>
   <script src="contacts-data.js?v=10"></script>
   <script src="supplies.js?v=19"></script>
-  <script src="app.js?v=19"></script>
-  <script src="ux.js?v=1"></script>
+  <script src="app.js?v=20"></script>
+  <script src="ux.js?v=2"></script>
 </body>
 </html>

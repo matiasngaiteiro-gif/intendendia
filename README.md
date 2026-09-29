@@ -1,5 +1,16 @@
 # Sistema de órdenes de trabajo — Intendencia + Supabase
 
+## Versión 18: sin Supabase ni contraseña (solo GitHub Pages)
+
+La aplicación ya no usa Supabase ni pide contraseña: se abre directamente desde GitHub Pages y guarda los datos **en el navegador de cada equipo** (`localStorage`).
+
+- Cada computadora o celular tiene sus propios datos; ya no se comparten automáticamente.
+- **Exportar copia** (arriba a la derecha) descarga un archivo `.json` con todos los datos. Conviene hacerlo con frecuencia: si se borran los datos del navegador, se pierden.
+- **Importar copia** reemplaza los datos del navegador por los de un archivo. Sirve para pasar la información a otro equipo o recuperarla.
+- La barra lateral indica cuándo se hizo la última copia.
+- Se eliminaron `config.js`, `supabase-api.js` y `auth.css`. Las instrucciones de Supabase de versiones anteriores quedan solo como historial.
+- Cualquiera que tenga el enlace puede abrir la herramienta, pero solo ve los datos guardados en su propio navegador.
+
 ## Versión 17: experiencia de usuario y diseño
 
 Capa de mejoras en `ux.css` y `ux.js` (se cargan al final, sin cambiar la lógica ni los datos):

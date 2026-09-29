@@ -167,7 +167,7 @@
     const el = e.target;
     if((e.key === 'Enter' || e.key === ' ') && el.matches?.(CLICKABLE)){ e.preventDefault(); el.click(); return; }
     if(e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
-    const typing = el.closest?.('input,select,textarea,[contenteditable]') || qs('dialog[open]') || !qs('#authScreen')?.classList.contains('hidden');
+    const typing = el.closest?.('input,select,textarea,[contenteditable]') || qs('dialog[open]');
     if(typing) return;
     if(e.key === '/'){
       const search = qs('.view.active input[type=search]');
@@ -221,41 +221,35 @@
     toastTimer = setTimeout(() => t.classList.remove('show'),isError ? 4500 : 2600);
   };
 
-  /* ---------- Estado de sincronización ---------- */
+  /* ---------- Estado del guardado y copia de respaldo ---------- */
+  function lastBackupText(){
+    let stamp = null;
+    try { stamp = localStorage.getItem('intendencia-ultima-copia'); } catch {}
+    if(!stamp) return 'Sin copia de respaldo todavía';
+    const days = Math.floor((Date.now() - new Date(stamp)) / 86400000);
+    return `Última copia: ${days <= 0 ? 'hoy' : days === 1 ? 'ayer' : `hace ${days} días`}`;
+  }
   function watchSync(){
     const footer = qs('.sidebar-footer');
     if(!footer || footer.dataset.enhanced) return;
     footer.dataset.enhanced = '1';
     footer.setAttribute('role','status');
-    footer.innerHTML = '<span class="online-dot"></span><span class="sync-text">Datos sincronizados</span>';
+    footer.innerHTML = '<span class="online-dot"></span><span><span class="sync-text">Guardado en este navegador</span><small class="backup-text"></small></span>';
     const text = footer.querySelector('.sync-text');
+    const backup = footer.querySelector('.backup-text');
     let last = null;
     setInterval(() => {
       const pending = typeof savePending === 'number' && savePending > 0;
-      const offline = !navigator.onLine;
-      const next = offline ? 'offline' : pending ? 'saving' : 'ok';
+      const next = (pending ? 'saving' : 'ok') + lastBackupText();
       if(next === last) return;
       last = next;
-      footer.dataset.state = next;
-      text.textContent = offline ? 'Sin conexión: los cambios no se guardan' : pending ? 'Guardando cambios…' : 'Datos sincronizados';
+      footer.dataset.state = pending ? 'saving' : 'ok';
+      text.textContent = pending ? 'Guardando cambios…' : 'Guardado en este navegador';
+      backup.textContent = lastBackupText();
     },400);
     window.addEventListener('beforeunload',e => {
       if(typeof savePending === 'number' && savePending > 0){ e.preventDefault(); e.returnValue = ''; }
     });
-  }
-
-  /* ---------- Acceso ---------- */
-  function enhanceLogin(){
-    const toggle = qs('#togglePassword');
-    const input = qs('#loginForm [name=password]');
-    if(toggle && input) toggle.onclick = () => {
-      const show = input.type === 'password';
-      input.type = show ? 'text' : 'password';
-      toggle.textContent = show ? 'Ocultar' : 'Mostrar';
-      toggle.setAttribute('aria-pressed',String(show));
-      input.focus();
-    };
-    if(input && !qs('#authScreen')?.classList.contains('hidden')) setTimeout(() => input.focus(),50);
   }
 
   /* ---------- Arranque ---------- */
@@ -283,5 +277,4 @@
     window.init = function(){ const result = originalInit.apply(this,arguments); afterInit(); return result; };
   }
   wrapShowView();
-  enhanceLogin();
 })();
