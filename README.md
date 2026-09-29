@@ -1,5 +1,21 @@
 # Sistema de órdenes de trabajo — Intendencia + Supabase
 
+## Versión 17: experiencia de usuario y diseño
+
+Capa de mejoras en `ux.css` y `ux.js` (se cargan al final, sin cambiar la lógica ni los datos):
+
+- **Navegación agrupada** en Operación, Recursos y Consulta, con íconos y sección activa destacada. En celular se convierte en una barra superior fija y deslizable.
+- **Enlaces directos**: cada sección tiene su dirección (`#orders`, `#supplies`…); el botón Atrás del navegador y recargar la página mantienen la sección.
+- **Métricas accionables**: tocar Pendientes, En proceso, etc. abre las órdenes ya filtradas; en Herramientas filtra el inventario por estado.
+- **Limpiar filtros** aparece cuando hay una búsqueda o filtro activo.
+- **Atajos de teclado**: `/` enfoca el buscador de la sección, `N` crea una orden; las filas se abren con Enter y el foco es siempre visible.
+- **Tablas en celular** convertidas en tarjetas con etiquetas, sin desplazamiento horizontal.
+- **Diálogos** con encabezado y botones siempre visibles; en celular se abren como hoja inferior con Guardar al alcance del pulgar. El formulario de órdenes se ordena en Trabajo, Ubicación y Seguimiento.
+- **Estado de sincronización** en la barra lateral (sincronizado, guardando, sin conexión) y aviso antes de cerrar si hay cambios sin guardar.
+- **Avisos** diferenciados para éxito y error, leídos por lectores de pantalla.
+- Teléfonos y correos de Contactos se pueden tocar para llamar o escribir; la contraseña puede mostrarse al ingresar; la fecha del día aparece en el encabezado.
+- Respeta la preferencia de movimiento reducido del sistema.
+
 ## Versión 16: Insumos, depósitos y retiros de los miércoles
 
 Nueva sección Insumos con depósitos Diagonal, Callao y Montevideo. Cada uno permite seleccionar un empleado referente (puede ser cualquiera de la dotación) y conserva su propio stock. Catálogo inicial: resmas de papel A4, carátulas amarillas, carátulas azules, carpetas verdes, sobres chicos y sobres grandes. Se pueden agregar insumos con unidad y cantidad sugerida; quedan disponibles en los tres depósitos, inicialmente en cero.

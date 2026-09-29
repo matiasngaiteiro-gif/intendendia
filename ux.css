@@ -1,0 +1,200 @@
+/* Capa de experiencia de usuario: unifica botones, foco, navegación, tablas y diálogos.
+   Se carga al final para ajustar las hojas anteriores sin reescribirlas. */
+:root{--blue-hover:#2747b8;--blue-soft:#eef2ff;--surface:#fff;--surface-2:#f8f9fb;--radius:12px;--radius-sm:9px;--ring:0 0 0 3px #3157d540;--ease:cubic-bezier(.2,.8,.2,1);--touch:44px}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{-webkit-font-smoothing:antialiased;line-height:1.45}
+::selection{background:#3157d533}
+
+/* Foco visible y consistente para teclado */
+:focus{outline:none}
+:focus-visible{outline:none;box-shadow:var(--ring)!important;border-radius:var(--radius-sm)}
+.nav-item:focus-visible{box-shadow:0 0 0 3px #ffffff55!important}
+
+/* Botones: jerarquía clara, estados de hover, presión y deshabilitado */
+.primary,.secondary,.danger,.finish-button,.claim-button,.edit-service,.text-button{transition:background-color .15s,border-color .15s,box-shadow .15s,transform .05s;min-height:40px;line-height:1.2}
+.primary:hover{background:var(--blue-hover);border-color:var(--blue-hover)}
+.secondary:hover,.edit-service:hover{background:var(--surface-2);border-color:#cdd4df}
+.danger:hover{background:#ffe3e3;border-color:#e8b1b1}
+.claim-button:hover{background:#e1e8ff}
+.text-button{border-radius:8px;padding:8px 10px}
+.text-button:hover{background:var(--blue-soft)}
+.primary:active,.secondary:active,.danger:active,.finish-button:active{transform:translateY(1px)}
+button:disabled,.primary:disabled,.secondary:disabled{opacity:.55;cursor:not-allowed;box-shadow:none;transform:none}
+.icon-btn{display:grid;place-items:center;line-height:1;color:var(--muted);transition:background-color .15s,color .15s}
+.icon-btn:hover{background:#e6e9ef;color:var(--text)}
+
+/* Campos: altura táctil, estados y placeholder legible */
+.toolbar input,.toolbar select,label input,label select,label textarea{min-height:var(--touch);transition:border-color .15s,box-shadow .15s}
+label textarea{min-height:auto;line-height:1.5}
+.toolbar input:hover,.toolbar select:hover,label input:hover,label select:hover,label textarea:hover{border-color:#cbd2de}
+input::placeholder,textarea::placeholder{color:#99a1b0}
+select:disabled,input:disabled{background:var(--surface-2);color:#98a0ad;cursor:not-allowed}
+label input:user-invalid,label select:user-invalid,label textarea:user-invalid{border-color:var(--red);box-shadow:0 0 0 3px #c6404018}
+input[type=search]{-webkit-appearance:none;appearance:none}
+
+/* Navegación lateral agrupada con íconos */
+.sidebar nav{gap:2px;margin-top:18px}
+.nav-group{margin:16px 14px 6px;font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#7f8aa3}
+.nav-group:first-child{margin-top:4px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;font-size:14px;position:relative;transition:background-color .15s,color .15s}
+.nav-icon{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+.nav-item.active{background:#ffffff1c;color:#fff;font-weight:650}
+.nav-item.active .nav-icon{opacity:1}
+.nav-item.active::before{content:"";position:absolute;left:-18px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:#8fa8ff}
+.sidebar-footer{display:flex;align-items:flex-start;gap:8px;line-height:1.4}
+.sidebar-footer .online-dot{margin:5px 0 0;flex:none;transition:background-color .2s}
+.sidebar-footer[data-state=saving] .online-dot{background:#f5b94c;animation:pulse 1s infinite}
+.sidebar-footer[data-state=offline] .online-dot{background:#ff7a7a}
+.sidebar-footer[data-state=offline]{color:#ffc2c2}
+@keyframes pulse{50%{opacity:.35}}
+
+/* Encabezado */
+.eyebrow.today::first-letter{text-transform:uppercase}
+.eyebrow.today{text-transform:none;letter-spacing:.04em;font-size:12px;color:var(--muted);font-weight:650}
+.people-header{align-items:flex-end}
+.people-header p{max-width:70ch;line-height:1.55}
+
+/* Métricas del panel: se pueden tocar para ver el listado filtrado */
+.metric{transition:border-color .15s,box-shadow .15s,transform .15s}
+.metric.is-action{cursor:pointer;position:relative}
+.metric.is-action::after{content:"Ver →";position:absolute;right:18px;bottom:16px;font-size:12px;font-weight:700;color:var(--blue);opacity:0;transition:opacity .15s}
+.metric.is-action:hover{border-color:#c9d3f5;box-shadow:0 10px 30px #3157d51a;transform:translateY(-1px)}
+.metric.is-action:hover::after,.metric.is-action:focus-visible::after{opacity:1}
+.metric b{font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+
+/* Listas del panel */
+.priority-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0 -10px;padding:12px 10px;border-radius:10px;transition:background-color .15s}
+.priority-card:hover{background:#f6f8fd}
+.priority-card:last-child{border-bottom:0}
+.building-row strong{font-size:14px}
+
+/* Barra de filtros */
+.toolbar{align-items:center}
+.toolbar.has-filters:has(#specialtyFilter){grid-template-columns:minmax(240px,1fr) repeat(3,170px) auto}
+.toolbar.has-filters.tool-toolbar{grid-template-columns:minmax(280px,1fr) 240px auto}
+.clear-filters{white-space:nowrap;justify-self:start}
+
+/* Tablas: encabezado fijo, filas con hover y foco */
+.table-wrap{-webkit-overflow-scrolling:touch}
+th{position:sticky;top:0;z-index:1}
+tbody tr{transition:background-color .12s}
+tr[data-id],tr[data-tool-id],tr[data-contact-id]{cursor:pointer}
+tr[data-tool-id]:hover,tr[data-contact-id]:hover{background:#f8faff}
+tr[role=button]:focus-visible{box-shadow:inset 3px 0 0 var(--blue)!important;background:#f3f6ff;border-radius:0}
+td{line-height:1.45}
+
+.contact-link{color:var(--blue);font-weight:600;text-decoration:none}
+.contact-link:hover{text-decoration:underline}
+
+/* Tarjetas de personal */
+.person-card{transition:box-shadow .15s,border-color .15s}
+.person-card:hover{border-color:#d3dae6}
+
+/* Estados vacíos */
+.empty{border:1px dashed #d6dce6;border-radius:var(--radius);background:var(--surface-2);padding:34px 16px;font-size:14px;line-height:1.5}
+.table-wrap+.empty,.panel>.empty{margin-top:8px}
+
+/* Diálogos: encabezado y acciones siempre visibles; el contenido desplaza */
+dialog{max-height:calc(100dvh - 32px);overflow:auto;overscroll-behavior:contain;color:var(--text)}
+dialog[open]{animation:dialog-in .18s var(--ease)}
+dialog[open]::backdrop{animation:fade-in .18s ease;backdrop-filter:blur(2px)}
+.modal-head{position:sticky;top:0;z-index:2;background:#fff}
+.modal-actions{position:sticky;bottom:0;z-index:2;background:#fff;flex-wrap:wrap;gap:10px}
+.modal-head h2{font-size:19px}
+.form-section{grid-column:1/-1;margin:4px 0 -6px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.form-section:first-child{border-top:0;padding-top:0;margin-top:0}
+@keyframes dialog-in{from{opacity:0;transform:translateY(10px) scale(.985)}}
+@keyframes fade-in{from{opacity:0}}
+
+/* Avisos */
+.toast{display:flex;align-items:center;gap:10px;max-width:min(420px,calc(100vw - 32px));box-shadow:0 12px 30px #0b12254d;font-size:14px;font-weight:600;z-index:2000;transition:opacity .2s,transform .2s var(--ease)}
+.toast::before{content:"✓";display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#4ad29b;color:#0e3b2a;font-size:12px;font-weight:900;flex:none}
+.toast.toast-error{background:#8f2323}
+.toast.toast-error::before{content:"!";background:#fff;color:#8f2323}
+
+/* Acceso */
+.password-field{position:relative;display:block}
+.password-field input{padding-right:84px}
+.password-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);margin-top:3.5px;border:0;background:transparent;color:var(--blue);font-weight:700;font-size:12px;padding:8px 10px;border-radius:7px;cursor:pointer}
+.password-toggle:hover{background:var(--blue-soft)}
+.login-user{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;margin:0}
+.login-user small{color:var(--muted)}
+
+/* Insumos: pestañas coherentes con el resto de la interfaz */
+.supply-tabs .active{background:var(--blue);border-color:var(--blue)}
+.supply-workspace-toolbar input[type=search]{border-color:var(--border);min-height:var(--touch)}
+.supply-summary article{background:#fff;border-color:var(--border);box-shadow:var(--shadow)}
+
+/* Escritorio amplio: limitar el ancho de lectura */
+@media(min-width:1600px){main{max-width:1500px}}
+
+/* Tablet */
+@media(max-width:1000px){.toolbar.has-filters:has(#specialtyFilter){grid-template-columns:1fr 1fr}}
+
+/* Celular */
+@media(max-width:720px){
+  /* Barra superior compacta y fija con secciones deslizables */
+  .sidebar{position:sticky;top:0;z-index:50;flex-direction:row;align-items:center;gap:10px;padding:8px 10px;box-shadow:0 4px 18px #0b122540}
+  .sidebar .brand{padding:0;border:0;flex:none}
+  .sidebar .brand>div{display:none}
+  .sidebar .brand-mark{width:36px;height:36px;border-radius:9px;font-size:13px}
+  .sidebar nav{flex:1;margin:0;gap:4px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x proximity;mask-image:linear-gradient(90deg,#000 88%,transparent)}
+  .sidebar nav::-webkit-scrollbar{display:none}
+  .nav-group{display:none}
+  .sidebar-footer{display:none}
+  .nav-item{padding:9px 12px;font-size:13px;gap:7px;scroll-snap-align:start;flex:none}
+  .nav-item.active::before{display:none}
+  .nav-icon{width:16px;height:16px}
+  main{padding:18px 14px 90px}
+  h1{font-size:23px}
+  .topbar{margin-bottom:18px;align-items:center}
+  .people-header{flex-direction:column;align-items:stretch;gap:12px}
+  .people-header>button,.people-header>div:last-child>button{width:100%}
+  .people-header>div:last-child:not(:first-child){display:grid;gap:8px}
+  .metric{padding:14px}
+  .metric b{font-size:26px;margin-top:8px}
+  .metric.is-action::after{display:none}
+  .panel{padding:16px}
+  .toolbar.has-filters:has(#specialtyFilter),.toolbar.has-filters.tool-toolbar{grid-template-columns:1fr}
+  .clear-filters{justify-self:stretch}
+
+  /* Tablas convertidas en tarjetas legibles */
+  .table-wrap{margin:8px -16px -16px;overflow:visible}
+  .table-wrap table,.supply-table{min-width:0}
+  .table-wrap thead{display:none}
+  .table-wrap tbody,.table-wrap tr{display:block}
+  .table-wrap tr{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;padding:14px 16px;border-top:1px solid var(--border)}
+  .table-wrap td{border:0;padding:0;min-width:0;overflow-wrap:anywhere}
+  .table-wrap td[data-label]::before{content:attr(data-label);display:block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  /* La primera columna es el título de la tarjeta; en órdenes y herramientas, el trabajo */
+  .table-wrap td:first-child{grid-column:1/-1}
+  .table-wrap td:first-child::before{display:none!important}
+  .table-wrap td:first-child strong{font-size:15px}
+  :is(#ordersTable,#recentOrders,#toolsTable) td:nth-child(2){grid-column:1/-1;grid-row:1}
+  :is(#ordersTable,#recentOrders,#toolsTable) td:nth-child(2)::before{display:none!important}
+  :is(#ordersTable,#recentOrders,#toolsTable) td:nth-child(2) strong{font-size:15px}
+  :is(#ordersTable,#recentOrders,#toolsTable) td:first-child{grid-column:auto;grid-row:2}
+  :is(#ordersTable,#recentOrders,#toolsTable) td:first-child::before{display:block!important}
+  :is(#ordersTable,#recentOrders,#toolsTable) td:first-child strong{font-size:inherit}
+  .order-date-cell,.order-created{text-align:left}
+  .table-wrap td:empty{display:none}
+
+  /* Diálogos como hoja inferior con botones al alcance del pulgar */
+  dialog{width:100%;max-width:100%;margin:auto 0 0;border-radius:18px 18px 0 0;max-height:92dvh}
+  dialog[open]{animation:sheet-in .22s var(--ease)}
+  .modal-head{padding:16px 18px}
+  .form-grid{padding:18px;gap:14px}
+  .modal-actions{padding:12px 18px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -6px 16px #17233d0f}
+  .modal-actions>button,.modal-actions>a{flex:1 1 auto}
+  .modal-actions .primary[type=submit],.modal-actions>.primary:only-child{order:-2;flex:1 0 100%!important}
+  .modal-actions .finish-button{order:-1}
+  .modal-actions .danger{order:1;flex:0 1 auto}
+  .toast{left:14px;right:14px;bottom:18px;max-width:none}
+}
+@keyframes sheet-in{from{transform:translateY(40px);opacity:.6}}
+
+/* Respetar la preferencia de menos movimiento */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+@media print{.clear-filters{display:none!important}}

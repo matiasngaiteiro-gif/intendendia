@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="auth.css?v=8">
   <link rel="stylesheet" href="modules.css?v=9">
   <link rel="stylesheet" href="supplies.css?v=17">
+  <link rel="stylesheet" href="ux.css?v=1">
 </head>
 <body>
   <div class="app-shell">
@@ -48,12 +49,12 @@
       </section>
 
       <section id="ordersView" class="view">
-        <div class="people-header"><p>Creá y consultá las tareas del equipo.</p><button class="primary" id="newOrderBtn">+ Nueva orden</button></div>
+        <div class="people-header"><p>Creá y consultá las tareas del equipo.</p><button class="primary" id="newOrderBtn" title="Atajo: N">+ Nueva orden</button></div>
         <div class="toolbar panel">
-          <input id="searchInput" type="search" placeholder="Buscar por número, tarea, sector o responsable">
-          <select id="statusFilter"><option value="">Todos los estados</option></select>
-          <select id="buildingFilter"><option value="">Todos los edificios</option></select>
-          <select id="specialtyFilter"><option value="">Todas las especialidades</option></select>
+          <input id="searchInput" type="search" aria-label="Buscar órdenes" placeholder="Buscar por número, tarea, sector o responsable">
+          <select id="statusFilter" aria-label="Filtrar por estado"><option value="">Todos los estados</option></select>
+          <select id="buildingFilter" aria-label="Filtrar por edificio"><option value="">Todos los edificios</option></select>
+          <select id="specialtyFilter" aria-label="Filtrar por especialidad"><option value="">Todas las especialidades</option></select>
         </div>
         <div class="panel"><div class="panel-head"><div><h2>Órdenes de trabajo</h2><p id="ordersCount"></p></div></div><div id="ordersTable"></div></div>
       </section>
@@ -67,8 +68,8 @@
         <div class="people-header"><div><p>Inventario y registro de herramientas entregadas al personal.</p></div><button class="secondary" id="newToolBtn">+ Cargar herramienta</button></div>
         <div class="metrics tool-metrics" id="toolMetrics"></div>
         <div class="toolbar panel tool-toolbar">
-          <input id="toolSearch" type="search" placeholder="Buscar herramienta, marca, modelo o responsable">
-          <select id="toolStatusFilter"><option value="">Todos los estados</option><option>Disponible</option><option>Entregada</option><option>En reparación</option><option>Fuera de servicio</option></select>
+          <input id="toolSearch" type="search" aria-label="Buscar herramientas" placeholder="Buscar herramienta, marca, modelo o responsable">
+          <select id="toolStatusFilter" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option>Disponible</option><option>Entregada</option><option>En reparación</option><option>Fuera de servicio</option></select>
         </div>
         <div class="panel"><div class="panel-head"><div><h2>Inventario de herramientas</h2><p id="toolsCount"></p></div></div><div id="toolsTable"></div></div>
       </section>
@@ -92,13 +93,16 @@
       <input type="hidden" name="id">
       <p class="security-note" id="orderCreatedAt" style="padding:0 24px">La fecha y hora de creación se registran al guardar.</p>
       <div class="form-grid">
+        <p class="form-section">Trabajo a realizar</p>
         <label class="wide">Especialidad<select name="specialty" required></select></label>
         <label class="wide">Tarea o reparación<select name="template" required disabled></select></label>
         <label class="wide" id="customTaskLabel" hidden>Otra tarea<input name="customTask" maxlength="90" placeholder="Indicá qué hay que hacer"></label>
+        <p class="form-section">Ubicación</p>
         <label>Edificio<select name="building" required></select></label>
         <label>Dependencia<select name="dependency" required></select></label>
         <p class="wide security-note" id="dependencyWarning" hidden>Esta dependencia no coincide con la sede publicada. Revisá su ubicación antes de modificar la orden.</p>
         <label class="wide">Detalle del sector, oficina o puerta<input name="location" required placeholder="Ej.: 9.º piso, oficina 914, puerta 22"></label>
+        <p class="form-section">Seguimiento</p>
         <label>Prioridad<select name="priority" required></select></label>
         <label>Estado<select name="status" required></select></label>
         <label>Responsable<select name="assignee"></select></label>
@@ -155,18 +159,19 @@
     <form id="loginForm" class="login-card">
       <div class="brand auth-brand"><span class="brand-mark">IC</span><div><strong>Intendencia</strong><small>Cámara Comercial</small></div></div>
       <p class="eyebrow">ACCESO RESTRINGIDO</p><h1>Sistema de gestión</h1><p class="login-copy">Ingresá con el usuario autorizado por la Intendencia.</p>
-      <p>Usuario: <strong>Master</strong></p>
-      <label>Contraseña<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+      <p class="login-user"><small>Usuario</small><strong>Master</strong></p>
+      <label>Contraseña<span class="password-field"><input name="password" type="password" autocomplete="current-password" minlength="8" required><button type="button" class="password-toggle" id="togglePassword" aria-pressed="false" aria-label="Mostrar u ocultar contraseña">Mostrar</button></span></label>
       <p id="loginError" class="login-error" role="alert"></p><button class="primary login-submit" type="submit">Ingresar</button>
       <p class="config-warning" id="configWarning">Primero completá la configuración de Supabase en <strong>config.js</strong>.</p>
     </form>
   </section>
-  <div id="toast" class="toast"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="config.js?v=9"></script>
   <script src="supabase-api.js?v=9"></script>
   <script src="modules.js?v=9"></script>
   <script src="contacts-data.js?v=10"></script>
   <script src="supplies.js?v=19"></script>
   <script src="app.js?v=19"></script>
+  <script src="ux.js?v=1"></script>
 </body>
 </html>
