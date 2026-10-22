@@ -740,6 +740,7 @@
     $('#importItems').onchange = importItems;
     $$('[data-item]').forEach(b => b.onclick = () => itemForm(state.items.find(i => i.id === b.dataset.item)));
     $$('[data-qty]').forEach(b => b.onclick = () => changeQty(b.dataset.id, Number(b.dataset.qty)));
+    $$('[data-move]').forEach(b => b.onclick = () => stockDialog(b.dataset.move));
     const s = $('#invSearch');
     if (s) s.oninput = () => {
       invView.q = s.value;
@@ -762,25 +763,107 @@
       </button>
       <div class="qty" role="group" aria-label="Cantidad de ${esc(i.name)}">
         <button type="button" class="qty-btn" data-qty="-1" data-id="${esc(i.id)}" aria-label="Uno menos" ${i.quantity ? '' : 'disabled'}>${icon('minus')}</button>
-        <span class="qty-value"><b>${esc(qty)}</b><small>${esc(i.quantity === null || i.quantity === undefined ? 'sin contar' : (i.unit || ''))}</small></span>
+        <button type="button" class="qty-value" data-move="${esc(i.id)}" aria-label="Registrar entrada o salida de ${esc(i.name)}"><b>${esc(qty)}</b><small>${esc(i.quantity === null || i.quantity === undefined ? 'sin contar' : (i.unit || ''))}</small></button>
         <button type="button" class="qty-btn" data-qty="1" data-id="${esc(i.id)}" aria-label="Uno más">${icon('plus')}</button>
       </div>
     </div>`;
   }
 
-  // Los toques seguidos en − y + se juntan y se guardan una sola vez.
+  // − y +: una unidad por toque. Los toques seguidos se juntan en un solo movimiento y se guardan una vez.
   const qtyTimers = {};
   function changeQty(id, delta) {
     const item = state.items.find(i => i.id === id);
     if (!item) return;
-    const next = {...item, quantity: Math.max(0, (Number(item.quantity) || 0) + delta), updatedAt: new Date().toISOString()};
-    upsertLocal('item', next);
+    const type = delta > 0 ? 'in' : 'out';
+    const r = C.applyMovement(item, {type, amount: 1, reason: 'Ajuste rápido'});
+    if (r.error) { toast(r.error); return; }
+    const moves = r.item.movements;
+    const prev = moves[moves.length - 2];
+    if (prev && prev.quick && prev.type === type && Date.now() - new Date(prev.at).getTime() < 60000) {
+      moves.pop();
+      prev.amount += 1;
+      prev.balance = r.item.quantity;
+    } else {
+      moves[moves.length - 1].quick = true;
+    }
+    upsertLocal('item', r.item);
     save();
     const y = window.scrollY;
     renderInventory();
     window.scrollTo(0, y);
     clearTimeout(qtyTimers[id]);
     qtyTimers[id] = setTimeout(() => saveItem('item', state.items.find(i => i.id === id)), 900);
+  }
+
+  // Entrada, salida o recuento de cualquier cantidad, con motivo e historial.
+  function stockDialog(id, mode = 'out') {
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+    const counted = item.quantity !== null && item.quantity !== undefined && item.quantity !== '';
+    if (!counted && mode === 'out') mode = 'count';
+    const unit = item.unit || '';
+    const recent = (item.movements || []).slice(-5).reverse();
+    const openOrders = state.orders.filter(o => !C.isDone(o)).slice(-30).reverse().map(o => `${o.id} · ${o.title}`);
+    const modes = [['out', 'Sale', 'minus'], ['in', 'Entra', 'plus'], ['count', 'Contar', 'list']];
+    openDialog(`<form class="dlg" id="stockForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">${esc(item.name)}</h2>
+      ${item.detail ? `<p class="muted">${esc(item.detail)}</p>` : ''}
+      <p class="big-status">Hay ahora: <strong>${counted ? esc(item.quantity) + ' ' + esc(unit) : 'sin contar'}</strong></p>
+      <div class="segmented segmented-3 stock-modes" role="group" aria-label="Qué querés registrar">
+        ${modes.map(([m, label, ic]) => `<button type="button" data-mode="${m}" class="${mode === m ? 'active' : ''}" aria-pressed="${mode === m}" ${m === 'out' && !counted ? 'disabled' : ''}>${icon(ic)} ${label}</button>`).join('')}
+      </div>
+      <label class="field-label" for="moveAmount" id="moveLabel"></label>
+      <div class="stepper">
+        <button type="button" class="qty-btn" data-step-amount="-1" aria-label="Menos">${icon('minus')}</button>
+        <input id="moveAmount" inputmode="decimal" autocomplete="off" value="${mode === 'count' && counted ? esc(item.quantity) : 1}">
+        <button type="button" class="qty-btn" data-step-amount="1" aria-label="Más">${icon('plus')}</button>
+      </div>
+      <div class="chips" id="moveChips">${[5, 10, 20, 50].map(n => `<button type="button" class="chip" data-chip="${n}">${n}</button>`).join('')}</div>
+      <label class="field-label" for="moveReason">Motivo <span class="optional">(opcional)</span></label>
+      <input id="moveReason" list="reasonList" maxlength="80" autocomplete="off" placeholder="Ej.: compra, para el pedido OT-0004">
+      ${datalist('reasonList', ['Compra', 'Reposición', 'Para un trabajo', 'Devolución', 'Préstamo', 'Corrección de conteo', ...openOrders])}
+      <p class="move-preview" id="movePreview" role="status"></p>
+      <div class="dlg-actions"><button class="btn btn-primary" type="submit" id="moveSave">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button></div>
+      ${recent.length ? `<h3 class="sub-q">Últimos movimientos</h3><ul class="moves">${recent.map(m => `<li><span class="move-${m.type}">${esc(C.MOVE_LABELS[m.type])} ${m.type === 'count' ? esc(m.amount) : (m.type === 'in' ? '+' : '−') + esc(m.amount)}</span><span>${esc(C.when(m.at))}${m.reason && m.reason !== 'Ajuste rápido' ? ' · ' + esc(m.reason) : ''}</span><span>quedó ${esc(m.balance)}</span></li>`).join('')}</ul>` : ''}
+    </form>`, body => {
+      const amount = $('#moveAmount', body);
+      const update = () => {
+        $$('[data-mode]', body).forEach(b => { b.classList.toggle('active', b.dataset.mode === mode); b.setAttribute('aria-pressed', String(b.dataset.mode === mode)); });
+        $('#moveLabel', body).textContent = mode === 'out' ? `¿Cuántos salen?` : mode === 'in' ? '¿Cuántos entran?' : '¿Cuántos hay en total?';
+        $('#moveChips', body).hidden = mode === 'count';
+        const r = C.applyMovement(item, {type: mode, amount: C.parseQuantity(amount.value) ?? NaN});
+        $('#movePreview', body).textContent = r.error ? r.error : `Va a quedar: ${r.item.quantity} ${unit}`;
+        $('#movePreview', body).classList.toggle('is-error', !!r.error);
+        $('#moveSave', body).disabled = !!r.error;
+      };
+      $$('[data-mode]', body).forEach(b => b.onclick = () => {
+        mode = b.dataset.mode;
+        amount.value = mode === 'count' ? (counted ? item.quantity : 0) : 1;
+        update();
+        amount.focus();
+        amount.select();
+      });
+      $$('[data-step-amount]', body).forEach(b => b.onclick = () => {
+        amount.value = Math.max(0, (C.parseQuantity(amount.value) || 0) + Number(b.dataset.stepAmount));
+        update();
+      });
+      $$('[data-chip]', body).forEach(b => b.onclick = () => { amount.value = b.dataset.chip; update(); });
+      amount.oninput = update;
+      update();
+      amount.focus();
+      amount.select();
+      $('#stockForm', body).onsubmit = e => {
+        e.preventDefault();
+        const r = C.applyMovement(item, {type: mode, amount: C.parseQuantity(amount.value) ?? NaN, reason: $('#moveReason', body).value});
+        if (r.error) { toast(r.error); return; }
+        saveItem('item', r.item);
+        dialog.close();
+        const y = window.scrollY;
+        renderInventory();
+        window.scrollTo(0, y);
+        toast(`${C.MOVE_LABELS[mode]} guardada. Quedan ${r.item.quantity} ${unit}.`);
+      };
+    });
   }
 
   function itemForm(it) {
