@@ -7,14 +7,14 @@ Esta versión es la **primera prueba piloto**: se dejó solo lo esencial y se re
 ## Qué tiene
 
 - **Pedidos**: un botón grande «Nuevo pedido» y tres pasos con botones grandes:
-  1. ¿Quién tiene que hacerlo? (Electricista, Plomero, Carpintero, Técnico de aire, Pintor, Albañil, Tapicero, Ayudante, Administrativo) y ¿qué hay que hacer?
+  1. ¿Quién tiene que hacerlo? (Electricista, Plomero, Carpintero, Técnico de aire, Pintor, Albañil, Herrero, Tapicero, Ayudante, Portería, Administrativo) y ¿qué hay que hacer?
   2. ¿Dónde? Edificio y dependencia. El piso sale solo de la Guía Judicial PJN; se puede agregar la oficina.
   3. ¿Es urgente? Sí o no, y una nota opcional.
 
   Antes de guardar se muestra un resumen. Desde ahí se puede «Guardar e imprimir» para archivar la orden en papel.
 - **Lista de pedidos**: «Por hacer» y «Terminados». Los urgentes aparecen primero. Cuando hay muchos pedidos aparecen un buscador y botones por edificio.
 - **Cada pedido**: cuatro botones de estado (Pendiente, En curso, Faltan materiales, Terminado). También se puede imprimir, modificar o borrar.
-- **Orden impresa**: dos copias iguales en una hoja A4, con una línea punteada al medio para cortar. Cada copia es informativa, en blanco y negro y con Arial. Arriba tiene un espacio para la firma y sello de la dependencia, y lleva número, fecha del pedido, trabajo, edificio, dependencia, piso u oficina, oficio e indicaciones, y marca «Urgente» cuando corresponde. No incluye el estado, los horarios de inicio y fin, los materiales ni firmas: informa, no controla. Los márgenes son amplios para que no se corten al imprimir. Terminar o borrar se puede **deshacer** durante unos segundos.
+- **Orden impresa**: dos copias iguales en una hoja A4, con una línea punteada al medio para cortar. Cada copia es informativa, en blanco y negro y con Arial. Lleva número, fecha del pedido, trabajo, edificio, dependencia, piso u oficina, oficio e indicaciones, y marca «Urgente» cuando corresponde. Al final de cada copia hay un espacio para la firma y sello de la dependencia. No incluye el estado, los horarios de inicio y fin, los materiales ni firmas: informa, no controla. Los márgenes son amplios para que no se corten al imprimir. Terminar o borrar se puede **deshacer** durante unos segundos.
 - **Inventario**: los elementos del depósito agrupados por categoría, con buscador y botones − y + para ajustar la cantidad. Se cargan de a uno o todos juntos desde un Excel (.xlsx) o .csv con las columnas Categoría, Elemento, Detalle / variante, Cantidad, Unidad, Estado, Ubicación y Observaciones (solo «Elemento» es obligatoria). Si se vuelve a cargar el mismo archivo, los elementos que ya estaban se actualizan en lugar de duplicarse. Un mismo elemento con distinto estado (por ejemplo, rollos nuevos y en uso) se cuenta por separado.
 - **Herramientas**: qué hay y a qué persona se le prestó (se escribe el nombre; los nombres ya usados se sugieren solos). Tiene el botón «Ya la devolvió».
 - **Contactos**: guía de juzgados, salas y oficinas. El teléfono se puede tocar para llamar. También se pueden agregar contactos propios.

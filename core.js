@@ -22,8 +22,10 @@
     {key: 'Aires Acondicionados', label: 'Técnico de aire', icon: 'snow', hint: 'Aire acondicionado'},
     {key: 'Pintura', label: 'Pintor', icon: 'roller', hint: 'Paredes, puertas, retoques'},
     {key: 'Albañilería', label: 'Albañil', icon: 'bricks', hint: 'Revoque, baldosas, filtraciones'},
+    {key: 'Herrería', label: 'Herrero', icon: 'hammer', hint: 'Rejas, soldaduras, metal'},
     {key: 'Tapicería', label: 'Tapicero', icon: 'chair', hint: 'Sillas y asientos'},
     {key: 'Ayudante', label: 'Ayudante', icon: 'box', hint: 'Traslados, limpieza, carteles'},
+    {key: 'Portería', label: 'Portería', icon: 'key', hint: 'Llaves, accesos, proveedores'},
     {key: 'Administrativo', label: 'Administrativo', icon: 'clipboard', hint: 'Papeles, pedidos, proveedores'}
   ];
 
@@ -35,6 +37,8 @@
     'Pintura': ['Retoque de pintura', 'Pintura de pared', 'Pintura de puerta'],
     'Albañilería': ['Reparación de revoque', 'Reposición de baldosa', 'Sellado de filtración'],
     'Tapicería': ['Reparación de silla', 'Retapizado de asiento'],
+    'Herrería': ['Reparación de reja', 'Reparación de puerta metálica', 'Soldadura', 'Reparación de baranda', 'Colocación de herraje', 'Reparación de estructura metálica'],
+    'Portería': ['Abrir o cerrar una oficina', 'Entrega de llaves', 'Recibir a un proveedor', 'Acompañar a un servicio técnico', 'Traslado de correspondencia', 'Control de acceso'],
     'Ayudante': ['Movimiento de mobiliario', 'Retiro de materiales', 'Limpieza extraordinaria', 'Colocación de cartelería'],
     'Administrativo': ['Preparación de pedido de insumos', 'Seguimiento de proveedor', 'Control de inventario', 'Carga de documentación']
   };

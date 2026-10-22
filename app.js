@@ -39,6 +39,8 @@
     building: '<path d="M4 21V5l8-2v18M12 8h8v13M8 8v.01M8 12v.01M8 16v.01M16 12v.01M16 16v.01M2.5 21h19"/>',
     shelf: '<path d="M4 3v18M20 3v18M4 10h16M4 17h16"/><rect x="6.5" y="5.5" width="4" height="4.5"/><rect x="12" y="12.5" width="5.5" height="4.5"/>',
     minus: '<path d="M5 12h14"/>',
+    hammer: '<path d="M14.5 4.5l5 5-2.5 2.5-5-5z"/><path d="M12 7l-2-2 2.5-2.5 2 2M13.5 10.5L4 20"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l2.5 2.5M18.5 4.5L21 7"/>',
     upload: '<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 20h14"/>'
   };
   const icon = (name, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON_PATHS[name] || ICON_PATHS.wrench}</svg>`;
@@ -458,7 +460,6 @@
         <div><h1>Orden de trabajo</h1><p>Intendencia · Cámara Nacional de Apelaciones en lo Comercial</p></div>
         <div class="ps-num"><strong>${esc(o.id)}</strong><span>${esc(C.fullDate(o.createdAt))}</span></div>
       </header>
-      <div class="ps-sign"><span>Firma y sello de la dependencia</span></div>
       <p class="ps-task">${esc(o.title)}${C.isUrgent(o) ? '<span class="ps-urgent">Urgente</span>' : ''}</p>
       <table class="ps-table">
         ${row('Edificio', esc(b ? `${b.short} · ${b.address}` : o.building))}
@@ -467,6 +468,7 @@
         ${row('Oficio', esc(C.tradeLabel(o.specialty)))}
         ${row('Indicaciones', esc(o.description))}
       </table>
+      <div class="ps-sign"><span>Firma y sello de la dependencia</span></div>
     </article>`;
     $('#printSheet').innerHTML = `${copy}<div class="ps-cut" aria-hidden="true"><span>cortar por aquí</span></div>${copy}`;
     window.print();
