@@ -325,6 +325,8 @@ button.qty-value { background: none; border: 0; border-radius: 10px; padding: 4p
 button.qty-value:hover { background: var(--bg); }
 button.qty-value b { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
 .initial-line { margin: -6px 0 12px !important; font-size: .92rem; }
+.initial-line small { font-size: .82rem; }
+.card-initial { color: var(--muted); font-size: .8rem; }
 .stock-modes { margin: 4px 0 6px; }
 .stock-modes .ico { width: 18px; height: 18px; }
 .stock-modes button[disabled] { opacity: .4; cursor: not-allowed; }

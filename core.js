@@ -385,7 +385,8 @@
   // type: 'in' (entra), 'out' (sale) o 'count' (recuento: fija la cantidad exacta).
   // Se guardan los últimos 50 movimientos dentro de cada elemento.
   const MOVE_LABELS = {in: 'Entrada', out: 'Salida', count: 'Recuento'};
-  function applyMovement(item, {type, amount, reason = '', at = new Date().toISOString()}) {
+  // restock: una entrada registrada como reposición vuelve a fijar el stock inicial (lo que quedó) y su fecha de carga.
+  function applyMovement(item, {type, amount, reason = '', at = new Date().toISOString(), restock = false}) {
     const n = Number(amount);
     if (!MOVE_LABELS[type] || !Number.isFinite(n) || n < 0 || (type !== 'count' && n === 0)) return {error: 'Escribí una cantidad mayor que cero.'};
     const current = item.quantity === null || item.quantity === undefined || item.quantity === '' ? null : Number(item.quantity);
@@ -394,7 +395,9 @@
     const quantity = type === 'count' ? n : type === 'in' ? (current || 0) + n : current - n;
     const move = {at, type, amount: n, balance: quantity, reason: String(reason || '').trim()};
     const movements = [...(Array.isArray(item.movements) ? item.movements : []), move].slice(-50);
-    return {item: {...item, quantity, movements, updatedAt: at}};
+    const next = {...item, quantity, movements, updatedAt: at};
+    if (restock && type === 'in') next.initial = {quantity, at, source: 'Reposición'};
+    return {item: next};
   }
   // Stock inicial: lo que había cuando el elemento se cargó (desde el Excel o a mano).
   // Si el elemento es de antes de guardar ese dato, se reconstruye deshaciendo sus movimientos.
@@ -452,9 +455,13 @@
     orders: {name: 'Pedidos', label: 'Pedidos de trabajo', columns: ORDER_COLUMNS, sort: byDate, row: orderRow},
     items: {name: 'Inventario', label: 'Inventario', sort: itemSort, columns: [
       {header: 'N°', width: 6}, {header: 'Categoría', width: 24}, {header: 'Elemento', width: 28}, {header: 'Detalle / variante', width: 24},
-      {header: 'Cantidad', width: 10}, {header: 'Unidad', width: 10}, {header: 'Estado', width: 18}, {header: 'Ubicación', width: 16},
-      {header: 'Observaciones', width: 30}, {header: 'Actualizado', width: 12}],
-      row: (i, n) => [n, i.category || '', i.name || '', i.detail || '', isUncounted(i) ? 'S/D' : Number(i.quantity), i.unit || '', i.status || '', i.location || '', i.notes || '', shortDate(i.updatedAt)]},
+      {header: 'Stock inicial', width: 10}, {header: 'Cantidad actual', width: 10}, {header: 'Unidad', width: 10}, {header: 'Estado', width: 18},
+      {header: 'Ubicación', width: 16}, {header: 'Observaciones', width: 30}, {header: 'Fecha de carga', width: 12}],
+      row: (i, n) => {
+        const ini = initialStock(i);
+        return [n, i.category || '', i.name || '', i.detail || '', ini.quantity === null ? 'S/D' : Number(ini.quantity), isUncounted(i) ? 'S/D' : Number(i.quantity),
+          i.unit || '', i.status || '', i.location || '', i.notes || '', shortDate(ini.at || i.createdAt || i.updatedAt)];
+      }},
     tools: {name: 'Herramientas', label: 'Herramientas', sort: (a, b) => String(a.name).localeCompare(String(b.name), 'es'), columns: [
       {header: 'N°', width: 6}, {header: 'Herramienta', width: 26}, {header: 'Marca', width: 16}, {header: 'Modelo', width: 16}, {header: 'N.º de inventario', width: 16},
       {header: 'Estado', width: 16}, {header: 'Asignada a', width: 22}, {header: 'Desde', width: 12}, {header: 'Observaciones', width: 30}],

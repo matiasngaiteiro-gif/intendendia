@@ -773,12 +773,15 @@
 
   function itemCard(i) {
     const meta = [i.status, i.location].filter(x => x && x !== 'Sin especificar').join(' · ');
+    const ini = C.initialStock(i);
+    const iniLine = ini.quantity === null || ini.quantity === undefined ? '' : `Stock inicial ${ini.quantity}${ini.at ? ` · ${C.shortDate(ini.at)}` : ''}`;
     const qty = i.quantity === null || i.quantity === undefined ? '—' : String(i.quantity);
     return `<div class="card item-card${i.quantity === 0 ? ' is-empty' : ''}">
       <button type="button" class="item-main" data-item="${esc(i.id)}">
         <span class="card-title">${esc(i.name)}</span>
         ${i.detail ? `<span class="card-sub">${esc(i.detail)}</span>` : ''}
         ${meta ? `<span class="card-meta">${esc(meta)}</span>` : ''}
+        ${iniLine ? `<span class="card-initial">${esc(iniLine)}</span>` : ''}
       </button>
       <div class="qty" role="group" aria-label="Cantidad de ${esc(i.name)}">
         <button type="button" class="qty-btn" data-qty="-1" data-id="${esc(i.id)}" aria-label="Uno menos" ${i.quantity ? '' : 'disabled'}>${icon('minus')}</button>
@@ -828,7 +831,7 @@
       <h2 id="dialogTitle">${esc(item.name)}</h2>
       ${item.detail ? `<p class="muted">${esc(item.detail)}</p>` : ''}
       <p class="big-status">Hay ahora: <strong>${counted ? esc(C.qtyWithUnit(item.quantity, unit)) : 'sin contar'}</strong></p>
-      ${(() => { const ini = C.initialStock(item); return `<p class="muted initial-line">Stock inicial: <strong>${ini.quantity === null ? 'sin contar' : esc(C.qtyWithUnit(ini.quantity, unit))}</strong>${ini.at ? ` · cargado el ${esc(C.shortDate(ini.at))}` : ''}${ini.source && ini.source !== 'Carga manual' ? ` (${esc(ini.source)})` : ''}</p>`; })()}
+      ${(() => { const ini = C.initialStock(item); return `<p class="muted initial-line">Stock inicial: <strong>${ini.quantity === null ? 'sin contar' : esc(C.qtyWithUnit(ini.quantity, unit))}</strong>${ini.at ? ` <small>· ${ini.source === 'Reposición' ? 'repuesto' : 'cargado'} el ${esc(C.shortDate(ini.at))}</small>` : ''}</p>`; })()}
       <div class="segmented segmented-3 stock-modes" role="group" aria-label="Qué querés registrar">
         ${modes.map(([m, label, ic]) => `<button type="button" data-mode="${m}" class="${mode === m ? 'active' : ''}" aria-pressed="${mode === m}" ${m === 'out' && !counted ? 'disabled' : ''}>${icon(ic)} ${label}</button>`).join('')}
       </div>
@@ -853,7 +856,7 @@
         $('#moveLabel', body).textContent = mode === 'out' ? `${cuantos} salen?` : mode === 'in' ? `${cuantos} entran?` : `${cuantos} hay en total?`;
         $('#moveChips', body).hidden = mode === 'count';
         const r = C.applyMovement(item, {type: mode, amount: C.parseQuantity(amount.value) ?? NaN});
-        $('#movePreview', body).textContent = r.error ? r.error : `${Number(r.item.quantity) === 1 ? 'Va a quedar' : 'Van a quedar'}: ${C.qtyWithUnit(r.item.quantity, unit)}`;
+        $('#movePreview', body).textContent = r.error ? r.error : `${Number(r.item.quantity) === 1 ? 'Va a quedar' : 'Van a quedar'}: ${C.qtyWithUnit(r.item.quantity, unit)}${mode === 'in' ? '. Es una reposición: el stock inicial y la fecha de carga se actualizan.' : ''}`;
         $('#movePreview', body).classList.toggle('is-error', !!r.error);
         $('#moveSave', body).disabled = !!r.error;
       };
@@ -875,7 +878,7 @@
       amount.select();
       $('#stockForm', body).onsubmit = e => {
         e.preventDefault();
-        const r = C.applyMovement(item, {type: mode, amount: C.parseQuantity(amount.value) ?? NaN, reason: $('#moveReason', body).value});
+        const r = C.applyMovement(item, {type: mode, amount: C.parseQuantity(amount.value) ?? NaN, reason: $('#moveReason', body).value, restock: mode === 'in'});
         if (r.error) { toast(r.error); return; }
         saveItem('item', r.item);
         dialog.close();
