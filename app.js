@@ -352,6 +352,7 @@
         <a role="tab" href="#/pedidos" aria-selected="${!showDone}" class="${showDone ? '' : 'active'}">Por hacer <b>${open.length}</b></a>
         <a role="tab" href="#/pedidos/terminados" aria-selected="${showDone}" class="${showDone ? 'active' : ''}">Terminados <b>${done.length}</b></a>
       </div>
+      ${state.orders.length ? `<div class="section-tools"><button type="button" class="btn btn-small btn-secondary" data-download="orders">${icon('save')} Descargar Excel</button></div>` : ''}
       ${!showDone && urgent ? `<p class="summary-line"><span class="pill pill-urgent">${urgent} urgente${urgent === 1 ? '' : 's'}</span> aparece${urgent === 1 ? '' : 'n'} primero.</p>` : ''}
       ${base.length > 4 || filtering ? `<div class="filters">
         <label class="search"><span class="sr-only">Buscar pedidos</span>${icon('search')}<input type="search" id="orderSearch" placeholder="Buscar: luz, juzgado 5, plomero…" value="${esc(listView.q)}" autocomplete="off"></label>
@@ -725,7 +726,7 @@
     });
     const categories = new Set(state.items.map(i => i.category)).size;
     main.innerHTML = `
-      <h1 class="page-title">Inventario</h1>
+      <div class="page-head"><h1 class="page-title">Inventario</h1><button type="button" class="btn btn-small btn-secondary" data-download="items">${icon('save')} Descargar Excel</button></div>
       <p class="lead">${state.items.length ? `${state.items.length} elemento${state.items.length === 1 ? '' : 's'} en ${categories} categoría${categories === 1 ? '' : 's'}` : 'Cargá los elementos desde un Excel o de a uno.'}</p>
       ${sheetOutdated() ? `<div class="notice">${icon('alert', 'notice-ico')}<div><strong>Falta actualizar el código de la planilla.</strong><p>Para guardar el inventario, la planilla necesita el código nuevo. Los pasos están en Ajustes.</p></div></div>` : ''}
       <div class="action-row inv-actions">
@@ -979,7 +980,7 @@
       : t.toolStatus === 'Fuera de servicio' ? '<span class="pill">Fuera de servicio</span>'
       : '<span class="pill pill-done">Disponible</span>';
     main.innerHTML = `
-      <h1 class="page-title">Herramientas</h1>
+      <div class="page-head"><h1 class="page-title">Herramientas</h1><button type="button" class="btn btn-small btn-secondary" data-download="tools">${icon('save')} Descargar Excel</button></div>
       <p class="lead">${state.tools.length ? `${state.tools.length} herramienta${state.tools.length === 1 ? '' : 's'} · ${out} asignada${out === 1 ? '' : 's'}` : 'Anotá acá qué herramientas hay y a quién están asignadas.'}</p>
       <button type="button" class="btn btn-primary btn-block" data-new-tool>${icon('plus')} Agregar herramienta</button>
       ${state.tools.length > 5 ? `<label class="search"><span class="sr-only">Buscar herramientas</span>${icon('search')}<input type="search" id="toolSearch" placeholder="Buscar herramienta" value="${esc(toolView.q)}" autocomplete="off"></label>` : ''}
@@ -1081,7 +1082,7 @@
   function renderContacts() {
     const list = C.searchContacts(state.contacts, contactView.q);
     main.innerHTML = `
-      <h1 class="page-title">Contactos</h1>
+      <div class="page-head"><h1 class="page-title">Contactos</h1><button type="button" class="btn btn-small btn-secondary" data-download="contacts">${icon('save')} Descargar Excel</button></div>
       <label class="search"><span class="sr-only">Buscar contactos</span>${icon('search')}<input type="search" id="contactSearch" placeholder="Buscar: juzgado 5, sala B, biblioteca…" value="${esc(contactView.q)}" autocomplete="off"></label>
       <div class="list">${list.length ? list.map(c => `<article class="card contact-card">
         <div class="card-main"><span class="card-title">${esc(c.name)}</span><span class="card-sub">${esc(c.building || '')}</span>
@@ -1278,6 +1279,30 @@
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
   const fileDate = d => d.toISOString().slice(0, 10);
+
+  // Los botones «Descargar Excel» de cada sección (un solo escuchador para todas las pantallas).
+  main.addEventListener('click', e => {
+    const b = e.target.closest('[data-download]');
+    if (b) downloadSection(b.dataset.download);
+  });
+
+  // Excel de una sección (lo que se ve en pantalla), con el formato del inventario, para imprimir y guardar.
+  function downloadSection(kind) {
+    const now = new Date();
+    let list, note = '';
+    if (kind === 'items') {
+      list = C.filterItems(state.items, invView);
+      const parts = [invView.category, invView.status, invView.location, C.STOCK_FILTERS.find(f => f.value === invView.stock && f.value)?.label, invView.q && `«${invView.q}»`].filter(Boolean);
+      note = parts.join(', ');
+    } else if (kind === 'tools') list = state.tools;
+    else if (kind === 'contacts') { list = C.searchContacts(state.contacts, contactView.q); note = contactView.q ? `«${contactView.q}»` : ''; }
+    else list = state.orders;
+    if (!list.length) { toast('No hay nada para descargar.'); return; }
+    const sheet = C.sectionSheet(kind, list, {now, note});
+    const names = {items: 'inventario', tools: 'herramientas', contacts: 'contactos', orders: 'pedidos'};
+    downloadFile(window.Xlsx.workbook([sheet]), `intendencia-${names[kind]}-${fileDate(now)}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    toast(`Excel descargado (${list.length} ${list.length === 1 ? 'fila' : 'filas'}${note ? ', con los filtros aplicados' : ''}). Queda en Descargas.`);
+  }
 
   // Excel para imprimir y archivar.
   function downloadExcel() {

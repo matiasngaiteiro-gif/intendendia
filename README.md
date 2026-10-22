@@ -19,6 +19,7 @@ Esta versión es la **primera prueba piloto**: se dejó solo lo esencial y se re
 - **Herramientas**: qué hay y a qué persona está asignada cada una (se escribe el nombre; los nombres ya usados se sugieren solos). «Quitar la asignación» la vuelve a dejar disponible y queda en el historial.
 - **Contactos**: guía de juzgados, salas y oficinas. El teléfono se puede tocar para llamar. También se pueden agregar contactos propios.
 - **Ajustes**: tamaño de letra (Normal, Grande, Muy grande) y la copia de seguridad.
+- **Descargar Excel** en cada sección (Pedidos, Inventario, Herramientas y Contactos): baja lo que se ve en pantalla, con los filtros aplicados, en el mismo formato del Excel de inventario (columna N°, Arial, blanco y negro, apaisado y ajustado al ancho de la hoja, títulos repetidos en cada página).
 - **Copia de los viernes**: el Excel trae las hojas Pedidos, Herramientas, Inventario y Movimientos.
 - **Copia de los viernes (detalle)**: todos los viernes desde las 12:00 (hora de Argentina) aparece un aviso en Pedidos para guardar la copia de la semana, en cada computadora donde se use. El botón descarga dos archivos:
   - Un Excel (`intendencia-pedidos-AAAA-MM-DD.xlsx`) con las hojas Pedidos y Herramientas, listo para imprimir en A4 apaisado y archivar en papel.

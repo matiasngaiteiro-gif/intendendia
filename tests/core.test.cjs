@@ -112,7 +112,8 @@ test('Excel válido con pedidos y herramientas', () => {
   const sheets = C.excelSheets(s, new Date('2026-10-23T15:00:00Z'));
   assert.deepEqual(sheets[0].rows[0].slice(0, 5), ['OT-0001', '22/10/2026, 08:00 h', 'Pérdida en canilla <baño>', 'Plomero', 'Callao']);
   assert.equal(sheets[0].rows[0][7], 'Sí');
-  assert.deepEqual(sheets[1].rows[0].slice(4, 7), ['Asignada', 'Carlos Benítez', '20/10/2026']);
+  assert.deepEqual(sheets[1].rows[0].slice(0, 2), [1, 'Taladro']);
+  assert.deepEqual(sheets[1].rows[0].slice(5, 8), ['Asignada', 'Carlos Benítez', '20/10/2026']);
   const bytes = X.workbook(sheets);
   fs.writeFileSync(path.join(require('os').tmpdir(), 'intendencia-test.xlsx'), bytes);
   assert.equal(Buffer.from(bytes.slice(0, 4)).toString('hex'), '504b0304');
@@ -191,6 +192,19 @@ test('unidades en singular y plural', () => {
   assert.equal(C.isFeminineUnit('Unidad'), true);
   assert.equal(C.isFeminineUnit('Rollo'), false);
   assert.match(C.applyMovement({quantity: 8, unit: 'Pomo'}, {type: 'out', amount: 9}).error, /quedan 8 pomos/);
+});
+
+test('descargas por sección con el formato del inventario', () => {
+  const items = [{name: 'Silicona', category: 'Pinturas', quantity: 8, unit: 'Pomo', updatedAt: '2026-10-22T15:00:00Z'}, {name: 'Látex', category: 'Pinturas', quantity: null}];
+  const sh = C.sectionSheet('items', items, {now: new Date('2026-10-22T15:00:00Z'), note: 'Pinturas'});
+  assert.deepEqual(sh.columns.map(c => c.header), ['N°', 'Categoría', 'Elemento', 'Detalle / variante', 'Cantidad', 'Unidad', 'Estado', 'Ubicación', 'Observaciones', 'Actualizado']);
+  assert.equal(sh.title, 'Intendencia · Inventario · 22/10/2026 · Pinturas');
+  assert.deepEqual(sh.rows.map(r => [r[0], r[2], r[4]]), [[1, 'Látex', 'S/D'], [2, 'Silicona', 8]]);
+  const contacts = C.sectionSheet('contacts', CATALOG.slice(0, 2));
+  assert.equal(contacts.rows[0][1], 'Juzgado Comercial N.º 1');
+  const X = require('../xlsx.js');
+  const bytes = X.workbook([sh]);
+  fs.writeFileSync(path.join(require('os').tmpdir(), 'intendencia-seccion.xlsx'), bytes);
 });
 
 console.log(`${n} pruebas de la prueba piloto: OK`);

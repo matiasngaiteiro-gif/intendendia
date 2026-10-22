@@ -274,6 +274,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 .panel .btn-block + .btn-block { margin-top: 8px; }
 .muted { color: var(--muted); }
 .small { font-size: .88rem; }
+/* ---------- Encabezado de sección con descarga ---------- */
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.page-head .page-title { margin: 0; }
+.page-head .btn .ico, .section-tools .btn .ico { width: 20px; height: 20px; }
+.section-tools { display: flex; justify-content: flex-end; margin: -2px 0 8px; }
+
 /* ---------- Inventario ---------- */
 .inv-actions { margin-bottom: 4px; }
 .inv-group { margin-top: 18px; }
