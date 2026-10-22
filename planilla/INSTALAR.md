@@ -36,11 +36,11 @@ Con la planilla, todas las computadoras ven y cargan los mismos pedidos. Se arma
 
 En cada computadora que vaya a usar la aplicación:
 
-1. Abrí la aplicación y entrá a **Ajustes › Planilla compartida**.
+1. Abrí la aplicación: aparece la pantalla **Conectá esta computadora**.
 2. Pegá la dirección del paso 3 y escribí la clave del paso 2.
 3. Tocá **Conectar**.
 
-La primera computadora que se conecta, si ya tenía pedidos cargados, pregunta si los sube a la planilla. Las siguientes muestran lo que ya está en la planilla. Si alguna tenía datos propios, antes descarga una copia por las dudas.
+Mientras una computadora no esté conectada, la aplicación muestra solo la pantalla «Conectá esta computadora». Si esa computadora tenía datos cargados por su cuenta, al conectarla se descarga una copia de esos datos por las dudas y se muestran los de la planilla.
 
 Arriba de la pantalla aparece el estado de la conexión: **Al día**, **Guardando…** o **Sin conexión**. Sin internet se pueden seguir marcando estados: los cambios quedan en espera y se envían solos cuando vuelve la conexión. Lo que sí necesita conexión es crear un pedido nuevo, porque el número lo asigna la planilla para que dos computadoras no usen el mismo.
 
@@ -51,6 +51,16 @@ Arriba de la pantalla aparece el estado de la conexión: **Al día**, **Guardand
 - **No cambies los títulos ni el orden de las columnas, y no borres la columna oculta «datos».** Ahí está la información que usa la aplicación.
 - Para corregir un pedido, usá la aplicación. Lo que se escribe a mano en la planilla se pisa con el próximo cambio desde la aplicación.
 - Google guarda el historial de versiones (**Archivo › Historial de versiones**), así que si algo se borra por error se puede recuperar.
+
+## Empezar de cero (borrar los datos de prueba)
+
+En la planilla, en las pestañas **Pedidos** y **Herramientas** (y **Contactos** si cargaste alguno de prueba):
+
+1. Hacé clic en el número **2** de la izquierda (la primera fila después de los títulos).
+2. Con **Mayúscula** apretada, hacé clic en el número de la última fila con datos.
+3. Clic derecho › **Borrar filas**.
+
+No borres la fila 1 (los títulos). Las computadoras conectadas se actualizan solas en menos de un minuto. Los números de pedido vuelven a empezar en OT-0001.
 
 ## Pasar a la cuenta institucional
 
