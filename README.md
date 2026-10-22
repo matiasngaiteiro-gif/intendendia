@@ -16,7 +16,7 @@ Esta versión es la **primera prueba piloto**: se dejó solo lo esencial y se re
 - **Cada pedido**: cuatro botones de estado (Pendiente, En curso, Faltan materiales, Terminado). También se puede imprimir, modificar o borrar.
 - **Orden impresa**: dos copias iguales en una hoja A4, con una línea punteada al medio para cortar. Cada copia es informativa, en blanco y negro y con Arial. Lleva número, fecha del pedido, trabajo, edificio, dependencia, piso u oficina, oficio e indicaciones, y marca «Urgente» cuando corresponde. Al final de cada copia hay un espacio para la firma y sello de la dependencia. No incluye el estado, los horarios de inicio y fin, los materiales ni firmas: informa, no controla. Los márgenes son amplios para que no se corten al imprimir. Terminar o borrar se puede **deshacer** durante unos segundos.
 - **Inventario**: los elementos del depósito agrupados por categoría, con buscador. Control de stock: los botones − y + suman o restan de a uno; tocando la cantidad se registra una **salida**, una **entrada** o un **recuento** de cualquier cantidad, con motivo (por ejemplo, el número de pedido). Cada elemento guarda sus últimos 50 movimientos, y no deja sacar más de lo que hay. Se cargan de a uno o todos juntos desde un Excel (.xlsx) o .csv con las columnas Categoría, Elemento, Detalle / variante, Cantidad, Unidad, Estado, Ubicación y Observaciones (solo «Elemento» es obligatoria). Si se vuelve a cargar el mismo archivo, los elementos que ya estaban se actualizan en lugar de duplicarse. Un mismo elemento con distinto estado (por ejemplo, rollos nuevos y en uso) se cuenta por separado.
-- **Herramientas**: qué hay y a qué persona se le prestó (se escribe el nombre; los nombres ya usados se sugieren solos). Tiene el botón «Ya la devolvió».
+- **Herramientas**: qué hay y a qué persona está asignada cada una (se escribe el nombre; los nombres ya usados se sugieren solos). «Quitar la asignación» la vuelve a dejar disponible y queda en el historial.
 - **Contactos**: guía de juzgados, salas y oficinas. El teléfono se puede tocar para llamar. También se pueden agregar contactos propios.
 - **Ajustes**: tamaño de letra (Normal, Grande, Muy grande) y la copia de seguridad.
 - **Copia de los viernes**: el Excel trae las hojas Pedidos, Herramientas, Inventario y Movimientos.
@@ -30,12 +30,12 @@ Diseño sobrio: íconos de línea en un solo color, sin emojis.
 
 ## Qué cambió respecto de la versión 19
 
-- Los pedidos no llevan nombres de empleados: se asignan a un **oficio**. Las herramientas, en cambio, se prestan a una **persona**.
+- Los pedidos no llevan nombres de empleados: se asignan a un **oficio**. Las herramientas, en cambio, se asignan a una **persona**.
 - Se quitó WhatsApp en esta prueba: el registro de lo pedido es la orden impresa.
 - Quedan ocultos: Recordatorios, Obras, Guías, Servicios, Insumos y el panel de métricas. **Sus datos no se borran**: siguen guardados en el navegador y en las copias de seguridad, por si se vuelven a activar.
 - Prioridad simplificada: «Normal» o «Urgente». Los pedidos viejos con Alta o Baja se ven como normales y conservan su valor.
 - Estados: «Sin asignar» pasa a «Pendiente»; «En proceso» se muestra como «En curso» y «Faltan insumos» como «Faltan materiales».
-- Las herramientas prestadas en la versión 19 conservan el nombre de la persona.
+- Las herramientas asignadas en la versión 19 conservan el nombre de la persona.
 - No se cargan pedidos ni herramientas de ejemplo: la aplicación arranca vacía.
 - Se quitaron los atajos de teclado y los filtros avanzados. El botón Atrás del navegador funciona en todas las pantallas.
 

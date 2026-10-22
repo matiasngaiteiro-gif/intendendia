@@ -159,7 +159,7 @@
     return [buildingShort(o.building), shortDependency(o.dependency), o.location].filter(Boolean).join(' · ');
   }
 
-  // Nombres para sugerir al prestar una herramienta: los del personal anterior y los ya usados.
+  // Nombres para sugerir al asignar una herramienta: los del personal anterior y los ya usados.
   function peopleNames(state) {
     const names = [...(state.people || []).map(p => p.name), ...(state.tools || []).flatMap(t => [t.holder, ...(t.returns || []).map(r => r.holderName)])];
     return [...new Set(names.map(n => String(n || '').trim()).filter(n => n && !/^p\d+$/.test(n)))].sort((a, b) => a.localeCompare(b, 'es'));
@@ -252,7 +252,7 @@
     {header: 'Estado', width: 13}, {header: 'Terminado el', width: 17}, {header: 'Indicaciones', width: 30}];
   const TOOL_COLUMNS = [
     {header: 'Código', width: 9}, {header: 'Herramienta', width: 24}, {header: 'Marca y modelo', width: 22}, {header: 'N.º de inventario', width: 16},
-    {header: 'Estado', width: 14}, {header: 'La tiene', width: 22}, {header: 'Desde', width: 12}, {header: 'Nota', width: 32}];
+    {header: 'Estado', width: 14}, {header: 'Asignada a', width: 22}, {header: 'Desde', width: 12}, {header: 'Nota', width: 32}];
   const CONTACT_COLUMNS = [
     {header: 'Código', width: 16}, {header: 'Nombre', width: 28}, {header: 'Teléfono', width: 18}, {header: 'Correo', width: 28}, {header: 'Para qué sirve', width: 32}];
 
@@ -263,7 +263,7 @@
   ];
   const toolRow = t => [
     t.id, t.name, [t.brand, t.model].filter(Boolean).join(' '), t.serial || '',
-    t.holder ? 'Prestada' : (t.toolStatus || 'Disponible'), t.holder || '',
+    t.holder ? 'Asignada' : (t.toolStatus || 'Disponible'), t.holder || '',
     t.holder && t.assignedDate ? String(t.assignedDate).split('-').reverse().join('/') : '', t.notes || ''
   ];
   const contactRow = c => [c.id, c.name || '', c.phone || '', c.email || '', c.notes || ''];

@@ -821,7 +821,7 @@
       <div class="chips" id="moveChips">${[5, 10, 20, 50].map(n => `<button type="button" class="chip" data-chip="${n}">${n}</button>`).join('')}</div>
       <label class="field-label" for="moveReason">Motivo <span class="optional">(opcional)</span></label>
       <input id="moveReason" list="reasonList" maxlength="80" autocomplete="off" placeholder="Ej.: compra, para el pedido OT-0004">
-      ${datalist('reasonList', ['Compra', 'Reposición', 'Para un trabajo', 'Devolución', 'Préstamo', 'Corrección de conteo', ...openOrders])}
+      ${datalist('reasonList', ['Compra', 'Reposición', 'Para un trabajo', 'Devolución', 'Corrección de conteo', ...openOrders])}
       <p class="move-preview" id="movePreview" role="status"></p>
       <div class="dlg-actions"><button class="btn btn-primary" type="submit" id="moveSave">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button></div>
       ${recent.length ? `<h3 class="sub-q">Últimos movimientos</h3><ul class="moves">${recent.map(m => `<li><span class="move-${m.type}">${esc(C.MOVE_LABELS[m.type])} ${m.type === 'count' ? esc(m.amount) : (m.type === 'in' ? '+' : '−') + esc(m.amount)}</span><span>${esc(C.when(m.at))}${m.reason && m.reason !== 'Ajuste rápido' ? ' · ' + esc(m.reason) : ''}</span><span>quedó ${esc(m.balance)}</span></li>`).join('')}</ul>` : ''}
@@ -955,13 +955,13 @@
       .filter(t => !q || C.normalizeText([t.name, t.brand, t.model, t.serial, t.holder].join(' ')).includes(q))
       .sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
     const out = state.tools.filter(t => t.holder).length;
-    const pill = t => t.holder ? `<span class="pill pill-progress">La tiene: ${esc(t.holder)}</span>`
+    const pill = t => t.holder ? `<span class="pill pill-progress">Asignada a ${esc(t.holder)}</span>`
       : t.toolStatus === 'En reparación' ? '<span class="pill pill-missing">En reparación</span>'
       : t.toolStatus === 'Fuera de servicio' ? '<span class="pill">Fuera de servicio</span>'
       : '<span class="pill pill-done">Disponible</span>';
     main.innerHTML = `
       <h1 class="page-title">Herramientas</h1>
-      <p class="lead">${state.tools.length ? `${state.tools.length} herramienta${state.tools.length === 1 ? '' : 's'} · ${out} prestada${out === 1 ? '' : 's'}` : 'Anotá acá qué herramientas hay y a quién se prestan.'}</p>
+      <p class="lead">${state.tools.length ? `${state.tools.length} herramienta${state.tools.length === 1 ? '' : 's'} · ${out} asignada${out === 1 ? '' : 's'}` : 'Anotá acá qué herramientas hay y a quién están asignadas.'}</p>
       <button type="button" class="btn btn-primary btn-block" data-new-tool>${icon('plus')} Agregar herramienta</button>
       ${state.tools.length > 5 ? `<label class="search"><span class="sr-only">Buscar herramientas</span>${icon('search')}<input type="search" id="toolSearch" placeholder="Buscar herramienta" value="${esc(toolView.q)}" autocomplete="off"></label>` : ''}
       <div class="list">${list.length ? list.map(t => `<button type="button" class="card tool-card" data-tool="${esc(t.id)}">
@@ -988,32 +988,33 @@
     openDialog(`<div class="dlg"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
       <h2 id="dialogTitle">${esc(t.name)}</h2>
       <p class="muted">${esc([t.brand, t.model].filter(Boolean).join(' '))}${t.serial ? ' · N.º ' + esc(t.serial) : ''}</p>
-      ${t.holder ? `<p class="big-status">La tiene <strong>${esc(t.holder)}</strong>${t.assignedDate ? ` desde ${esc(C.when(t.assignedDate).toLowerCase())}` : ''}.</p>
-        <button type="button" class="btn btn-primary btn-block" data-return>${icon('check')} Ya la devolvió</button>`
+      ${t.holder ? `<p class="big-status">Asignada a <strong>${esc(t.holder)}</strong>${t.assignedDate ? ` desde ${esc(C.when(t.assignedDate).toLowerCase())}` : ''}.</p>
+        <button type="button" class="btn btn-primary btn-block" data-return>${icon('check')} Quitar la asignación</button>
+        <p class="hint">La herramienta vuelve a figurar como disponible.</p>`
         : `<p class="big-status">${t.toolStatus === 'Disponible' ? 'Está disponible.' : esc(t.toolStatus) + '.'}</p>
-        <h3 class="sub-q">¿A quién se la prestás?</h3>
+        <h3 class="sub-q">¿A quién se la asignás?</h3>
         <form class="lend" id="lendForm">
           <label class="field-label" for="lendName">Nombre de la persona</label>
           <input id="lendName" list="peopleList" maxlength="60" autocomplete="off" placeholder="Ej.: Carlos Benítez">
           <datalist id="peopleList">${C.peopleNames(state).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
-          <button type="submit" class="btn btn-primary btn-block">${icon('hand')} Prestar</button>
+          <button type="submit" class="btn btn-primary btn-block">${icon('hand')} Asignar</button>
         </form>`}
       ${t.notes ? `<p class="muted">Nota: ${esc(t.notes)}</p>` : ''}
-      ${history.length ? `<p class="muted small">Últimas devoluciones: ${history.map(h => esc(`${h.holderName && !C.trade(h.holder) ? h.holderName + ', ' : ''}${C.when(h.returnedAt).toLowerCase()}`)).join(' · ')}</p>` : ''}
+      ${history.length ? `<p class="muted small">Asignaciones anteriores: ${history.map(h => esc(`${h.holderName && !C.trade(h.holder) ? h.holderName + ', ' : ''}${C.when(h.returnedAt).toLowerCase()}`)).join(' · ')}</p>` : ''}
       <div class="dlg-actions"><button type="button" class="btn btn-secondary" data-edit>${icon('pencil')} Modificar</button><button type="button" class="btn btn-link-danger" data-del>Borrar</button></div></div>`, body => {
       const now = new Date().toISOString();
       $('[data-return]', body)?.addEventListener('click', () => {
         const returns = [...(Array.isArray(t.returns) ? t.returns : []), {holder: t.holder, holderName: t.holder, assignedDate: t.assignedDate || '', returnedAt: now}];
         saveItem('tool', {...t, returns, holder: '', assignedDate: '', toolStatus: 'Disponible', returnedAt: now, updatedAt: now});
-        dialog.close(); renderTools(); toast('Devolución anotada.');
+        dialog.close(); renderTools(); toast('Asignación quitada: la herramienta está disponible.');
       });
       const lend = $('#lendForm', body);
       if (lend) lend.onsubmit = e => {
         e.preventDefault();
         const name = $('#lendName', body).value.trim();
-        if (!name) { $('#lendName', body).focus(); toast('Escribí el nombre de quien se la lleva.'); return; }
+        if (!name) { $('#lendName', body).focus(); toast('Escribí el nombre de la persona.'); return; }
         saveItem('tool', {...t, holder: name, assignedDate: now.slice(0, 10), toolStatus: 'Entregada', updatedAt: now});
-        dialog.close(); renderTools(); toast(`Prestada a ${name}.`);
+        dialog.close(); renderTools(); toast(`Asignada a ${name}.`);
       };
       $('[data-edit]', body).onclick = () => toolForm(t);
       $('[data-del]', body).onclick = async () => {
