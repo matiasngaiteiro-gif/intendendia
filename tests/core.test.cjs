@@ -119,4 +119,22 @@ test('Excel válido con pedidos y herramientas', () => {
   assert.equal(X.crc32(new TextEncoder().encode('123456789')), 0xCBF43926);
 });
 
+test('inventario: lee el Excel/CSV del inventario actual y une repetidos', () => {
+  const csv = fs.readFileSync(path.join(__dirname, 'inventario-ejemplo.csv'), 'utf8');
+  const {items, error} = C.rowsToItems(C.parseCsv(csv));
+  assert.equal(error, '');
+  assert.equal(items.length, 4);
+  assert.deepEqual(items[0], {category: 'Electricidad - Cables', name: 'Rollo de cable', detail: 'Color celeste', quantity: 2, unit: 'Rollo', status: 'Cerrado / nuevo', location: '', notes: ''});
+  assert.equal(items[2].quantity, null, 'S/D queda sin contar');
+  assert.equal(items[3].notes, 'Verificar denominación (cargado como "porta termina")');
+  const {added, updated} = C.mergeItems([{id: 'I-0001', ...items[0], quantity: 5}], items);
+  assert.equal(added.length, 3);
+  assert.equal(updated.length, 1);
+  assert.equal(updated[0].id, 'I-0001');
+  assert.equal(updated[0].quantity, 2);
+  assert.equal(C.rowsToItems([['Nombre raro'], ['x']]).items.length, 0);
+  assert.equal(C.parseQuantity('3,5'), 3.5);
+  assert.equal(C.itemRow({id: 'I-0001', quantity: null})[4], 'Sin contar');
+});
+
 console.log(`${n} pruebas de la prueba piloto: OK`);

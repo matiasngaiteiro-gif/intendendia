@@ -274,6 +274,36 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 .panel .btn-block + .btn-block { margin-top: 8px; }
 .muted { color: var(--muted); }
 .small { font-size: .88rem; }
+/* ---------- Inventario ---------- */
+.inv-actions { margin-bottom: 4px; }
+.inv-group { margin-top: 18px; }
+.inv-group .group-label { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.inv-group .group-label span { background: #e7e3da; color: var(--ink); border-radius: 999px; padding: 0 9px; font-size: .8rem; letter-spacing: 0; }
+.inv-group .list { margin: 0; gap: 8px; }
+.item-card { padding: 10px 10px 10px 16px; gap: 10px; cursor: default; }
+.item-card.is-empty .qty-value b { color: var(--red); }
+.item-main { flex: 1; min-width: 0; display: grid; gap: 2px; text-align: left; background: none; border: 0; padding: 6px 0; cursor: pointer; font: inherit; color: inherit; }
+.item-main:hover .card-title { text-decoration: underline; }
+.qty { display: flex; align-items: center; gap: 4px; flex: none; }
+.qty-btn { width: 52px; height: 52px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; color: var(--navy); }
+.qty-btn:hover:not([disabled]) { border-color: #aaa395; }
+.qty-btn[disabled] { opacity: .35; cursor: not-allowed; }
+.qty-btn .ico { width: 22px; height: 22px; stroke-width: 2.2; }
+.qty-value { min-width: 64px; display: grid; justify-items: center; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.qty-value b { font-size: 1.3rem; }
+.qty-value small { color: var(--muted); font-size: .78rem; }
+.form-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.steps { margin: 8px 0 0; padding-left: 1.3em; display: grid; gap: 6px; }
+@media (max-width: 520px) {
+  .item-card { padding: 8px 8px 8px 14px; }
+  .item-card .card-title { font-size: 1rem; }
+  .qty-btn { width: 44px; height: 44px; }
+  .qty-value { min-width: 50px; }
+  .qty-value b { font-size: 1.15rem; }
+  .form-two { grid-template-columns: 1fr; gap: 0; }
+}
+@media (max-width: 720px) { .tabs a { font-size: .6rem; padding: 6px 0; } }
+
 /* ---------- Planilla compartida ---------- */
 .sync { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: .78rem; font-weight: 600; color: #dfe5f2; white-space: nowrap; }
 .sync-dot { width: 10px; height: 10px; border-radius: 50%; background: #4ade80; flex: none; }
@@ -319,28 +349,32 @@ dialog::backdrop { background: rgba(15, 20, 35, .55); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
 
-/* ---------- Orden impresa (blanco y negro, Arial, A4) ---------- */
-/* Márgenes amplios en la página y además dentro de la hoja, para que no se corte
-   aunque la impresora tenga bordes sin impresión o el navegador use márgenes mínimos. */
+/* ---------- Orden impresa (blanco y negro, Arial, A4, dos copias con línea de corte) ---------- */
+/* Cada copia ocupa media hoja. Los márgenes van dentro de cada mitad para que nada quede
+   pegado al borde ni a la línea de corte, aunque la impresora tenga bordes sin impresión. */
 .print-sheet { display: none; }
 @media print {
-  @page { size: A4 portrait; margin: 18mm 16mm; }
-  html, body { background: #fff !important; padding: 0 !important; margin: 0 !important; font-size: 11pt !important; }
+  @page { size: A4 portrait; margin: 10mm 12mm; }
+  html, body { background: #fff !important; padding: 0 !important; margin: 0 !important; font-size: 10pt !important; }
   body > *:not(.print-sheet) { display: none !important; }
   .print-sheet {
-    display: block; box-sizing: border-box; width: 100%; max-width: 178mm; margin: 0 auto; padding: 4mm 4mm 0;
-    font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 11pt; line-height: 1.4;
+    display: flex; flex-direction: column; box-sizing: border-box; width: 100%; max-width: 186mm; height: 276mm; margin: 0 auto;
+    font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 10pt; line-height: 1.35;
   }
-  .ps-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12mm; border-bottom: 1.5pt solid #000; padding-bottom: 4mm; }
-  .ps-head h1 { font-size: 16pt; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
-  .ps-head p { margin: 1.5mm 0 0; font-size: 10pt; }
-  .ps-num { display: grid; text-align: right; gap: 1mm; flex: none; font-size: 10pt; }
-  .ps-num strong { font-size: 14pt; }
-  .ps-task { font-size: 15pt; font-weight: bold; margin: 8mm 0 5mm; display: flex; align-items: center; gap: 4mm; flex-wrap: wrap; }
-  .ps-urgent { font-size: 10pt; text-transform: uppercase; letter-spacing: .08em; border: 1pt solid #000; padding: 1mm 3mm; }
+  .ps-copy { box-sizing: border-box; height: 130mm; padding: 5mm 5mm 0; overflow: hidden; flex: none; }
+  .ps-cut { flex: 1; display: flex; align-items: center; border: 0; position: relative; }
+  .ps-cut::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1pt dashed #000; }
+  .ps-cut span { position: relative; margin: 0 auto; background: #fff; padding: 0 3mm; font-size: 8pt; letter-spacing: .08em; text-transform: uppercase; }
+  .ps-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 10mm; border-bottom: 1.25pt solid #000; padding-bottom: 3mm; }
+  .ps-head h1 { font-size: 13pt; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+  .ps-head p { margin: 1mm 0 0; font-size: 8.5pt; }
+  .ps-num { display: grid; text-align: right; gap: .5mm; flex: none; font-size: 9pt; }
+  .ps-num strong { font-size: 12pt; }
+  .ps-task { font-size: 13pt; font-weight: bold; margin: 5mm 0 3mm; display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; }
+  .ps-urgent { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .08em; border: 1pt solid #000; padding: .6mm 2.5mm; }
   .ps-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  .ps-table th, .ps-table td { border-bottom: .75pt solid #000; padding: 3.5mm 2mm; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+  .ps-table th, .ps-table td { border-bottom: .75pt solid #000; padding: 2.2mm 1.5mm; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
   .ps-table tr:first-child th, .ps-table tr:first-child td { border-top: .75pt solid #000; }
-  .ps-table th { width: 38mm; font-weight: bold; }
+  .ps-table th { width: 32mm; font-weight: bold; }
   .ps-table td { white-space: pre-line; }
 }

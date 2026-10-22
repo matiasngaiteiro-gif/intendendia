@@ -36,7 +36,10 @@
     chair: '<path d="M7 3v18M17 13v8M7 13h10M7 3h7a3 3 0 0 1 3 3v3H7"/>',
     box: '<path d="M3.5 7.5L12 3.5l8.5 4v9L12 20.5l-8.5-4z"/><path d="M3.5 7.5L12 11.5l8.5-4M12 11.5v9"/>',
     clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3.5h6v3H9z"/><path d="M9 12h6M9 16h4"/>',
-    building: '<path d="M4 21V5l8-2v18M12 8h8v13M8 8v.01M8 12v.01M8 16v.01M16 12v.01M16 16v.01M2.5 21h19"/>'
+    building: '<path d="M4 21V5l8-2v18M12 8h8v13M8 8v.01M8 12v.01M8 16v.01M16 12v.01M16 16v.01M2.5 21h19"/>',
+    shelf: '<path d="M4 3v18M20 3v18M4 10h16M4 17h16"/><rect x="6.5" y="5.5" width="4" height="4.5"/><rect x="12" y="12.5" width="5.5" height="4.5"/>',
+    minus: '<path d="M5 12h14"/>',
+    upload: '<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 20h14"/>'
   };
   const icon = (name, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON_PATHS[name] || ICON_PATHS.wrench}</svg>`;
   $$('[data-nav-icon]').forEach(el => { el.innerHTML = icon(el.dataset.navIcon); });
@@ -76,14 +79,15 @@
   let outbox = readJSON(OUTBOX_KEY, []);
   const connected = () => !!(remote && remote.url && remote.key);
   const sync = {busy: 0, error: '', lastOk: null};
-  const LIST = {order: 'orders', tool: 'tools', contact: 'contacts'};
-  const ROW = {order: C.orderRow, tool: C.toolRow, contact: C.contactRow};
-  const PREFIX = {order: 'OT', tool: 'H', contact: 'C'};
+  const LIST = {order: 'orders', tool: 'tools', contact: 'contacts', item: 'items'};
+  const ROW = {order: C.orderRow, tool: C.toolRow, contact: C.contactRow, item: C.itemRow};
+  const PREFIX = {order: 'OT', tool: 'H', contact: 'C', item: 'I'};
 
   const ERRORS = {
     clave: 'La clave no coincide con la de la planilla.',
     'sin-clave': 'Falta cambiar la clave en el código de la planilla (línea CLAVE).',
-    red: 'No hay conexión con la planilla. Revisá internet.'
+    red: 'No hay conexión con la planilla. Revisá internet.',
+    'codigo-viejo': 'Falta actualizar el código de la planilla para usar el inventario (ver Ajustes).'
   };
   const errorText = err => ERRORS[err?.message] || ERRORS.red;
 
@@ -98,7 +102,7 @@
       });
       if (!res.ok) throw new Error('red');
       const data = await res.json().catch(() => { throw new Error('red'); });
-      if (!data.ok) throw new Error(data.error || 'red');
+      if (!data.ok) throw new Error(/Tipo desconocido/.test(data.error || '') ? 'codigo-viejo' : (data.error || 'red'));
       return data;
     } catch (e) {
       throw new Error(ERRORS[e.message] ? e.message : 'red');
@@ -170,15 +174,19 @@
       await api(op.action, op);
       setSync({busy: sync.busy - 1, error: '', lastOk: new Date()});
     } catch (e) {
-      outbox.push(op);
-      writeJSON(OUTBOX_KEY, outbox);
-      setSync({busy: sync.busy - 1, error: e.message});
-      toast(e.message === 'red' ? 'Sin conexión: el cambio se envía a la planilla cuando vuelva internet.' : errorText(e));
+      // Solo se reintenta lo que falló por falta de conexión; otros errores no se arreglan reintentando.
+      if (e.message === 'red') { outbox.push(op); writeJSON(OUTBOX_KEY, outbox); }
+      setSync({busy: sync.busy - 1, error: e.message === 'red' ? e.message : ''});
+      toast(e.message === 'red' ? 'Sin conexión: el cambio se envía a la planilla cuando vuelva internet.' : `No se guardó: ${errorText(e)}`);
     }
   }
   async function flushOutbox() {
     while (outbox.length) {
-      await api(outbox[0].action, outbox[0]);
+      try {
+        await api(outbox[0].action, outbox[0]);
+      } catch (e) {
+        if (e.message === 'red') throw e;
+      }
       outbox.shift();
       writeJSON(OUTBOX_KEY, outbox);
     }
@@ -205,8 +213,8 @@
   }
   function applyRemote(data) {
     const custom = (data.contacts || []).filter(C.isCustomContact);
-    state = C.normalizeState({...state, orders: data.orders || [], tools: data.tools || [], contacts: [...structuredClone(CATALOG), ...custom]}, CATALOG);
-    if (data.sheetUrl && remote) { remote.sheetUrl = data.sheetUrl; writeJSON(REMOTE_KEY, remote); }
+    state = C.normalizeState({...state, orders: data.orders || [], tools: data.tools || [], items: data.items || [], contacts: [...structuredClone(CATALOG), ...custom]}, CATALOG);
+    if (remote) { remote.sheetUrl = data.sheetUrl || remote.sheetUrl; remote.version = Number(data.version || 1); writeJSON(REMOTE_KEY, remote); }
     save();
   }
   setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 30000);
@@ -280,12 +288,13 @@
       return;
     }
     const r = route();
-    const tab = ['herramientas', 'contactos', 'ajustes'].includes(r.name) ? r.name : 'pedidos';
+    const tab = ['inventario', 'herramientas', 'contactos', 'ajustes'].includes(r.name) ? r.name : 'pedidos';
     $$('.tabs a').forEach(a => a.classList.toggle('active', a.dataset.tab === tab));
     document.body.dataset.screen = r.name;
     if (r.name === 'nuevo') renderWizard('new', null, r.parts[1]);
     else if (r.name === 'editar') renderWizard('edit', r.parts[1], r.parts[2]);
     else if (r.name === 'pedido') renderOrder(r.parts[1]);
+    else if (r.name === 'inventario') renderInventory();
     else if (r.name === 'herramientas') renderTools();
     else if (r.name === 'contactos') renderContacts();
     else if (r.name === 'ajustes') renderSettings();
@@ -439,11 +448,12 @@
     toast('Pedido borrado.', () => { saveItem('order', o); render(); });
   }
 
-  // Hoja informativa del pedido para archivo: qué se pidió, dónde y cuándo. Sin estados ni controles.
+  // Hoja informativa del pedido: dos copias iguales en una A4, con una línea punteada para cortar.
+  // Sin estados ni controles: solo qué se pidió, dónde y cuándo.
   function printOrder(o) {
     const b = C.building(o.building);
     const row = (label, value) => value ? `<tr><th>${label}</th><td>${value}</td></tr>` : '';
-    $('#printSheet').innerHTML = `
+    const copy = `<article class="ps-copy">
       <header class="ps-head">
         <div><h1>Orden de trabajo</h1><p>Intendencia · Cámara Nacional de Apelaciones en lo Comercial</p></div>
         <div class="ps-num"><strong>${esc(o.id)}</strong><span>${esc(C.fullDate(o.createdAt))}</span></div>
@@ -455,7 +465,9 @@
         ${row('Piso / oficina', esc(o.location))}
         ${row('Oficio', esc(C.tradeLabel(o.specialty)))}
         ${row('Indicaciones', esc(o.description))}
-      </table>`;
+      </table>
+    </article>`;
+    $('#printSheet').innerHTML = `${copy}<div class="ps-cut" aria-hidden="true"><span>cortar por aquí</span></div>${copy}`;
     window.print();
   }
 
@@ -689,6 +701,164 @@
     if (andPrint) setTimeout(() => printOrder(order), 150);
   }
 
+  // ==================== INVENTARIO ====================
+  const invView = {q: ''};
+  const STATUS_SUGGESTIONS = ['Cerrado / nuevo', 'Abierto / en uso', 'Usado - buen estado', 'Antiguo', 'A revisar / testear', 'Sin especificar'];
+  const datalist = (id, values) => `<datalist id="${id}">${[...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')).map(v => `<option value="${esc(v)}"></option>`).join('')}</datalist>`;
+  const sheetOutdated = () => connected() && Number(remote.version || 1) < 2;
+
+  function renderInventory() {
+    const q = C.normalizeText(invView.q);
+    const items = state.items.slice().sort(C.itemSort)
+      .filter(i => !q || q.split(' ').every(w => C.normalizeText([i.category, i.name, i.detail, i.status, i.location, i.notes].join(' ')).includes(w)));
+    const groups = [];
+    items.forEach(i => {
+      const g = groups[groups.length - 1];
+      if (g && g.name === i.category) g.items.push(i); else groups.push({name: i.category, items: [i]});
+    });
+    const categories = new Set(state.items.map(i => i.category)).size;
+    main.innerHTML = `
+      <h1 class="page-title">Inventario</h1>
+      <p class="lead">${state.items.length ? `${state.items.length} elemento${state.items.length === 1 ? '' : 's'} en ${categories} categoría${categories === 1 ? '' : 's'}` : 'Cargá los elementos desde un Excel o de a uno.'}</p>
+      ${sheetOutdated() ? `<div class="notice">${icon('alert', 'notice-ico')}<div><strong>Falta actualizar el código de la planilla.</strong><p>Para guardar el inventario, la planilla necesita el código nuevo. Los pasos están en Ajustes.</p></div></div>` : ''}
+      <div class="action-row inv-actions">
+        <button type="button" class="btn btn-primary" data-new-item>${icon('plus')} Agregar elemento</button>
+        <button type="button" class="btn btn-secondary" data-import-items>${icon('upload')} Cargar desde Excel</button>
+      </div>
+      <input type="file" id="importItems" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>
+      ${state.items.length > 5 ? `<label class="search"><span class="sr-only">Buscar en el inventario</span>${icon('search')}<input type="search" id="invSearch" placeholder="Buscar: cable, pincel 20, silicona…" value="${esc(invView.q)}" autocomplete="off"></label>` : ''}
+      <div class="inv-list">${groups.length ? groups.map(g => `<section class="inv-group">
+        <h2 class="group-label">${esc(g.name)} <span>${g.items.length}</span></h2>
+        <div class="list">${g.items.map(itemCard).join('')}</div></section>`).join('')
+        : `<div class="empty"><p>${q ? 'No se encontró ese elemento.' : 'Todavía no hay elementos en el inventario.'}</p></div>`}</div>`;
+
+    $('[data-new-item]').onclick = () => itemForm();
+    $('[data-import-items]').onclick = () => $('#importItems').click();
+    $('#importItems').onchange = importItems;
+    $$('[data-item]').forEach(b => b.onclick = () => itemForm(state.items.find(i => i.id === b.dataset.item)));
+    $$('[data-qty]').forEach(b => b.onclick = () => changeQty(b.dataset.id, Number(b.dataset.qty)));
+    const s = $('#invSearch');
+    if (s) s.oninput = () => {
+      invView.q = s.value;
+      const p = s.selectionStart;
+      renderInventory();
+      const a = $('#invSearch');
+      a.focus();
+      a.setSelectionRange(p, p);
+    };
+  }
+
+  function itemCard(i) {
+    const meta = [i.status, i.location].filter(x => x && x !== 'Sin especificar').join(' · ');
+    const qty = i.quantity === null || i.quantity === undefined ? '—' : String(i.quantity);
+    return `<div class="card item-card${i.quantity === 0 ? ' is-empty' : ''}">
+      <button type="button" class="item-main" data-item="${esc(i.id)}">
+        <span class="card-title">${esc(i.name)}</span>
+        ${i.detail ? `<span class="card-sub">${esc(i.detail)}</span>` : ''}
+        ${meta ? `<span class="card-meta">${esc(meta)}</span>` : ''}
+      </button>
+      <div class="qty" role="group" aria-label="Cantidad de ${esc(i.name)}">
+        <button type="button" class="qty-btn" data-qty="-1" data-id="${esc(i.id)}" aria-label="Uno menos" ${i.quantity ? '' : 'disabled'}>${icon('minus')}</button>
+        <span class="qty-value"><b>${esc(qty)}</b><small>${esc(i.quantity === null || i.quantity === undefined ? 'sin contar' : (i.unit || ''))}</small></span>
+        <button type="button" class="qty-btn" data-qty="1" data-id="${esc(i.id)}" aria-label="Uno más">${icon('plus')}</button>
+      </div>
+    </div>`;
+  }
+
+  // Los toques seguidos en − y + se juntan y se guardan una sola vez.
+  const qtyTimers = {};
+  function changeQty(id, delta) {
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+    const next = {...item, quantity: Math.max(0, (Number(item.quantity) || 0) + delta), updatedAt: new Date().toISOString()};
+    upsertLocal('item', next);
+    save();
+    const y = window.scrollY;
+    renderInventory();
+    window.scrollTo(0, y);
+    clearTimeout(qtyTimers[id]);
+    qtyTimers[id] = setTimeout(() => saveItem('item', state.items.find(i => i.id === id)), 900);
+  }
+
+  function itemForm(it) {
+    openDialog(`<form class="dlg" id="itemForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">${it ? 'Modificar elemento' : 'Agregar elemento'}</h2>
+      <label class="field-label" for="iName">Elemento</label><input id="iName" name="name" required maxlength="80" placeholder="Ej.: Rollo de cable" value="${esc(it?.name)}">
+      <label class="field-label" for="iDetail">Detalle o variante <span class="optional">(color, medida, marca)</span></label><input id="iDetail" name="detail" maxlength="80" placeholder="Ej.: Color celeste" value="${esc(it?.detail)}">
+      <label class="field-label" for="iCat">Categoría</label><input id="iCat" name="category" list="catList" required maxlength="60" placeholder="Ej.: Electricidad - Cables" value="${esc(it?.category)}">
+      ${datalist('catList', state.items.map(i => i.category))}
+      <div class="form-two">
+        <div><label class="field-label" for="iQty">Cantidad <span class="optional">(vacío = sin contar)</span></label><input id="iQty" name="quantity" inputmode="decimal" maxlength="10" value="${esc(it?.quantity ?? '')}"></div>
+        <div><label class="field-label" for="iUnit">Unidad</label><input id="iUnit" name="unit" list="unitList" maxlength="20" placeholder="Ej.: Rollo" value="${esc(it?.unit)}">${datalist('unitList', ['Unidad', 'Caja', 'Rollo', 'Lata', 'Pomo', 'Bolsa', 'Tarro', ...state.items.map(i => i.unit)])}</div>
+      </div>
+      <label class="field-label" for="iStatus">Estado</label><input id="iStatus" name="status" list="statusList" maxlength="40" value="${esc(it?.status)}">${datalist('statusList', [...STATUS_SUGGESTIONS, ...state.items.map(i => i.status)])}
+      <label class="field-label" for="iLoc">Ubicación <span class="optional">(opcional)</span></label><input id="iLoc" name="location" maxlength="60" placeholder="Ej.: Depósito Diagonal, estante 2" value="${esc(it?.location)}">
+      <label class="field-label" for="iNotes">Observaciones <span class="optional">(opcional)</span></label><textarea id="iNotes" name="notes" rows="2" maxlength="300">${esc(it?.notes)}</textarea>
+      <div class="dlg-actions"><button class="btn btn-primary" type="submit">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+      ${it ? '<button type="button" class="btn btn-link-danger" data-del>Borrar elemento</button>' : ''}</div></form>`, body => {
+      if (!it) $('#iName', body).focus();
+      $('#itemForm', body).onsubmit = async e => {
+        e.preventDefault();
+        const f = Object.fromEntries(new FormData(e.target));
+        Object.keys(f).forEach(k => { f[k] = String(f[k]).trim(); });
+        if (!f.name || !f.category) return;
+        const data = {...f, quantity: C.parseQuantity(f.quantity), updatedAt: new Date().toISOString()};
+        if (it) {
+          saveItem('item', {...it, ...data});
+        } else {
+          const button = $('button[type=submit]', body);
+          button.disabled = true;
+          button.textContent = 'Guardando…';
+          if (!await createItem('item', data)) { button.disabled = false; button.textContent = 'Guardar'; return; }
+        }
+        dialog.close(); renderInventory(); toast('Elemento guardado.');
+      };
+      $('[data-del]', body)?.addEventListener('click', async () => {
+        if (!await confirmBox({title: '¿Borrar este elemento?', text: [it.name, it.detail].filter(Boolean).join(' · '), yes: 'Sí, borrar', danger: true})) return;
+        removeItem('item', it);
+        renderInventory();
+        toast('Elemento borrado.', () => { saveItem('item', it); renderInventory(); });
+      });
+    });
+  }
+
+  async function importItems(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    let rows;
+    try {
+      rows = /\.csv$/i.test(file.name) ? C.parseCsv(await file.text()) : await window.Xlsx.read(await file.arrayBuffer());
+    } catch {
+      toast('No se pudo leer el archivo. Tiene que ser un Excel (.xlsx) o un .csv.');
+      return;
+    }
+    const {items, error} = C.rowsToItems(rows);
+    if (error) { toast(error); return; }
+    const now = new Date().toISOString();
+    const {added, updated} = C.mergeItems(state.items, items.map(i => ({...i, updatedAt: now})));
+    const ok = await confirmBox({
+      title: `Cargar «${file.name}»`,
+      text: [added.length && `${added.length} elemento${added.length === 1 ? '' : 's'} nuevo${added.length === 1 ? '' : 's'}`, updated.length && `${updated.length} que ya estaba${updated.length === 1 ? '' : 'n'} se actualiza${updated.length === 1 ? '' : 'n'} con los datos del archivo`].filter(Boolean).join(' y ') + '.',
+      yes: 'Sí, cargar'
+    });
+    if (!ok) return;
+    toast('Cargando el inventario…');
+    const payload = [...added, ...updated].map(item => ({kind: 'item', item, row: C.itemRow({...item, id: item.id || ''})}));
+    setSync({busy: sync.busy + 1});
+    try {
+      const res = await api('import', {items: payload});
+      (res.items || []).forEach(i => upsertLocal('item', i));
+      save();
+      setSync({busy: sync.busy - 1, error: '', lastOk: new Date()});
+      renderInventory();
+      toast(`Listo: inventario cargado (${payload.length} elementos).`);
+    } catch (err) {
+      setSync({busy: sync.busy - 1, error: err.message === 'red' ? 'red' : ''});
+      toast(`No se cargó: ${errorText(err)}`);
+    }
+  }
+
   // ==================== HERRAMIENTAS ====================
   const toolView = {q: ''};
   function renderTools() {
@@ -878,6 +1048,9 @@
           ${[['normal', 'Normal'], ['grande', 'Grande'], ['muy-grande', 'Muy grande']].map(([v, l]) => `<button type="button" data-size="${v}" class="${size === v ? 'active' : ''}" aria-pressed="${size === v}">${l}</button>`).join('')}
         </div>
       </section>
+      ${sheetOutdated() ? `<section class="panel"><h2>Actualizar el código de la planilla</h2>
+        <p class="muted">El inventario necesita una versión nueva del código. Se hace una sola vez, desde la computadora donde armaste la planilla:</p>
+        <ol class="steps"><li>En la planilla, abrí <b>Extensiones › Apps Script</b>.</li><li>Borrá todo y pegá el código nuevo (<b>Codigo.gs</b>). Volvé a poner tu clave en la línea CLAVE.</li><li>Guardá con Ctrl+S.</li><li><b>Implementar › Administrar implementaciones</b> › lápiz › <b>Versión: nueva versión</b> › <b>Implementar</b>.</li><li>Acá, tocá <b>Actualizar ahora</b>.</li></ol></section>` : ''}
       ${sheetPanel()}
       <section class="panel">
         <h2>Copia de seguridad</h2>
@@ -947,7 +1120,7 @@
       outbox = [];
       try { localStorage.removeItem(REMOTE_KEY); localStorage.removeItem(OUTBOX_KEY); } catch {}
       // No queda ninguna copia de los pedidos en esta computadora.
-      state = C.normalizeState({...state, orders: [], tools: [], contacts: structuredClone(CATALOG)}, CATALOG);
+      state = C.normalizeState({...state, orders: [], tools: [], items: [], contacts: structuredClone(CATALOG)}, CATALOG);
       save();
       go('pedidos', true);
       toast('Computadora desconectada de la planilla.');

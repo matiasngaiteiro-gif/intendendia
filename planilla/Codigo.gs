@@ -19,8 +19,12 @@ const CLAVE = 'CAMBIAR-ESTA-CLAVE';
 const HOJAS = {
   order: {nombre: 'Pedidos', prefijo: 'OT', columnas: ['Número', 'Fecha del pedido', 'Trabajo', 'Oficio', 'Edificio', 'Dependencia', 'Piso / oficina', 'Urgente', 'Estado', 'Terminado el', 'Indicaciones']},
   tool: {nombre: 'Herramientas', prefijo: 'H', columnas: ['Código', 'Herramienta', 'Marca y modelo', 'N.º de inventario', 'Estado', 'La tiene', 'Desde', 'Nota']},
-  contact: {nombre: 'Contactos', prefijo: 'C', columnas: ['Código', 'Nombre', 'Teléfono', 'Correo', 'Para qué sirve']}
+  contact: {nombre: 'Contactos', prefijo: 'C', columnas: ['Código', 'Nombre', 'Teléfono', 'Correo', 'Para qué sirve']},
+  item: {nombre: 'Inventario', prefijo: 'I', columnas: ['Código', 'Categoría', 'Elemento', 'Detalle / variante', 'Cantidad', 'Unidad', 'Estado', 'Ubicación', 'Observaciones', 'Actualizado']}
 };
+
+// Versión del código, para que la aplicación avise si hay que actualizarlo.
+const VERSION = 2;
 
 function doPost(e) {
   let pedido;
@@ -48,7 +52,7 @@ function atender(pedido) {
       if (pedido.action === 'create') return {ok: true, item: crear(pedido.kind, pedido.item, pedido.row)};
       if (pedido.action === 'save') return {ok: true, item: guardar(pedido.kind, pedido.item, pedido.row)};
       if (pedido.action === 'delete') { borrar(pedido.kind, pedido.id); return {ok: true}; }
-      if (pedido.action === 'import') return {ok: true, count: importar(pedido.items || [])};
+      if (pedido.action === 'import') { const creados = importar(pedido.items || []); return {ok: true, count: creados.length, items: creados}; }
       return {ok: false, error: 'accion'};
     } finally {
       candado.releaseLock();
@@ -97,6 +101,8 @@ function leerTodo() {
     orders: leerHoja('order'),
     tools: leerHoja('tool'),
     contacts: leerHoja('contact'),
+    items: leerHoja('item'),
+    version: VERSION,
     sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()
   };
 }
@@ -155,13 +161,20 @@ function borrar(tipo, id) {
   if (n) hoja(tipo).deleteRow(n);
 }
 
-// Primera carga: sube lo que ya estaba guardado en una computadora. Conserva los números existentes.
+// Carga varios registros juntos (copias de seguridad, inventario desde Excel).
+// Los que traen código lo conservan; los nuevos reciben el siguiente número.
 function importar(items) {
+  const creados = [];
   items.forEach(x => {
-    if (!x || !x.item || !x.item.id) return;
+    if (!x || !x.item || !HOJAS[x.kind]) return;
+    if (!x.item.id) {
+      x.item.id = siguienteId(x.kind);
+      if (x.row && x.row.length) x.row[0] = x.item.id;
+    }
     escribir(x.kind, x.item, x.row);
+    creados.push(x.item);
   });
-  return items.length;
+  return creados;
 }
 
 // Opcional: ejecutar una vez desde el editor para crear las pestañas antes de usar la aplicación.

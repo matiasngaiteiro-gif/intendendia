@@ -141,7 +141,88 @@ ${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.open
     ]);
   }
 
-  const Xlsx = {workbook, crc32};
+  // ---------- Lectura de un .xlsx (para importar el inventario) ----------
+  // Usa el descompresor que traen los navegadores; no hace falta ninguna librería.
+  async function unzip(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const view = new DataView(buffer);
+    let end = bytes.length - 22;
+    while (end >= 0 && view.getUint32(end, true) !== 0x06054b50) end--;
+    if (end < 0) throw new Error('no-zip');
+    const count = view.getUint16(end + 10, true);
+    let p = view.getUint32(end + 16, true);
+    const dec = new TextDecoder();
+    const files = {};
+    for (let i = 0; i < count; i++) {
+      const method = view.getUint16(p + 10, true);
+      const size = view.getUint32(p + 20, true);
+      const nameLen = view.getUint16(p + 28, true);
+      const extraLen = view.getUint16(p + 30, true);
+      const commentLen = view.getUint16(p + 32, true);
+      const local = view.getUint32(p + 42, true);
+      const name = dec.decode(bytes.subarray(p + 46, p + 46 + nameLen));
+      const start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
+      const raw = bytes.subarray(start, start + size);
+      files[name] = {method, raw};
+      p += 46 + nameLen + extraLen + commentLen;
+    }
+    const text = async name => {
+      const f = files[name];
+      if (!f) return null;
+      if (f.method === 0) return dec.decode(f.raw);
+      const stream = new Blob([f.raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return new Response(stream).text();
+    };
+    return {names: Object.keys(files), text};
+  }
+
+  function colIndex(ref) {
+    const letters = ref.replace(/\d+/g, '');
+    let n = 0;
+    for (const ch of letters) n = n * 26 + (ch.charCodeAt(0) - 64);
+    return n - 1;
+  }
+
+  // Devuelve las filas de la primera hoja como listas de texto.
+  async function read(buffer) {
+    const zipFile = await unzip(buffer);
+    const parse = t => new DOMParser().parseFromString(t, 'application/xml');
+    const shared = [];
+    const sst = await zipFile.text('xl/sharedStrings.xml');
+    if (sst) parse(sst).querySelectorAll('si').forEach(si => shared.push([...si.querySelectorAll('t')].map(t => t.textContent).join('')));
+    let sheetPath = 'xl/worksheets/sheet1.xml';
+    const wb = await zipFile.text('xl/workbook.xml');
+    const rels = await zipFile.text('xl/_rels/workbook.xml.rels');
+    if (wb && rels) {
+      const first = parse(wb).querySelector('sheet');
+      const rid = first && (first.getAttribute('r:id') || first.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id'));
+      const rel = rid && [...parse(rels).querySelectorAll('Relationship')].find(r => r.getAttribute('Id') === rid);
+      if (rel) {
+        const target = rel.getAttribute('Target').replace(/^\//, '');
+        sheetPath = target.startsWith('xl/') ? target : 'xl/' + target;
+      }
+    }
+    const sheet = await zipFile.text(sheetPath);
+    if (!sheet) throw new Error('no-sheet');
+    const rows = [];
+    parse(sheet).querySelectorAll('sheetData > row').forEach(row => {
+      const r = Number(row.getAttribute('r')) - 1;
+      const cells = rows[r] = [];
+      row.querySelectorAll('c').forEach((c, i) => {
+        const ref = c.getAttribute('r');
+        const col = ref ? colIndex(ref) : i;
+        const type = c.getAttribute('t');
+        let value = '';
+        if (type === 's') value = shared[Number(c.querySelector('v')?.textContent)] ?? '';
+        else if (type === 'inlineStr') value = [...c.querySelectorAll('is t')].map(t => t.textContent).join('');
+        else value = c.querySelector('v')?.textContent ?? '';
+        cells[col] = value;
+      });
+    });
+    return Array.from(rows, r => Array.from(r || [], v => v ?? ''));
+  }
+
+  const Xlsx = {workbook, crc32, read};
   if (typeof module !== 'undefined' && module.exports) module.exports = Xlsx;
   else root.Xlsx = Xlsx;
 })(typeof window !== 'undefined' ? window : globalThis);
