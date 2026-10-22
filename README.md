@@ -39,12 +39,11 @@ Diseño sobrio: íconos de línea en un solo color, sin emojis.
 
 ## Dónde se guardan los datos
 
-Hay dos formas de trabajar:
+En la **planilla compartida de Google**. Todas las computadoras conectadas ven y cargan lo mismo: cada cambio se guarda en la planilla y cada 30 segundos se trae lo que cargaron las demás. Para armarla, seguí los pasos de [`planilla/INSTALAR.md`](planilla/INSTALAR.md).
 
-- **Solo esta computadora** (así arranca): los datos quedan en el navegador (`localStorage`, clave `intendencia-estado-v2`, la misma de la versión 19). Al actualizar desde la versión 19 no se pierde nada: los datos se adaptan solos la primera vez que se abre la aplicación.
-- **Planilla compartida de Google**: todas las computadoras conectadas ven y cargan lo mismo. Cada cambio se guarda en una planilla y cada 30 segundos se trae lo que cargaron las demás. Para armarla, seguí los pasos de [`planilla/INSTALAR.md`](planilla/INSTALAR.md).
-
-En los dos casos:
+- Una computadora sin conectar no muestra nada: solo la pantalla «Conectá esta computadora», que pide la dirección y la clave. Así nadie carga pedidos por fuera de la planilla.
+- Al conectar una computadora que tenía datos de la versión anterior (clave `intendencia-estado-v2` del navegador), se descarga una copia de esos datos y se reemplazan por los de la planilla.
+- Al desconectarla, se borra la copia de trabajo que quedaba en esa computadora.
 
 - **Guardar copia de la semana** (en el aviso de los viernes o en Ajustes) descarga el Excel y la copia para recuperar. En Ajustes también se puede descargar cada uno por separado.
 - **Recuperar desde una copia** acepta también las copias de la versión 19. Con la planilla conectada, sube los datos de la copia a la planilla.

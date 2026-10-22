@@ -271,6 +271,14 @@
   function render({keepScroll} = {}) {
     if (dialog.open) dialog.close();
     const y = window.scrollY;
+    // Sin planilla conectada no se muestra nada: solo la pantalla para conectar esta computadora.
+    if (!connected()) {
+      document.body.dataset.screen = 'conectar';
+      renderConnect();
+      window.scrollTo(0, 0);
+      paintSync();
+      return;
+    }
     const r = route();
     const tab = ['herramientas', 'contactos', 'ajustes'].includes(r.name) ? r.name : 'pedidos';
     $$('.tabs a').forEach(a => a.classList.toggle('active', a.dataset.tab === tab));
@@ -873,7 +881,7 @@
       ${sheetPanel()}
       <section class="panel">
         <h2>Copia de seguridad</h2>
-        <p class="muted">${connected() ? 'Los pedidos están en la planilla de Google.' : 'Los pedidos se guardan solo en esta computadora.'} Todos los viernes desde las 12:00 la aplicación pide guardar la copia de la semana para imprimir y archivar.</p>
+        <p class="muted">Los pedidos están en la planilla de Google. Todos los viernes desde las 12:00 la aplicación pide guardar la copia de la semana para imprimir y archivar.</p>
         <p><strong>Última copia en Excel:</strong> ${lastExcel() ? esc(C.when(lastExcel())) : 'nunca'}</p>
         <button type="button" class="btn btn-primary btn-block" data-backup>${icon('save')} Guardar copia de la semana</button>
         <div class="action-row">
@@ -903,17 +911,23 @@
         <button type="button" class="btn btn-link-danger" data-sheet-off>Desconectar esta computadora</button>
       </section>`;
     }
-    return `<section class="panel">
-      <h2>Planilla compartida</h2>
-      <p class="muted">Para que varias computadoras vean y carguen los mismos pedidos, conectá la planilla de Google. Se hace una sola vez en cada computadora.</p>
-      <form id="sheetForm" class="sheet-form">
+    return '';
+  }
+
+  function renderConnect() {
+    main.innerHTML = `<section class="connect">
+      <h1 class="page-title">Conectá esta computadora</h1>
+      <p class="lead">Los pedidos están en la planilla de Intendencia. Para verlos y cargarlos, escribí la dirección y la clave. Se hace una sola vez en cada computadora.</p>
+      <form id="sheetForm" class="panel sheet-form">
         <label class="field-label" for="sheetUrl">Dirección de la aplicación web</label>
         <input id="sheetUrl" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
         <label class="field-label" for="sheetKey">Clave</label>
         <input id="sheetKey" autocomplete="off" placeholder="La misma que escribiste en el código">
         <button type="submit" class="btn btn-primary btn-block">Conectar</button>
       </form>
+      <p class="muted small">La dirección y la clave las tiene quien administra la planilla.</p>
     </section>`;
+    $('#sheetForm').onsubmit = connectSheet;
   }
 
   function bindSheetPanel() {
@@ -932,7 +946,10 @@
       remote = null;
       outbox = [];
       try { localStorage.removeItem(REMOTE_KEY); localStorage.removeItem(OUTBOX_KEY); } catch {}
-      renderSettings();
+      // No queda ninguna copia de los pedidos en esta computadora.
+      state = C.normalizeState({...state, orders: [], tools: [], contacts: structuredClone(CATALOG)}, CATALOG);
+      save();
+      go('pedidos', true);
       toast('Computadora desconectada de la planilla.');
     });
   }
@@ -956,31 +973,15 @@
       toast(`No se pudo conectar: ${errorText(err)}`);
       return;
     }
-    const sheetEmpty = !data.orders.length && !data.tools.length;
-    const localCustom = state.contacts.filter(C.isCustomContact);
-    const hasLocal = state.orders.length || state.tools.length || localCustom.length;
-    if (sheetEmpty && hasLocal) {
-      const up = await confirmBox({title: 'La planilla está vacía', text: `¿Subir los ${state.orders.length} pedidos y ${state.tools.length} herramientas que hay en esta computadora?`, yes: 'Sí, subirlos'});
-      if (up) {
-        const items = [
-          ...state.orders.map(item => ({kind: 'order', item, row: C.orderRow(item)})),
-          ...state.tools.map(item => ({kind: 'tool', item, row: C.toolRow(item)})),
-          ...localCustom.map(item => ({kind: 'contact', item, row: C.contactRow(item)}))
-        ];
-        try { await api('import', {items}, conf); ({data} = await api('load', {}, conf)); }
-        catch (err) { button.disabled = false; button.textContent = 'Conectar'; toast(`No se pudieron subir: ${errorText(err)}`); return; }
-      }
-    } else if (!sheetEmpty && hasLocal) {
-      // Antes de pasar a la planilla, se guarda lo de esta computadora por las dudas.
-      downloadRestoreCopy();
-      toast('Se descargó una copia de lo que había en esta computadora, por las dudas.');
-    }
+    // Si esta computadora tenía pedidos cargados por su cuenta, se descarga una copia y se reemplazan por los de la planilla.
+    const hasLocal = state.orders.length || state.tools.length || state.contacts.some(C.isCustomContact);
+    if (hasLocal) downloadRestoreCopy();
     remote = conf;
     writeJSON(REMOTE_KEY, remote);
     applyRemote(data);
     setSync({error: '', lastOk: new Date()});
-    renderSettings();
-    toast('Listo: esta computadora ya usa la planilla compartida.');
+    go('pedidos', true);
+    toast(hasLocal ? 'Conectada. Lo que había en esta computadora quedó en una copia en Descargas.' : 'Listo: esta computadora ya está conectada.');
   }
 
   function bindBackup() { $$('[data-backup]').forEach(b => b.onclick = weeklyBackup); }
