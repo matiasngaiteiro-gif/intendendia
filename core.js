@@ -427,15 +427,45 @@
 
   const itemSort = (a, b) => String(a.category).localeCompare(String(b.category), 'es') || String(a.name).localeCompare(String(b.name), 'es') || String(a.detail || '').localeCompare(String(b.detail || ''), 'es', {numeric: true});
 
+  // ---------- Excel para descargar e imprimir ----------
+  // Mismo formato que el Excel de inventario de Intendencia: columna N°, títulos en ese orden,
+  // Arial, blanco y negro, apaisado y ajustado al ancho de la hoja.
+  const shortDate = v => {
+    if (!v) return '';
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(v) ? new Date(v + 'T12:00:00-03:00') : new Date(v);
+    return Number.isNaN(d.getTime()) ? '' : new Intl.DateTimeFormat('es-AR', {timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric'}).format(d);
+  };
+  const byDate = (a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
+  const EXPORTS = {
+    orders: {name: 'Pedidos', label: 'Pedidos de trabajo', columns: ORDER_COLUMNS, sort: byDate, row: orderRow},
+    items: {name: 'Inventario', label: 'Inventario', sort: itemSort, columns: [
+      {header: 'N°', width: 6}, {header: 'Categoría', width: 24}, {header: 'Elemento', width: 28}, {header: 'Detalle / variante', width: 24},
+      {header: 'Cantidad', width: 10}, {header: 'Unidad', width: 10}, {header: 'Estado', width: 18}, {header: 'Ubicación', width: 16},
+      {header: 'Observaciones', width: 30}, {header: 'Actualizado', width: 12}],
+      row: (i, n) => [n, i.category || '', i.name || '', i.detail || '', isUncounted(i) ? 'S/D' : Number(i.quantity), i.unit || '', i.status || '', i.location || '', i.notes || '', shortDate(i.updatedAt)]},
+    tools: {name: 'Herramientas', label: 'Herramientas', sort: (a, b) => String(a.name).localeCompare(String(b.name), 'es'), columns: [
+      {header: 'N°', width: 6}, {header: 'Herramienta', width: 26}, {header: 'Marca', width: 16}, {header: 'Modelo', width: 16}, {header: 'N.º de inventario', width: 16},
+      {header: 'Estado', width: 16}, {header: 'Asignada a', width: 22}, {header: 'Desde', width: 12}, {header: 'Observaciones', width: 30}],
+      row: (t, n) => [n, t.name || '', t.brand || '', t.model || '', t.serial || '', t.holder ? 'Asignada' : (t.toolStatus || 'Disponible'), t.holder || '', t.holder ? shortDate(t.assignedDate) : '', t.notes || '']},
+    contacts: {name: 'Contactos', label: 'Contactos', sort: (a, b) => String(a.name).localeCompare(String(b.name), 'es', {numeric: true}), columns: [
+      {header: 'N°', width: 6}, {header: 'Nombre', width: 34}, {header: 'Dirección', width: 34}, {header: 'Teléfono', width: 20}, {header: 'Correo', width: 32}, {header: 'Notas', width: 30}],
+      row: (c, n) => [n, c.name || '', c.building || '', c.phone || '', c.email || '', c.source ? '' : (c.notes || '')]}
+  };
+  // Una hoja con la lista que se ve en una sección. «note» se agrega al título (por ejemplo, el filtro aplicado).
+  function sectionSheet(kind, list, {now = new Date(), note = '', title} = {}) {
+    const e = EXPORTS[kind];
+    const rows = list.slice().sort(e.sort).map((x, i) => e.row(x, i + 1));
+    return {name: e.name, columns: e.columns, rows, title: title || `Intendencia · ${e.label} · ${shortDate(now.toISOString())}${note ? ' · ' + note : ''}`};
+  }
+
   function excelSheets(state, now = new Date()) {
     const stamp = fullDate(now.toISOString());
-    const byDate = (a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
+    const copy = label => `Intendencia · ${label} · copia del ${stamp}`;
     return [
-      {name: 'Pedidos', title: `Intendencia · Pedidos de trabajo · copia del ${stamp}`, columns: ORDER_COLUMNS, rows: state.orders.slice().sort(byDate).map(orderRow)},
-      {name: 'Herramientas', title: `Intendencia · Herramientas · copia del ${stamp}`, columns: TOOL_COLUMNS,
-        rows: state.tools.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')).map(toolRow)},
-      {name: 'Inventario', title: `Intendencia · Inventario · copia del ${stamp}`, columns: ITEM_COLUMNS, rows: (state.items || []).slice().sort(itemSort).map(itemRow)},
-      {name: 'Movimientos', title: `Intendencia · Movimientos de stock · copia del ${stamp}`, rows: movementRows(state.items || []), columns: [
+      sectionSheet('orders', state.orders, {title: copy('Pedidos de trabajo')}),
+      sectionSheet('tools', state.tools, {title: copy('Herramientas')}),
+      sectionSheet('items', state.items || [], {title: copy('Inventario')}),
+      {name: 'Movimientos', title: copy('Movimientos de stock'), rows: movementRows(state.items || []), columns: [
         {header: 'Fecha', width: 17}, {header: 'Elemento', width: 26}, {header: 'Detalle', width: 20}, {header: 'Movimiento', width: 12},
         {header: 'Cantidad', width: 10}, {header: 'Quedó', width: 9}, {header: 'Unidad', width: 10}, {header: 'Motivo', width: 30}]}
     ];
@@ -451,7 +481,7 @@
     ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact,
     ITEM_COLUMNS, itemRow, qtyText, parseQuantity, itemKey, rowsToItems, mergeItems, parseCsv, itemSort,
     MOVE_LABELS, applyMovement, movementRows, STOCK_FILTERS, filterItems, isUncounted,
-    unitText, qtyWithUnit, isFeminineUnit, remainingText
+    unitText, qtyWithUnit, isFeminineUnit, remainingText, sectionSheet, shortDate
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   else root.Core = Core;

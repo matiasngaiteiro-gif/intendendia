@@ -77,7 +77,10 @@
   // sheet = {name, title, columns: [{header, width}], rows: [[texto…]]}
   function sheetXml(sheet) {
     const last = colName(sheet.columns.length - 1);
-    const cell = (ref, value, style) => `<c r="${ref}" t="inlineStr" s="${style}"><is><t xml:space="preserve">${xml(value)}</t></is></c>`;
+    // Los números se guardan como números (para poder sumar en Excel); lo demás como texto.
+    const cell = (ref, value, style) => typeof value === 'number' && Number.isFinite(value)
+      ? `<c r="${ref}" s="${style === 3 ? 4 : style}"><v>${value}</v></c>`
+      : `<c r="${ref}" t="inlineStr" s="${style}"><is><t xml:space="preserve">${xml(value)}</t></is></c>`;
     const rows = [
       `<row r="1" ht="22" customHeight="1">${cell('A1', sheet.title, 1)}</row>`,
       `<row r="3">${sheet.columns.map((c, i) => cell(colName(i) + 3, c.header, 2)).join('')}</row>`,
@@ -97,18 +100,19 @@ ${sheet.rows.length ? `<autoFilter ref="A3:${last}${lastRow}"/>` : ''}
 </worksheet>`;
   }
 
-  // Estilos: 0 normal, 1 título, 2 encabezado de columna, 3 celda con ajuste de texto. Todo en Arial, blanco y negro.
+  // Estilos: 0 normal, 1 título, 2 encabezado de columna, 3 celda con ajuste de texto, 4 número centrado. Todo en Arial, blanco y negro.
   const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
 <fonts count="3"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font><font><b/><sz val="13"/><name val="Arial"/></font></fonts>
 <fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
 <borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="4">
+<cellXfs count="5">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
 <xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
 <xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
 <xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>
 </cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
