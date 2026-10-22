@@ -1,215 +1,761 @@
-const STORE = 'intendencia-ordenes-v1';
-const BUILDINGS = ['Diagonal Roque Sáenz Peña 1211','Av. Callao 635','Montevideo 546'];
-const STATUSES = ['Pendiente','En proceso','Faltan insumos','Resuelto','Sin asignar'];
-const PRIORITIES = ['Urgente','Alta','Media','Baja'];
-const CATEGORIES = ['Mantenimiento general','Electricidad','Sanitarios','Pintura','Carpintería','Aire acondicionado','Ascensores','Limpieza','Movimiento interno','Seguridad','Albañilería','Tapicería','Administrativo'];
-const SPECIALTIES = ['Carpintería','Aires Acondicionados','Albañilería','Ayudante','Electricidad','Plomería','Tapicería','Pintura','Administrativo'];
-const CATEGORY_SPECIALTY = {'Carpintería':'Carpintería','Aire acondicionado':'Aires Acondicionados','Mantenimiento general':'Ayudante','Electricidad':'Electricidad','Sanitarios':'Plomería','Pintura':'Pintura','Movimiento interno':'Ayudante','Limpieza':'Ayudante','Ascensores':'Electricidad','Seguridad':'Electricidad','Albañilería':'Albañilería','Tapicería':'Tapicería','Administrativo':'Administrativo'};
-const SERVICE_TYPES = ['Caldera','Tanques','Fumigación','Limpieza','Aires acondicionados','Ascensores','Hidrantes','Matafuegos','Detección de incendios','Otro'];
-const CLAIM_REASONS = {
-  'Caldera':['Falta de calefacción','Pérdida de agua','Ruidos o funcionamiento irregular','Mantenimiento pendiente'],
-  'Tanques':['Falta de agua','Pérdida o filtración','Limpieza pendiente','Problema de presión'],
-  'Fumigación':['Presencia de plagas','Servicio programado no realizado','Sector omitido','Reiteración del tratamiento'],
-  'Limpieza':['Falta de limpieza','Insumos faltantes','Sector omitido','Servicio incompleto'],
-  'Aires acondicionados':['Equipo no enciende','No funciona en frío','No funciona en calor','Pérdida de agua','Mantenimiento o filtros'],
-  'Ascensores':['Ascensor fuera de servicio','Puertas no cierran','Indicador de piso defectuoso','Ruidos o movimientos anormales','Rescate o persona encerrada'],
-  'Hidrantes':['Mantenimiento pendiente','Pérdida de agua','Manguera o accesorio deteriorado','Control de presión pendiente'],
-  'Matafuegos':['Recarga o control pendiente','Vencimiento de equipos','Equipo faltante','Precinto o manómetro defectuoso'],
-  'Detección de incendios':['Avisos de falla en central','Detector fuera de servicio','Mantenimiento pendiente','Falla de señalización'],
-  'Otro':['Servicio no prestado','Falla o funcionamiento deficiente','Mantenimiento pendiente','Incumplimiento del servicio']
-};
-const DEPENDENCIES = [
-  ...Array.from({length:31},(_,i)=>`Juzgado Nacional de Primera Instancia en lo Comercial N.º ${i+1}`),
-  ...['A','B','C','D','E','F'].map(x=>`Sala ${x}`),
-  'Mesa de entradas','Portería','Jurisprudencia','Secretaría General','Habilitación','Superintendencia','Auxiliares de Justicia','Biblioteca','Intendencia','Otra dependencia'
-];
-const TEMPLATES = [
-  {name:'Cambio de tubo de luz',category:'Electricidad',description:'Retirar el tubo agotado, verificar artefacto y reemplazar por uno operativo.'},
-  {name:'Reparación o cambio de enchufe',category:'Electricidad',description:'Revisar el tomacorriente, ajustar conexiones y reemplazarlo si corresponde.'},
-  {name:'Pérdida en canilla',category:'Sanitarios',description:'Revisar canilla, flexibles y cierre; reparar la pérdida y comprobar funcionamiento.'},
-  {name:'Destapar desagote',category:'Sanitarios',description:'Desobstruir el desagote y verificar el escurrimiento correcto.'},
-  {name:'Cambio de cerradura',category:'Carpintería',description:'Revisar y reemplazar cerradura; comprobar apertura y cierre.'},
-  {name:'Ajuste de puerta',category:'Carpintería',description:'Alinear puerta, ajustar herrajes y comprobar cierre.'},
-  {name:'Retoque de pintura',category:'Pintura',description:'Preparar la superficie y realizar retoque de pintura en el sector indicado.'},
-  {name:'Revisión de aire acondicionado',category:'Aire acondicionado',description:'Verificar encendido, temperatura, filtros y desagote del equipo.'},
-  {name:'Movimiento de mobiliario',category:'Movimiento interno',description:'Trasladar y ubicar el mobiliario según las indicaciones de la dependencia.'},
-  {name:'Limpieza extraordinaria',category:'Limpieza',description:'Realizar limpieza puntual y retirar residuos del sector.'},
-  ...[
-    ['Cambio de lámpara LED','Electricidad'],['Cambio de interruptor','Electricidad'],['Revisión de artefacto de iluminación','Electricidad'],['Revisión de luz de emergencia','Electricidad'],['Reparación de timbre','Electricidad'],
-    ['Cambio de flexible','Sanitarios'],['Reparación de descarga de inodoro','Sanitarios'],['Cambio de grifería','Sanitarios'],['Reparación de sifón','Sanitarios'],['Revisión de pérdida de agua','Sanitarios'],
-    ['Ajuste de bisagras','Carpintería'],['Cambio de picaporte','Carpintería'],['Reparación de cajón','Carpintería'],['Reparación de escritorio','Carpintería'],['Colocación de estante','Carpintería'],
-    ['Reparación de revoque','Albañilería'],['Reposición de baldosa','Albañilería'],['Sellado de filtración','Albañilería'],['Pintura de pared','Pintura'],['Pintura de puerta','Pintura'],
-    ['Limpieza de filtros de aire','Aire acondicionado'],['Revisión de desagote de aire','Aire acondicionado'],['Reparación de silla','Tapicería'],['Retapizado de asiento','Tapicería'],
-    ['Retiro de materiales','Movimiento interno'],['Colocación de cartelería','Mantenimiento general'],['Control de inventario','Administrativo'],['Carga de documentación','Administrativo'],['Seguimiento de proveedor','Administrativo'],['Preparación de pedido de insumos','Administrativo'],
-    ['Coordinar visita del servicio de ascensores','Ascensores'],['Registrar falla de ascensor','Ascensores'],['Control de señalización de evacuación','Seguridad'],['Coordinar revisión del sistema de incendio','Seguridad']
-  ].map(([name,category])=>({name,category,description:''}))
-];
-const seed = {people:[
-  {id:'p1',name:'Carlos Benítez',role:'Ayudante',building:BUILDINGS[0]},
-  {id:'p2',name:'Mariano Ferrante',role:'Ayudante',building:BUILDINGS[1]},
-  {id:'p3',name:'Damián Morán',role:'Ayudante',building:BUILDINGS[2]},
-  {id:'p4',name:'Laura Gómez',role:'Electricidad',building:BUILDINGS[0]},
-  {id:'p5',name:'Diego Rodríguez',role:'Carpintería',building:BUILDINGS[1]},
-  {id:'p6',name:'Javier Acosta',role:'Plomería',building:BUILDINGS[2]}
-],tools:[
-  {id:'H-0001',name:'Taladro percutor',type:'Herramienta eléctrica',brand:'Bosch',model:'GSB 13 RE',serial:'INV-001',toolStatus:'Entregada',holder:'p1',assignedDate:days(-12),notes:'Incluye mechas y maletín.',updatedAt:new Date().toISOString()},
-  {id:'H-0002',name:'Multímetro digital',type:'Instrumento de medición',brand:'Uni-T',model:'UT33D+',serial:'INV-002',toolStatus:'Disponible',holder:'',assignedDate:'',notes:'',updatedAt:new Date().toISOString()}
-],services:[
-  {id:'S-0001',building:BUILDINGS[0],serviceType:'Ascensores',provider:'Prestador a completar',endDate:days(90),contactName:'',phone:'',email:'',notes:'',updatedAt:new Date().toISOString()}
-],contacts:typeof OFFICIAL_CONTACTS==='undefined'?[]:structuredClone(OFFICIAL_CONTACTS),orders:[
-  {id:'OT-0001',title:'Reparar pérdida de aire acondicionado',building:BUILDINGS[0],location:'9.º piso, oficina 914',category:'Aire acondicionado',specialty:'Aires Acondicionados',priority:'Alta',status:'En proceso',assignee:'p1',dueDate:days(1),description:'Revisar desagote y pérdida de agua.',createdAt:days(-3),updatedAt:new Date().toISOString()},
-  {id:'OT-0002',title:'Revisar ascensor N.º 1',building:BUILDINGS[1],location:'Hall central',category:'Ascensores',specialty:'Electricidad',priority:'Urgente',status:'Pendiente',assignee:'',dueDate:days(-1),description:'Equipo fuera de servicio.',createdAt:days(-2),updatedAt:days(-1)},
-  {id:'OT-0003',title:'Limpiar batea de desagote',building:BUILDINGS[0],location:'Portería',category:'Aire acondicionado',specialty:'Aires Acondicionados',priority:'Media',status:'Resuelto',assignee:'p1',dueDate:days(-1),description:'Batea sucia y obstruida.',createdAt:days(-5),updatedAt:days(-1)},
-  {id:'OT-0004',title:'Verificar avisos del sistema SECURITON',building:BUILDINGS[2],location:'Central de incendio',category:'Seguridad',specialty:'Electricidad',priority:'Alta',status:'Sin asignar',assignee:'',dueDate:days(2),description:'Avisos recurrentes FALLA ELEM NO OK.',createdAt:days(-1),updatedAt:days(-1)}
-]};
-function days(offset){const d=new Date();d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10)}
-let state=structuredClone(seed);
-let currentMessageOrderId='';
-let appStarted=false, saveQueue=Promise.resolve(), lastRemoteUpdate='', remoteRevision=0, savePending=0;
-function normalizeState(input){const value=input&&typeof input==='object'?input:{};value.people=Array.isArray(value.people)?value.people:[];value.orders=Array.isArray(value.orders)?value.orders:[];value.tools=Array.isArray(value.tools)?value.tools:[];value.services=Array.isArray(value.services)?value.services:[];value.contacts=Array.isArray(value.contacts)?value.contacts:[];const roleMap={'Mantenimiento general':'Ayudante','Servicios y traslados':'Ayudante','Patrimonio':'Carpintería','Sanitarios':'Plomería','Aire acondicionado':'Aires Acondicionados'};value.people.forEach(p=>{p.role=roleMap[p.role]||p.role;if(!SPECIALTIES.includes(p.role))p.role='Ayudante'});value.orders.forEach(o=>{if(!SPECIALTIES.includes(o.specialty))o.specialty=value.people.find(p=>p.id===o.assignee)?.role||CATEGORY_SPECIALTY[o.category]||'Ayudante'});return value}
-function loadLegacy(){try{return normalizeState(JSON.parse(localStorage.getItem(STORE))||structuredClone(seed))}catch{return structuredClone(seed)}}
-function save(){renderAll();const snapshot=structuredClone(state);savePending++;saveQueue=saveQueue.then(async()=>{const row=await db.saveState(snapshot,remoteRevision);lastRemoteUpdate=row?.updated_at||lastRemoteUpdate;remoteRevision=Number(row?.revision||remoteRevision)}).catch(async error=>{if(/REVISION_CONFLICT/.test(error.message)){const latest=await db.getState();if(latest){state=normalizeState(latest.data);lastRemoteUpdate=latest.updated_at;remoteRevision=Number(latest.revision||0);renderAll()}toast('Otro usuario modificó la información. Se cargó la versión más reciente.')}else toast(`No se guardó: ${error.message}`)}).finally(()=>savePending--);return saveQueue}
-const $=s=>document.querySelector(s);
-const slug=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-');
-const fmt=d=>d?new Intl.DateTimeFormat('es-AR',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(d+'T12:00:00')):'Sin fecha';
-const person=id=>state.people.find(p=>p.id===id);
-const overdue=o=>o.status!=='Resuelto'&&o.dueDate&&o.dueDate<days(0);
-function fillSelect(el,items,empty){el.innerHTML=(empty?`<option value="">${empty}</option>`:'')+items.map(x=>`<option value="${x}">${x}</option>`).join('')}
-function init(){
-  const defaultsAdded=ensureDefaultServices(state);
-  initModules();
-  initSupplies();
-  document.querySelectorAll('.nav-item').forEach(b=>b.onclick=()=>showView(b.dataset.view));
-  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>showView(b.dataset.go));
-  $('#exportBackupBtn').onclick=exportBackup;$('#importBackupBtn').onclick=()=>$('#importBackupFile').click();$('#importBackupFile').onchange=importBackup;
-  $('#newOrderBtn').onclick=()=>openOrder(); $('#newPersonBtn').onclick=()=>openPerson();
-  $('#newToolBtn').onclick=()=>openTool();
-  $('#newServiceBtn').onclick=()=>openService(); $('#newContactBtn').onclick=()=>openContact(); $('#importContactsBtn').onclick=importOfficialContacts;
-  document.querySelectorAll('.close-modal').forEach(b=>b.onclick=()=>$('#orderDialog').close());
-  document.querySelectorAll('.close-person').forEach(b=>b.onclick=()=>$('#personDialog').close());
-  document.querySelectorAll('.close-message').forEach(b=>b.onclick=()=>$('#messageDialog').close());
-  document.querySelectorAll('.close-tool').forEach(b=>b.onclick=()=>$('#toolDialog').close());
-  document.querySelectorAll('.close-service').forEach(b=>b.onclick=()=>$('#serviceDialog').close());
-  document.querySelectorAll('.close-claim').forEach(b=>b.onclick=()=>$('#claimDialog').close());
-  document.querySelectorAll('.close-contact').forEach(b=>b.onclick=()=>$('#contactDialog').close());
-  $('#orderForm').onsubmit=submitOrder; $('#personForm').onsubmit=submitPerson;
-  $('#deleteOrderBtn').onclick=deleteCurrentOrder; $('#finishOrderBtn').onclick=finishCurrentOrder;
-  $('#toolForm').onsubmit=submitTool; $('#deleteToolBtn').onclick=deleteCurrentTool; $('#returnToolBtn').onclick=returnCurrentTool;
-  $('#serviceForm').onsubmit=submitService; $('#deleteServiceBtn').onclick=deleteCurrentService;
-  $('#contactForm').onsubmit=submitContact; $('#deleteContactBtn').onclick=deleteCurrentContact;
-  ['searchInput','statusFilter','buildingFilter','specialtyFilter'].forEach(id=>$('#'+id).addEventListener('input',renderOrders));
-  ['toolSearch','toolStatusFilter'].forEach(id=>$('#'+id).addEventListener('input',renderTools));
-  $('#contactSearch').addEventListener('input',renderContacts);
-  fillSelect($('#statusFilter'),STATUSES,'Todos los estados'); fillSelect($('#buildingFilter'),BUILDINGS,'Todos los edificios');
-  fillSelect($('#orderForm [name=building]'),BUILDINGS); fillSelect($('#orderForm [name=priority]'),PRIORITIES); fillSelect($('#orderForm [name=status]'),STATUSES);
-  fillSelect($('#personForm [name=building]'),BUILDINGS); renderAll();
-  fillSelect($('#personForm [name=role]'),SPECIALTIES); fillSelect($('#specialtyFilter'),SPECIALTIES,'Todas las especialidades');
-  fillSelect($('#serviceForm [name=building]'),BUILDINGS); fillSelect($('#serviceForm [name=serviceType]'),SERVICE_TYPES);
-  fillSelect($('#contactForm [name=building]'),BUILDINGS,'Todos / sin edificio específico');
-  $('#orderForm [name=building]').onchange=()=>refreshDependencies();
-  refreshDependencies();
-  fillSelect($('#orderForm [name=specialty]'),SPECIALTIES,'Seleccionar especialidad');
-  $('#orderForm [name=specialty]').onchange=()=>refreshTaskOptions();
-  refreshTaskOptions();
-  $('#orderForm [name=template]').onchange=applyTemplate;
-  $('#copyMessageBtn').onclick=copyMessage;
-  $('#printOrderBtn').onclick=printCurrentOrder;
-  $('#generateClaimBtn').onclick=generateClaimEmail; $('#copyClaimBtn').onclick=copyClaimEmail;
-  $('#claimForm [name=reason]').onchange=generateClaimEmail; $('#claimForm [name=location]').oninput=generateClaimEmail; $('#claimForm [name=detail]').oninput=generateClaimEmail;
-  $('#toolForm [name=holder]').onchange=e=>{const f=$('#toolForm');if(e.target.value){f.elements.toolStatus.value='Entregada';if(!f.elements.assignedDate.value)f.elements.assignedDate.value=days(0)}else if(f.elements.toolStatus.value==='Entregada'){f.elements.toolStatus.value='Disponible';f.elements.assignedDate.value=''}};
-  if(defaultsAdded)save();
-}
-function showView(name){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));$('#'+name+'View').classList.add('active');document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));$('#pageTitle').textContent={dashboard:'Panel general',orders:'Órdenes de trabajo',people:'Personal',tools:'Herramientas',services:'Servicios',contacts:'Contactos de utilidad',works:'Obras',guides:'Guías',reminders:'Recordatorios',supplies:'Insumos'}[name]}
-function renderAll(){renderMetrics();renderBuildings();renderPriority();renderRecent();renderOrders();renderPeople();renderTools();renderServices();renderContacts();fillAssignees();fillToolHolders();renderModules();renderSupplies()}
-function renderMetrics(){const vals=[['Pendientes',state.orders.filter(o=>o.status==='Pendiente').length,'#d78a25'],['En proceso',state.orders.filter(o=>o.status==='En proceso').length,'#3157d5'],['Resueltos',state.orders.filter(o=>o.status==='Resuelto').length,'#16805b'],['Sin asignar',state.orders.filter(o=>!o.assignee||o.status==='Sin asignar').length,'#7650aa'],['Demorados',state.orders.filter(overdue).length,'#c64040']];$('#metrics').innerHTML=vals.map(v=>`<article class="metric"><div class="metric-top"><span>${v[0]}</span><span class="dot" style="background:${v[2]}"></span></div><b>${v[1]}</b></article>`).join('')}
-function renderBuildings(){const max=Math.max(1,...BUILDINGS.map(b=>state.orders.filter(o=>o.building===b).length));$('#buildingSummary').innerHTML=BUILDINGS.map(b=>{const all=state.orders.filter(o=>o.building===b),active=all.filter(o=>o.status!=='Resuelto').length;return `<div class="building-row"><div><strong>${b}</strong><small>${active} activas · ${all.length-active} resueltas</small></div><div class="bar"><span style="width:${all.length/max*100}%"></span></div><b>${all.length}</b></div>`}).join('')}
-function renderPriority(){const list=state.orders.filter(o=>o.priority==='Urgente'||overdue(o)||!o.assignee).slice(0,4);$('#priorityList').innerHTML=list.length?list.map(o=>`<div class="priority-card" data-open="${esc(o.id)}"><span class="badge priority-${slug(o.priority)}">${overdue(o)?'Demorada':esc(o.priority)}</span><div><strong>${esc(o.title)}</strong><small>${esc(o.building)} · ${esc(person(o.assignee)?.name||'Sin asignar')}</small></div></div>`).join(''):'<div class="empty">No hay órdenes prioritarias.</div>';bindOpen()}
-function renderRecent(){const list=[...state.orders].sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0,5);$('#recentOrders').innerHTML=table(list);bindOpen()}
-function renderOrders(){const normalize=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();const q=normalize($('#searchInput').value),status=$('#statusFilter').value,building=$('#buildingFilter').value,specialty=$('#specialtyFilter').value;const list=state.orders.filter(o=>(!status||o.status===status)&&(!building||o.building===building)&&(!specialty||o.specialty===specialty)&&normalize([o.id,o.title,o.description,o.dependency,o.building,o.category,o.location,person(o.assignee)?.name,o.specialty].join(' ')).includes(q)).sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));$('#ordersCount').textContent=`${list.length} resultado${list.length===1?'':'s'}`;$('#ordersTable').innerHTML=table(list);bindOpen()}
-function table(list){if(!list.length)return '<div class="empty">No se encontraron órdenes.</div>';return `<div class="table-wrap"><table><thead><tr><th>Orden</th><th>Trabajo</th><th>Especialidad</th><th>Edificio</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th class="order-date-cell">Hasta</th></tr></thead><tbody>${list.map(o=>`<tr data-id="${esc(o.id)}"><td><strong>${esc(o.id)}</strong><small class="order-created">Fecha: ${esc(formatCreatedAt(o.createdAt))}</small></td><td><strong>${esc(o.title)}</strong><small>${esc(o.dependency||'Dependencia sin especificar')} · ${esc(o.location)}</small></td><td>${esc(o.specialty||'Ayudante')}</td><td>${esc(o.building)}</td><td>${esc(person(o.assignee)?.name||'Sin asignar')}</td><td><span class="badge priority-${slug(o.priority)}">${esc(o.priority)}</span></td><td><span class="badge status-${slug(o.status)}">${esc(o.status)}</span></td><td class="order-date-cell"><span class="order-date">${esc(o.dueDate?formatServiceDate(o.dueDate):'Sin fecha')}</span>${overdue(o)?'<br><small class="expiry-soon">Demorada</small>':''}</td></tr>`).join('')}</tbody></table></div>`}
-function renderPeople(){$('#peopleGrid').innerHTML=state.people.map(p=>{const active=state.orders.filter(o=>o.assignee===p.id&&o.status!=='Resuelto').length;const initials=p.name.split(' ').slice(0,2).map(x=>x[0]).join('');return `<article class="person-card"><div class="avatar">${esc(initials)}</div><div class="person-info"><strong>${esc(p.name)}</strong><small>${esc(p.role)}</small><small>${esc(p.building)}</small>${p.phone?`<small class="phone">WhatsApp: ${esc(p.phone)}</small>`:''}<span class="badge status-en-proceso" style="margin-top:9px">${active} tarea${active===1?'':'s'} activa${active===1?'':'s'}</span></div><div class="person-actions"><button class="secondary" data-edit-person="${esc(p.id)}">Editar</button><button class="delete-person" data-delete-person="${esc(p.id)}" title="Eliminar empleado">Eliminar</button></div></article>`}).join('');document.querySelectorAll('[data-edit-person]').forEach(b=>b.onclick=()=>openPerson(b.dataset.editPerson));document.querySelectorAll('[data-delete-person]').forEach(b=>b.onclick=()=>deletePerson(b.dataset.deletePerson))}
-function fillPeopleSelect(s,empty){const value=s.value;s.replaceChildren();const first=document.createElement('option');first.value='';first.textContent=empty;s.append(first);state.people.forEach(p=>{const option=document.createElement('option');option.value=p.id;option.textContent=`${p.name} — ${p.role}`;s.append(option)});s.value=value}
-function fillAssignees(){fillPeopleSelect($('#orderForm [name=assignee]'),'Sin asignar')}
-function fillToolHolders(){fillPeopleSelect($('#toolForm [name=holder]'),'Sin entregar')}
-function toggleCustomTask(){const f=$('#orderForm'),custom=f.elements.template.value==='Otra tarea';$('#customTaskLabel').hidden=!custom;f.elements.customTask.required=custom;f.elements.customTask.disabled=!custom}
-function tasksForSpecialty(specialty){return TEMPLATES.filter(t=>(t.specialty||CATEGORY_SPECIALTY[t.category])===specialty)}
-function refreshTaskOptions(title=''){const f=$('#orderForm'),specialty=f.elements.specialty.value,select=f.elements.template;fillSelect(select,specialty?[...tasksForSpecialty(specialty).map(t=>t.name),'Otra tarea']:[],specialty?'Seleccionar tarea':'Elegí primero una especialidad');select.value='';select.disabled=!specialty;if(title){select.value=tasksForSpecialty(specialty).some(t=>t.name===title)?title:'Otra tarea';f.elements.customTask.value=title}toggleCustomTask()}
-function buildingForAddress(address){const s=String(address||'');if(/(?:Roque|Diagonal).*1211/i.test(s))return BUILDINGS[0];if(/Callao\s+635/i.test(s))return BUILDINGS[1];if(/Montevideo\s+546/i.test(s))return BUILDINGS[2];return ''}
-function dependenciesForBuilding(building){if(!BUILDINGS.includes(building))return [];const catalog=typeof OFFICIAL_CONTACTS==='undefined'?[]:OFFICIAL_CONTACTS;const list=catalog.filter(c=>buildingForAddress(c.building)===building).map(c=>/^PJN-COM-J\d+$/.test(c.id)?`Juzgado N.º ${c.id.match(/\d+$/)[0]}`:c.id.startsWith('PJN-COM-SALA-')?`Sala ${c.id.slice(-1)}`:c.id==='PJN-COM-MESA-DIAGONAL'?null:c.id==='PJN-COM-AUXILIARES'?'Auxiliares de Justicia':c.name).filter(Boolean);return [...new Set([...list,'Portería','Otra dependencia'])]}
-function canonicalDependency(value){return shortDependency(value)}
-function refreshDependencies(previous=''){const f=$('#orderForm'),select=f.elements.dependency,list=dependenciesForBuilding(f.elements.building.value),value=canonicalDependency(previous);fillSelect(select,list,'Seleccionar dependencia');select.value='';select.disabled=!BUILDINGS.includes(f.elements.building.value);$('#dependencyWarning').hidden=true;if(value){if(!list.includes(value)){const option=document.createElement('option');option.value=value;option.textContent=`${value} (ubicación anterior: revisar)`;select.append(option);$('#dependencyWarning').hidden=false}select.value=value}}
-function openOrder(id){const f=$('#orderForm');f.reset();fillAssignees();f.elements.id.value='';f.elements.specialty.value='';f.elements.status.value='Pendiente';f.elements.priority.value='Media';$('#orderModalTitle').textContent='Nueva orden';$('#deleteOrderBtn').style.display='none';$('#finishOrderBtn').style.display='none';let title='',dependency='';if(id){const o=state.orders.find(x=>x.id===id);if(!o)return;Object.entries(o).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});f.elements.specialty.value=SPECIALTIES.includes(o.specialty)?o.specialty:orderSpecialty(o);title=o.title||'';dependency=o.dependency||'';$('#orderModalTitle').textContent=`Editar ${o.id}`;$('#deleteOrderBtn').style.display='inline-block';$('#finishOrderBtn').style.display=o.status==='Resuelto'?'none':'inline-block'}$('#orderCreatedAt').textContent=id?'Creada: '+formatCreatedAt(state.orders.find(o=>o.id===id)?.createdAt):'La fecha y hora se registran automáticamente al guardar.';refreshTaskOptions(title);refreshDependencies(dependency);$('#orderDialog').showModal()}
-function orderSpecialty(data){return SPECIALTIES.includes(data.specialty)?data.specialty:CATEGORY_SPECIALTY[data.category]||person(data.assignee)?.role||'Ayudante'}
-function submitOrder(e){
-  e.preventDefault();
-  const data=Object.fromEntries(new FormData(e.target)),now=new Date().toISOString();
-  if(!SPECIALTIES.includes(data.specialty)){toast('Seleccioná una especialidad');return}
-  if(data.template!=='Otra tarea'&&!tasksForSpecialty(data.specialty).some(t=>t.name===data.template)){toast('Seleccioná una tarea de esa especialidad');return}
-  const previous=state.orders.find(o=>o.id===data.id),legacyMatch=previous&&previous.building===data.building&&canonicalDependency(previous.dependency)===data.dependency;
-  if(!dependenciesForBuilding(data.building).includes(data.dependency)&&!legacyMatch){toast('Elegí una dependencia del edificio seleccionado');return}
-  data.title=data.template==='Otra tarea'?(data.customTask||'').trim():data.template;
-  if(!data.title){toast('Seleccioná una tarea');return}
-  data.specialty=orderSpecialty(data);
-  data.category=TEMPLATES.find(t=>t.name===data.template)?.category||Object.keys(CATEGORY_SPECIALTY).find(c=>CATEGORY_SPECIALTY[c]===data.specialty)||'Mantenimiento general';
-  delete data.template;delete data.customTask;delete data.taskSpecialty;
-  if(data.id){const i=state.orders.findIndex(o=>o.id===data.id);state.orders[i]={...state.orders[i],...data,updatedAt:now}}
-  else{const n=Math.max(0,...state.orders.map(o=>Number(o.id.split('-')[1])))+1;data.id=`OT-${String(n).padStart(4,'0')}`;data.createdAt=now;data.updatedAt=now;state.orders.push(data)}
-  save();$('#orderDialog').close();showAssignmentMessage(state.orders.find(o=>o.id===data.id));toast('Orden guardada correctamente');
-}
-function openPerson(id){const f=$('#personForm');f.reset();f.elements.id.value='';$('#personModalTitle').textContent=id?'Editar empleado':'Agregar empleado';$('#savePersonBtn').textContent=id?'Guardar cambios':'Agregar';if(id){const p=person(id);if(!p)return;Object.entries(p).forEach(([key,value])=>{if(f.elements[key])f.elements[key].value=value})}$('#personDialog').showModal()}
-function updatePerson(data){const now=new Date().toISOString();if(data.id){const i=state.people.findIndex(p=>p.id===data.id);if(i<0)return false;state.people[i]={...state.people[i],...data,updatedAt:now}}else state.people.push({...data,id:'p'+crypto.randomUUID(),createdAt:now,updatedAt:now});return true}
-function submitPerson(e){e.preventDefault();const data=Object.fromEntries(new FormData(e.target)),editing=Boolean(data.id);if(!updatePerson(data)){toast('No se encontró el empleado');return}save();e.target.reset();$('#personDialog').close();toast(editing?'Empleado actualizado':'Empleado agregado')}
-function formatCreatedAt(value){if(!value)return 'Creación no registrada';if(/^\d{4}-\d{2}-\d{2}$/.test(value))return formatServiceDate(value)+' · hora no registrada';const date=new Date(value);return Number.isNaN(date.getTime())?'Creación no registrada':new Intl.DateTimeFormat('es-AR',{timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(date)+' (Argentina)'}
-function defaultServicesForBuilding(building){const list=['Limpieza','Tanques','Caldera','Fumigación','Ascensores','Hidrantes','Matafuegos'];return list.filter(type=>!(building===BUILDINGS[2]&&type==='Caldera')&&!(building===BUILDINGS[1]&&type==='Hidrantes')).concat(building===BUILDINGS[2]?['Detección de incendios']:[])}
-function ensureDefaultServices(workspace){if(workspace.defaultServicesVersion>=1)return false;workspace.services=Array.isArray(workspace.services)?workspace.services:[];let next=Math.max(0,...workspace.services.map(s=>Number(/^S-(\d+)$/.exec(s.id)?.[1]||0)))+1;const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();for(const building of BUILDINGS)for(const serviceType of defaultServicesForBuilding(building)){if(workspace.services.some(s=>s.building===building&&norm(s.serviceType)===norm(serviceType)))continue;const now=new Date().toISOString();workspace.services.push({id:`S-${String(next++).padStart(4,'0')}`,building,serviceType,provider:'',endDate:'',contactName:'',phone:'',email:'',notes:'',createdAt:now,updatedAt:now})}workspace.defaultServicesVersion=1;return true}
-function deletePerson(id){const p=person(id);if(!p||!confirm(`Eliminar a ${p.name}? Sus órdenes y herramientas quedarán sin asignar.`))return;state.orders.forEach(o=>{if(o.assignee===id){o.assignee='';o.status=o.status==='Resuelto'?'Resuelto':'Sin asignar';o.updatedAt=new Date().toISOString()}});state.tools.forEach(t=>{if(t.holder===id){t.holder='';t.assignedDate='';t.toolStatus='Disponible';t.updatedAt=new Date().toISOString()}});state.people=state.people.filter(x=>x.id!==id);save();toast('Empleado eliminado')}
-function applyTemplate(e){toggleCustomTask();const f=$('#orderForm'),t=tasksForSpecialty(f.elements.specialty.value).find(x=>x.name===e.target.value);if(!t)return;f.elements.description.value=t.description}
-function finishCurrentOrder(){const id=$('#orderForm [name=id]').value,o=state.orders.find(x=>x.id===id);if(!o||!confirm(`Marcar ${o.id} como finalizada?`))return;o.status='Resuelto';o.completedAt=new Date().toISOString();o.updatedAt=o.completedAt;save();$('#orderDialog').close();toast('Orden finalizada')}
-function deleteCurrentOrder(){const id=$('#orderForm [name=id]').value,o=state.orders.find(x=>x.id===id);if(!o||!confirm(`Eliminar definitivamente la orden ${o.id}?`))return;state.orders=state.orders.filter(x=>x.id!==id);save();$('#orderDialog').close();toast('Orden eliminada')}
-function shortDependency(value){const text=String(value||''),match=text.match(/juzgado.*?(?:N\.?\s*[.º°]*\s*|número\s*)(\d+)/i)||text.match(/juzgado\s+(\d+)/i);return match?`Juzgado N.º ${match[1]}`:text}
-function assignmentText(o){
-  const first=(person(o.assignee)?.name||'').trim().split(/\s+/)[0];
-  const building=String(o.building||'').replace('Diagonal Roque Sáenz Peña','Diagonal').replace('Av. Callao','Callao');
-  const place=[building,shortDependency(o.dependency),o.location].filter(Boolean).join(', ');
-  const task=String(o.title||'esta tarea').replace(/^./,c=>c.toLowerCase());
-  return [`Hola${first?' '+first:''}, podés encargarte de ${task}?`,place?`${place}.`:'',o.priority==='Urgente'?'Darle prioridad.':'','Avisame cuando esté listo. Gracias!'].filter(Boolean).join('\n').replace(/[¿¡]/g,'');
-}
-function showAssignmentMessage(o){currentMessageOrderId=o.id;$('#messageCreatedAt').textContent='Creada: '+formatCreatedAt(o.createdAt);const msg=assignmentText(o),p=person(o.assignee),phone=(p?.phone||'').replace(/\D/g,''),button=$('#openWhatsappBtn');$('#whatsappMessage').value=msg;button.href=o.assignee?`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`:'#';button.classList.toggle('disabled',!o.assignee);button.setAttribute('aria-disabled',String(!o.assignee));$('#messageDialog').showModal()}
-async function copyMessage(){await navigator.clipboard.writeText($('#whatsappMessage').value);toast('Mensaje copiado')}
-function esc(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
-function printCurrentOrder(){const o=state.orders.find(x=>x.id===currentMessageOrderId);if(!o)return;const p=person(o.assignee),sheet=$('#printSheet');sheet.innerHTML=`<div class="print-header"><div><h1>ORDEN DE TRABAJO</h1><p>Intendencia — Cámara Nacional de Apelaciones en lo Comercial</p></div><div><span class="print-label">Número</span><strong>${esc(o.id)}</strong><br>Emitida: ${esc(formatCreatedAt(o.createdAt))}</div></div><div class="print-grid"><div class="print-field"><span class="print-label">Edificio</span><strong>${esc(o.building)}</strong></div><div class="print-field"><span class="print-label">Dependencia</span><strong>${esc(o.dependency||'Sin especificar')}</strong></div><div class="print-field print-wide"><span class="print-label">Sector, oficina o puerta</span><strong>${esc(o.location)}</strong></div><div class="print-field print-wide"><span class="print-label">Trabajo solicitado</span><strong>${esc(o.title)}</strong></div><div class="print-field"><span class="print-label">Especialidad</span><strong>${esc(o.specialty)}</strong></div><div class="print-field"><span class="print-label">Prioridad</span><strong>${esc(o.priority)}</strong></div><div class="print-field"><span class="print-label">Responsable</span><strong>${esc(p?.name||'Sin asignar')}</strong></div><div class="print-field"><span class="print-label">Fecha límite</span><strong>${esc(o.dueDate?formatServiceDate(o.dueDate):'Sin fecha')}</strong></div><div class="print-field print-wide print-description"><span class="print-label">Descripción e indicaciones</span>${esc(o.description||'Sin observaciones adicionales.')}</div></div><div class="print-tracking"><strong>Registro de ejecución</strong><div class="print-lines"><div class="print-line">Fecha y hora de inicio:</div><div class="print-line">Fecha y hora de finalización:</div><div class="print-line">Materiales utilizados:</div><div class="print-line">Observaciones:</div></div></div><div class="print-signatures"><div class="print-signature">Firma del responsable</div><div class="print-signature">Conformidad de la dependencia</div></div>`;window.print()}
-function toolStatusClass(status){return {'Disponible':'tool-available','Entregada':'tool-assigned','En reparación':'tool-repair','Fuera de servicio':'tool-out'}[status]||''}
-function renderTools(){const q=$('#toolSearch')?.value.toLowerCase()||'',filter=$('#toolStatusFilter')?.value||'',tools=state.tools||[];const visible=tools.filter(t=>(!filter||t.toolStatus===filter)&&[t.name,t.type,t.brand,t.model,t.serial,person(t.holder)?.name].join(' ').toLowerCase().includes(q));const counts=['Disponible','Entregada','En reparación','Fuera de servicio'].map(status=>[status,tools.filter(t=>t.toolStatus===status).length,{'Disponible':'#16805b','Entregada':'#3157d5','En reparación':'#bd7115','Fuera de servicio':'#c64040'}[status]]);if($('#toolMetrics'))$('#toolMetrics').innerHTML=counts.map(v=>`<article class="metric"><div class="metric-top"><span>${esc(v[0])}</span><span class="dot" style="background:${v[2]}"></span></div><b>${v[1]}</b></article>`).join('');if($('#toolsCount'))$('#toolsCount').textContent=`${visible.length} herramienta${visible.length===1?'':'s'}`;if(!$('#toolsTable'))return;$('#toolsTable').innerHTML=visible.length?`<div class="table-wrap"><table><thead><tr><th>ID</th><th>Herramienta</th><th>Marca / modelo</th><th>Identificación</th><th>Estado</th><th>Responsable</th><th>Entrega</th></tr></thead><tbody>${visible.map(t=>`<tr data-tool-id="${esc(t.id)}"><td><strong>${esc(t.id)}</strong></td><td><strong>${esc(t.name)}</strong><small>${esc(t.type)}</small></td><td>${esc(t.brand)}<br><small>${esc(t.model)}</small></td><td>${esc(t.serial||'Sin identificar')}</td><td><span class="badge ${toolStatusClass(t.toolStatus)}">${esc(t.toolStatus)}</span></td><td>${esc(person(t.holder)?.name||'—')}</td><td>${esc(fmt(t.assignedDate))}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No se encontraron herramientas.</div>';document.querySelectorAll('[data-tool-id]').forEach(row=>row.onclick=()=>openTool(row.dataset.toolId))}
-function openTool(id){const f=$('#toolForm');f.reset();fillToolHolders();f.elements.id.value='';f.elements.toolStatus.value='Disponible';$('#toolModalTitle').textContent='Cargar herramienta';$('#deleteToolBtn').style.display='none';$('#returnToolBtn').hidden=true;$('#toolReturnHistory').innerHTML='';if(id){const t=state.tools.find(x=>x.id===id);if(!t)return;Object.entries(t).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});$('#toolModalTitle').textContent=`Editar ${t.id}`;$('#deleteToolBtn').style.display='inline-block';$('#returnToolBtn').hidden=!t.holder;$('#toolReturnHistory').innerHTML=(Array.isArray(t.returns)?t.returns:[]).map(r=>`<p>Devuelta el ${esc(fmt(String(r.returnedAt||'').slice(0,10)))} por ${esc(r.holderName||'Empleado anterior')}.</p>`).join('')}$('#toolDialog').showModal()}
-function registerToolReturn(t,now=new Date().toISOString()){if(!t.holder)return false;t.returns=Array.isArray(t.returns)?t.returns:[];t.returns.push({holder:t.holder,holderName:person(t.holder)?.name||'',assignedDate:t.assignedDate||'',returnedAt:now});t.holder='';t.assignedDate='';t.toolStatus='Disponible';t.returnedAt=now;t.updatedAt=now;return true}
-function returnCurrentTool(){const t=state.tools.find(x=>x.id===$('#toolForm [name=id]').value);if(!t?.holder||!confirm(`¿Registrar la devolución de ${t.name}?`))return;registerToolReturn(t);save();$('#toolDialog').close();toast('Devolución registrada. Herramienta disponible')}
-function submitTool(e){e.preventDefault();const data=Object.fromEntries(new FormData(e.target)),now=new Date().toISOString();if(!data.holder&&data.toolStatus==='Entregada')data.toolStatus='Disponible';if(data.holder&&data.toolStatus==='Disponible')data.toolStatus='Entregada';if(!data.holder)data.assignedDate='';if(data.id){const i=state.tools.findIndex(t=>t.id===data.id);state.tools[i]={...state.tools[i],...data,updatedAt:now}}else{const n=Math.max(0,...state.tools.map(t=>Number(t.id.split('-')[1])))+1;data.id=`H-${String(n).padStart(4,'0')}`;data.createdAt=now;data.updatedAt=now;state.tools.push(data)}save();$('#toolDialog').close();toast('Herramienta guardada')}
-function deleteCurrentTool(){const id=$('#toolForm [name=id]').value,t=state.tools.find(x=>x.id===id);if(!t||!confirm(`Eliminar ${t.name} del inventario?`))return;state.tools=state.tools.filter(x=>x.id!==id);save();$('#toolDialog').close();toast('Herramienta eliminada')}
-function renderServices(){const root=$('#servicesByBuilding');if(!root)return;root.innerHTML=BUILDINGS.map(building=>{const list=state.services.filter(s=>s.building===building);return `<section class="panel building-service-section"><div class="panel-head"><div><h2>${building}</h2><p>${list.length} servicio${list.length===1?'':'s'} cargado${list.length===1?'':'s'}</p></div></div><div class="service-grid">${list.length?list.map(serviceCard).join(''):'<div class="empty">No hay servicios cargados en este edificio.</div>'}</div></section>`}).join('');document.querySelectorAll('[data-edit-service]').forEach(b=>b.onclick=()=>openService(b.dataset.editService));document.querySelectorAll('[data-claim-service]').forEach(b=>b.onclick=()=>openClaim(b.dataset.claimService))}
-function serviceCard(s){const expiring=s.endDate&&s.endDate<=days(30);return `<article class="service-card"><div class="service-card-head"><div><h3>${esc(s.serviceType)}</h3><p>${esc(s.provider||'Empresa pendiente de cargar')}</p></div><span class="badge service-expiry ${expiring?'priority-urgente':'status-resuelto'}">${esc(s.endDate?formatServiceDate(s.endDate):'Sin vencimiento')}</span></div><div class="service-contact"><p><strong>Contacto:</strong> ${esc(s.contactName||'Sin registrar')}</p><p><strong>Teléfono:</strong> ${esc(s.phone||'—')}</p><p><strong>Correo:</strong> ${esc(s.email||'—')}</p>${s.notes?`<p>${esc(s.notes)}</p>`:''}</div><div class="service-actions"><button class="edit-service" data-edit-service="${esc(s.id)}">Editar</button><button class="claim-button" data-claim-service="${esc(s.id)}">Generar reclamo</button></div></article>`}
-function formatServiceDate(value){const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value||''));return match?`${match[3]}/${match[2]}/${match[1]}`:'Sin vencimiento'}
-function openService(id){const f=$('#serviceForm');f.reset();f.elements.id.value='';$('#serviceModalTitle').textContent='Cargar servicio';$('#deleteServiceBtn').style.display='none';if(id){const s=state.services.find(x=>x.id===id);if(s.serviceType&&!SERVICE_TYPES.includes(s.serviceType)){const option=document.createElement('option');option.value=s.serviceType;option.textContent=s.serviceType;f.elements.serviceType.append(option)}Object.entries(s).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});$('#serviceModalTitle').textContent=`Editar ${s.serviceType}`;$('#deleteServiceBtn').style.display='inline-block'}$('#serviceDialog').showModal()}
-function submitService(e){e.preventDefault();const data=Object.fromEntries(new FormData(e.target)),now=new Date().toISOString();if(data.id){const i=state.services.findIndex(s=>s.id===data.id);state.services[i]={...state.services[i],...data,updatedAt:now}}else{const n=Math.max(0,...state.services.map(s=>Number(s.id.split('-')[1])))+1;data.id=`S-${String(n).padStart(4,'0')}`;data.createdAt=now;data.updatedAt=now;state.services.push(data)}save();$('#serviceDialog').close();toast('Servicio guardado')}
-function deleteCurrentService(){const id=$('#serviceForm [name=id]').value,s=state.services.find(x=>x.id===id);if(!s||!confirm(`Eliminar el servicio ${s.serviceType} de ${s.building}?`))return;state.services=state.services.filter(x=>x.id!==id);save();$('#serviceDialog').close();toast('Servicio eliminado')}
-function openClaim(id){const s=state.services.find(x=>x.id===id),f=$('#claimForm');f.reset();f.elements.serviceId.value=id;$('#claimTitle').textContent=`Reclamo — ${s.serviceType}`;fillSelect(f.elements.reason,CLAIM_REASONS[s.serviceType]||CLAIM_REASONS.Otro);generateClaimEmail();$('#claimDialog').showModal()}
-function generateClaimEmail(e){e?.preventDefault();const f=$('#claimForm'),s=state.services.find(x=>x.id===f.elements.serviceId.value);if(!s)return;const reason=f.elements.reason.value||'inconveniente en el servicio',location=f.elements.location.value||'[indicar ubicación]',detail=f.elements.detail.value.trim();$('#claimEmail').value=`Asunto: Solicitud de intervención — ${s.serviceType} — ${s.building}\n\nPor medio del presente, se solicita la intervención de esa empresa a fin de subsanar el siguiente inconveniente relacionado con el servicio de ${s.serviceType.toLowerCase()}: ${reason.toLowerCase()}.\n\nEl inconveniente se presenta en el edificio sito en ${s.building}, específicamente en ${location}.${detail?` Se deja constancia de que ${detail}`:''}\n\nEn virtud de lo expuesto, se requiere arbitrar los medios necesarios para efectuar la correspondiente revisión y reparación a la mayor brevedad posible, informando fecha y horario estimados de concurrencia.\n\nAsimismo, se solicita comunicar el diagnóstico y las tareas realizadas una vez finalizada la intervención.\n\nSin otro particular, saludo atentamente.\n\nIntendencia\nCámara Nacional de Apelaciones en lo Comercial`}
-async function copyClaimEmail(e){e?.preventDefault();await navigator.clipboard.writeText($('#claimEmail').value);toast('Correo copiado')}
-function normalizeContactText(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9@]+/g,' ').trim()}
-function courtNumber(c){return /juzgado.*?(\d+)/i.exec(c.name||'')?.[1]||''}
-function contactMatches(c,q){const query=normalizeContactText(q),numeric=/^(?:juzgados?\s+)?(\d+)$/.exec(query);if(numeric)return courtNumber(c).includes(numeric[1]);const text=normalizeContactText([c.name,c.organization,c.role,c.building,c.phone,c.email,c.notes].join(' '));return query.split(/\s+/).filter(Boolean).every(word=>text.includes(word))}
-function searchContacts(contacts,q){const query=normalizeContactText(q),numeric=/^(?:juzgados?\s+)?(\d+)$/.exec(query);const score=c=>numeric?(courtNumber(c).startsWith(numeric[1])?0:1):(normalizeContactText(c.name).startsWith(query)?0:1);return contacts.filter(c=>contactMatches(c,q)).sort((a,b)=>score(a)-score(b)||(numeric?Number(courtNumber(a))-Number(courtNumber(b)):String(a.name||'').localeCompare(String(b.name||''),'es',{numeric:true,sensitivity:'base'})))}
-function mergeOfficialContacts(existing,catalog){const ids=new Set(existing.map(c=>c.id)),emails=new Set(existing.map(c=>String(c.email||'').trim().toLowerCase()).filter(Boolean));const additions=catalog.filter(c=>!ids.has(c.id)&&!emails.has(String(c.email||'').trim().toLowerCase()));existing.push(...structuredClone(additions));return additions.length}
-function importOfficialContacts(){const count=mergeOfficialContacts(state.contacts,OFFICIAL_CONTACTS);if(count){save();toast(`${count} contactos oficiales agregados`)}else toast('Los contactos oficiales ya están cargados')}
-function renderContacts(){const q=$('#contactSearch')?.value||'',list=searchContacts(state.contacts,q);if($('#contactsCount'))$('#contactsCount').textContent=`${list.length} contacto${list.length===1?'':'s'}`;if(!$('#contactsTable'))return;$('#contactsTable').innerHTML=list.length?`<div class="table-wrap"><table><thead><tr><th>Nombre</th><th>Entidad</th><th>Función / rubro</th><th>Dirección / edificio</th><th>Teléfono</th><th>Correo</th></tr></thead><tbody>${list.map(c=>`<tr data-contact-id="${esc(c.id)}"><td><strong>${esc(c.name)}</strong>${c.source==='https://www.pjn.gov.ar/guia'?'<small>Fuente: Guía PJN · 16/09/2026</small>':''}</td><td>${esc(c.organization||'—')}</td><td>${esc(c.role)}</td><td>${esc(c.building||'Todos')}</td><td>${esc(c.phone||'—')}</td><td>${esc(c.email||'—')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">No se encontraron contactos. Podés agregar uno o cargar el catálogo oficial.</div>';document.querySelectorAll('[data-contact-id]').forEach(row=>row.onclick=()=>openContact(row.dataset.contactId))}
-function openContact(id){const f=$('#contactForm');f.reset();fillSelect(f.elements.building,BUILDINGS,'Todos / sin edificio específico');f.elements.id.value='';$('#contactModalTitle').textContent='Agregar contacto';$('#deleteContactBtn').style.display='none';if(id){const c=state.contacts.find(x=>x.id===id);if(!c)return;if(c.building&&!BUILDINGS.includes(c.building)){const option=document.createElement('option');option.value=c.building;option.textContent=c.building;f.elements.building.append(option)}Object.entries(c).forEach(([k,v])=>{if(f.elements[k])f.elements[k].value=v});$('#contactModalTitle').textContent=`Editar ${c.name}`;$('#deleteContactBtn').style.display='inline-block'}$('#contactDialog').showModal()}
-function submitContact(e){e.preventDefault();const data=Object.fromEntries(new FormData(e.target)),now=new Date().toISOString();if(data.id){const i=state.contacts.findIndex(c=>c.id===data.id);state.contacts[i]={...state.contacts[i],...data,updatedAt:now}}else{data.id=`C-${Date.now()}`;data.createdAt=now;data.updatedAt=now;state.contacts.push(data)}save();$('#contactDialog').close();toast('Contacto guardado')}
-function deleteCurrentContact(){const id=$('#contactForm [name=id]').value,c=state.contacts.find(x=>x.id===id);if(!c||!confirm(`Eliminar el contacto ${c.name}?`))return;state.contacts=state.contacts.filter(x=>x.id!==id);save();$('#contactDialog').close();toast('Contacto eliminado')}
-function bindOpen(){document.querySelectorAll('[data-id],[data-open]').forEach(el=>el.onclick=()=>openOrder(el.dataset.id||el.dataset.open))}
-function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
-async function startApplication(){try{const remote=await db.getState();if(remote?.data){state=normalizeState(remote.data);lastRemoteUpdate=remote.updated_at||'';remoteRevision=Number(remote.revision||0)}else{state=loadLegacy();const created=await db.saveState(state,0);lastRemoteUpdate=created?.updated_at||'';remoteRevision=Number(created?.revision||1);localStorage.removeItem(STORE)}if(!appStarted){init();appStarted=true}else renderAll();setInterval(syncRemote,15000)}catch(error){$('#loadError').hidden=false;$('#loadError').textContent=`No se pudieron cargar los datos: ${error.message}`}}
-async function syncRemote(){if(savePending)return;try{const remote=await db.getState();if(remote?.revision&&Number(remote.revision)!==remoteRevision){state=normalizeState(remote.data);lastRemoteUpdate=remote.updated_at;remoteRevision=Number(remote.revision);renderAll();toast('Información actualizada')}}catch(error){if(/sesión/i.test(error.message))location.reload()}}
-const BACKUP_KEY='intendencia-ultima-copia';
-function exportBackup(){const stamp=new Date().toISOString(),blob=new Blob([JSON.stringify({app:'intendencia',version:17,exportedAt:stamp,data:state},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`intendencia-copia-${stamp.slice(0,10)}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);try{localStorage.setItem(BACKUP_KEY,stamp)}catch{}toast('Copia de respaldo descargada')}
-async function importBackup(e){const file=e.target.files[0];e.target.value='';if(!file)return;try{const parsed=JSON.parse(await file.text()),data=parsed&&parsed.app==='intendencia'?parsed.data:parsed;if(!data||typeof data!=='object'||!Array.isArray(data.orders)||!Array.isArray(data.people))throw new Error('formato');if(!confirm(`Reemplazar los datos de este navegador por la copia «${file.name}»? Los datos actuales se perderán si no los exportaste.`))return;state=normalizeState(data);await save();toast('Copia de respaldo importada')}catch{toast('No se pudo importar: el archivo no es una copia válida')}}
-async function bootstrap(){await startApplication()}
-bootstrap();
+// Pantallas de la prueba piloto. Toda la lógica de datos está en core.js.
+(() => {
+  'use strict';
+  const C = window.Core;
+  const CATALOG = typeof OFFICIAL_CONTACTS === 'undefined' ? [] : OFFICIAL_CONTACTS;
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+  const main = $('#main');
+
+  // Íconos de línea, simples y en un solo color (toman el color del texto).
+  const ICON_PATHS = {
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+    list: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3.5h6v3H9z"/><path d="M9 11h6M9 15h6"/>',
+    toolbox: '<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V5h6v3M3 13h18M10 13v2h4v-2"/>',
+    phone: '<path d="M5 4h3.5l1.8 4.5-2.3 1.4a11 11 0 0 0 6.1 6.1l1.4-2.3L20 15.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+    sliders: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+    printer: '<path d="M7 9V4h10v5"/><rect x="3.5" y="9" width="17" height="8" rx="1.5"/><path d="M7 14h10v6H7z"/>',
+    pencil: '<path d="M4 20l4.5-1 10.3-10.3a2 2 0 0 0-3.5-3.5L5 15.5z"/><path d="M14 6.5l3.5 3.5"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.3 5.3L4 17l3 3 5.4-5.4a4 4 0 0 0 5.3-5.3l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+    alert: '<path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.2v.3"/>',
+    back: '<path d="M15 5l-7 7 7 7"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>',
+    save: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/>',
+    hand: '<path d="M5 12h4l3-3h4a2 2 0 0 1 0 4h-3M5 18h9l5-4a1.5 1.5 0 0 0-2-2.2L14 13"/><path d="M2 11v8"/>',
+    bolt: '<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/>',
+    drop: '<path d="M12 3.5s6 6.8 6 11a6 6 0 0 1-12 0c0-4.2 6-11 6-11z"/>',
+    door: '<rect x="6" y="3" width="12" height="18" rx="1"/><path d="M3.5 21h17"/><circle cx="14.5" cy="12" r=".9" fill="currentColor"/>',
+    snow: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5"/>',
+    roller: '<rect x="4" y="4" width="13" height="5" rx="1"/><path d="M17 6.5h3v5h-8v3"/><rect x="10.5" y="14.5" width="3" height="6" rx="1"/>',
+    bricks: '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9.7h18M3 14.3h18M9 5v4.7M15 9.7v4.6M9 14.3V19"/>',
+    chair: '<path d="M7 3v18M17 13v8M7 13h10M7 3h7a3 3 0 0 1 3 3v3H7"/>',
+    box: '<path d="M3.5 7.5L12 3.5l8.5 4v9L12 20.5l-8.5-4z"/><path d="M3.5 7.5L12 11.5l8.5-4M12 11.5v9"/>',
+    clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3.5h6v3H9z"/><path d="M9 12h6M9 16h4"/>',
+    building: '<path d="M4 21V5l8-2v18M12 8h8v13M8 8v.01M8 12v.01M8 16v.01M16 12v.01M16 16v.01M2.5 21h19"/>'
+  };
+  const icon = (name, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON_PATHS[name] || ICON_PATHS.wrench}</svg>`;
+  $$('[data-nav-icon]').forEach(el => { el.innerHTML = icon(el.dataset.navIcon); });
+
+  // ---------- Guardado en este navegador ----------
+  let state, revision = 0;
+  function readStored() {
+    try { return JSON.parse(localStorage.getItem(C.STORAGE_KEY)) || null; } catch { return null; }
+  }
+  function load() {
+    const row = readStored();
+    revision = Number(row?.revision || 0);
+    state = C.normalizeState(row?.data || null, CATALOG);
+  }
+  function save() {
+    const row = {data: state, revision: revision + 1, updated_at: new Date().toISOString()};
+    try {
+      localStorage.setItem(C.STORAGE_KEY, JSON.stringify(row));
+      revision = row.revision;
+      return true;
+    } catch {
+      toast('No se pudo guardar: el navegador no tiene espacio. Descargá una copia en Ajustes.');
+      return false;
+    }
+  }
+  // Si se cambió algo en otra pestaña, se muestra lo último.
+  window.addEventListener('storage', e => { if (e.key === C.STORAGE_KEY) { load(); render(); } });
+
+  // ---------- Preferencias de este equipo ----------
+  const PREF_KEY = 'intendencia-preferencias';
+  const prefs = (() => { try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; } catch { return {}; } })();
+  const savePrefs = () => { try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch {} };
+  const applyTextSize = () => { document.documentElement.dataset.textSize = prefs.size || 'normal'; };
+  applyTextSize();
+
+  // ---------- Avisos ----------
+  let toastTimer;
+  function toast(message, undo) {
+    const t = $('#toast');
+    t.innerHTML = `<span>${esc(message)}</span>${undo ? '<button type="button" class="toast-undo">Deshacer</button>' : ''}`;
+    t.hidden = false;
+    if (undo) $('.toast-undo', t).onclick = () => { undo(); hideToast(); };
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, undo ? 7000 : 3500);
+  }
+  function hideToast() { $('#toast').hidden = true; }
+
+  // ---------- Ventanas (diálogos) ----------
+  const dialog = $('#dialog');
+  function openDialog(html, onReady) {
+    $('#dialogBody').innerHTML = html;
+    $$('[data-close]', dialog).forEach(b => b.onclick = () => dialog.close());
+    if (onReady) onReady($('#dialogBody'));
+    if (!dialog.open) dialog.showModal();
+  }
+  dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+
+  function confirmBox({title, text, yes, danger}) {
+    return new Promise(resolve => {
+      let answer = false;
+      openDialog(`<div class="dlg"><h2 id="dialogTitle">${esc(title)}</h2>${text ? `<p>${esc(text)}</p>` : ''}
+        <div class="dlg-actions"><button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-yes>${esc(yes)}</button>
+        <button type="button" class="btn btn-ghost" data-close>No, volver</button></div></div>`, body => {
+        $('[data-yes]', body).onclick = () => { answer = true; dialog.close(); };
+      });
+      dialog.addEventListener('close', () => resolve(answer), {once: true});
+    });
+  }
+
+  // ---------- Navegación (usa la barra de direcciones: el botón Atrás funciona) ----------
+  function go(path, replace) {
+    const hash = '#/' + path;
+    if (replace) { history.replaceState(null, '', hash); render(); }
+    else if (location.hash === hash) render();
+    else location.hash = hash;
+  }
+  window.addEventListener('hashchange', render);
+
+  function route() {
+    const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+    return {name: parts[0] || 'pedidos', parts};
+  }
+
+  function render() {
+    if (dialog.open) dialog.close();
+    const r = route();
+    const tab = ['herramientas', 'contactos', 'ajustes'].includes(r.name) ? r.name : 'pedidos';
+    $$('.tabs a').forEach(a => a.classList.toggle('active', a.dataset.tab === tab));
+    document.body.dataset.screen = r.name;
+    if (r.name === 'nuevo') renderWizard('new', null, r.parts[1]);
+    else if (r.name === 'editar') renderWizard('edit', r.parts[1], r.parts[2]);
+    else if (r.name === 'pedido') renderOrder(r.parts[1]);
+    else if (r.name === 'herramientas') renderTools();
+    else if (r.name === 'contactos') renderContacts();
+    else if (r.name === 'ajustes') renderSettings();
+    else renderOrders(r.parts[1] === 'terminados');
+    window.scrollTo(0, 0);
+  }
+
+  // ==================== PEDIDOS ====================
+  const listView = {q: '', building: ''};
+  const statusClass = v => ({'Pendiente': 'pending', 'En proceso': 'progress', 'Faltan insumos': 'missing', 'Resuelto': 'done'}[v] || 'pending');
+
+  function orderCard(o) {
+    const s = C.statusInfo(o.status);
+    const t = C.trade(o.specialty);
+    const urgentOpen = C.isUrgent(o) && !C.isDone(o);
+    return `<a class="card order-card${urgentOpen ? ' is-urgent' : ''}" href="#/pedido/${encodeURIComponent(o.id)}">
+      <span class="card-icon">${icon(t?.icon)}</span>
+      <span class="card-main">
+        <span class="card-title">${esc(o.title)}</span>
+        <span class="card-sub">${esc(C.orderPlace(o))}</span>
+        <span class="card-meta">${esc(C.tradeLabel(o.specialty))} · ${esc(C.isDone(o) ? 'Terminado ' + C.when(o.completedAt || o.updatedAt).toLowerCase() : 'Pedido ' + C.when(o.createdAt).toLowerCase())}</span>
+      </span>
+      <span class="card-side">${urgentOpen ? '<span class="pill pill-urgent">Urgente</span>' : ''}${C.isDone(o) ? '' : `<span class="pill pill-${statusClass(o.status)}">${esc(s.label)}</span>`}</span>
+    </a>`;
+  }
+
+  function lastBackup() { try { return localStorage.getItem(C.BACKUP_KEY); } catch { return null; } }
+
+  // Recordatorio de copia: si nunca se hizo, recién aparece cuando hay pedidos de hace 2 días o más.
+  function backupReminder() {
+    if (!state.orders.length) return '';
+    const last = lastBackup();
+    if (last ? C.daysSince(last) < 7 : !state.orders.some(o => C.daysSince(o.createdAt) >= 2)) return '';
+    return `<div class="notice">${icon('save', 'notice-ico')}<div><strong>${last ? 'Hace más de una semana que no guardás una copia.' : 'Todavía no guardaste una copia de los pedidos.'}</strong>
+      <p>Los pedidos quedan en esta computadora. Una copia sirve por si se borran.</p></div><button type="button" class="btn btn-small btn-secondary" data-backup>Guardar copia</button></div>`;
+  }
+
+  function renderOrders(showDone) {
+    const open = state.orders.filter(o => !C.isDone(o));
+    const done = state.orders.filter(C.isDone);
+    const urgent = open.filter(C.isUrgent).length;
+    const base = showDone ? done : open;
+    const filtered = C.sortOrders(C.searchOrders(base, listView.q).filter(o => !listView.building || o.building === listView.building), showDone);
+    const filtering = listView.q || listView.building;
+
+    main.innerHTML = `
+      <button type="button" class="btn btn-primary btn-hero" data-new-order>${icon('plus')} Nuevo pedido</button>
+      ${backupReminder()}
+      <div class="segmented" role="tablist" aria-label="Qué pedidos ver">
+        <a role="tab" href="#/pedidos" aria-selected="${!showDone}" class="${showDone ? '' : 'active'}">Por hacer <b>${open.length}</b></a>
+        <a role="tab" href="#/pedidos/terminados" aria-selected="${showDone}" class="${showDone ? 'active' : ''}">Terminados <b>${done.length}</b></a>
+      </div>
+      ${!showDone && urgent ? `<p class="summary-line"><span class="pill pill-urgent">${urgent} urgente${urgent === 1 ? '' : 's'}</span> aparece${urgent === 1 ? '' : 'n'} primero.</p>` : ''}
+      ${base.length > 4 || filtering ? `<div class="filters">
+        <label class="search"><span class="sr-only">Buscar pedidos</span>${icon('search')}<input type="search" id="orderSearch" placeholder="Buscar: luz, juzgado 5, plomero…" value="${esc(listView.q)}" autocomplete="off"></label>
+        <div class="chips" role="group" aria-label="Edificio">
+          <button type="button" class="chip${listView.building ? '' : ' active'}" data-building="">Todos</button>
+          ${C.BUILDINGS.map(b => `<button type="button" class="chip${listView.building === b.id ? ' active' : ''}" data-building="${esc(b.id)}">${esc(b.short)}</button>`).join('')}
+        </div></div>` : ''}
+      <div class="list" id="orderList">${listHtml()}</div>`;
+
+    function listHtml() {
+      if (filtered.length) return filtered.map(orderCard).join('');
+      if (filtering) return `<div class="empty"><p>No hay pedidos que coincidan.</p><button type="button" class="btn btn-ghost" data-clear>Ver todos</button></div>`;
+      return showDone
+        ? `<div class="empty"><p>Todavía no hay pedidos terminados.</p></div>`
+        : `<div class="empty"><p><strong>No hay nada pendiente.</strong></p><p>Cuando haya un trabajo para hacer, tocá «Nuevo pedido».</p></div>`;
+    }
+
+    const search = $('#orderSearch');
+    if (search) {
+      search.oninput = () => {
+        listView.q = search.value;
+        const pos = search.selectionStart;
+        renderOrders(showDone);
+        const again = $('#orderSearch');
+        again.focus();
+        again.setSelectionRange(pos, pos);
+      };
+    }
+    $$('[data-building]').forEach(b => b.onclick = () => { listView.building = b.dataset.building; renderOrders(showDone); });
+    $$('[data-clear]').forEach(b => b.onclick = () => { listView.q = ''; listView.building = ''; renderOrders(showDone); });
+    $('[data-new-order]').onclick = startNewOrder;
+    bindBackup();
+  }
+
+  function renderOrder(id) {
+    const o = state.orders.find(x => x.id === id);
+    if (!o) {
+      main.innerHTML = `<div class="empty"><p>Ese pedido no existe o fue borrado.</p><a class="btn btn-primary" href="#/pedidos">Volver a pedidos</a></div>`;
+      return;
+    }
+    const t = C.trade(o.specialty);
+    main.innerHTML = `
+      <a class="back" href="#/pedidos${C.isDone(o) ? '/terminados' : ''}">${icon('back')} Volver a pedidos</a>
+      <article class="detail">
+        <div class="detail-head">
+          <span class="card-icon big">${icon(t?.icon)}</span>
+          <div><p class="eyebrow">Pedido ${esc(o.id)}</p><h1>${esc(o.title)}</h1>
+          ${C.isUrgent(o) ? '<span class="pill pill-urgent">Urgente</span>' : ''}</div>
+        </div>
+        <dl class="facts">
+          <div><dt>Dónde</dt><dd>${esc(C.orderPlace(o) || 'Sin indicar')}</dd></div>
+          <div><dt>Quién lo hace</dt><dd>${esc(C.tradeLabel(o.specialty))}</dd></div>
+          ${o.description ? `<div><dt>Nota</dt><dd>${esc(o.description)}</dd></div>` : ''}
+          <div><dt>Pedido</dt><dd>${esc(C.when(o.createdAt))}</dd></div>
+          ${C.isDone(o) && o.completedAt ? `<div><dt>Terminado</dt><dd>${esc(C.when(o.completedAt))}</dd></div>` : ''}
+        </dl>
+        <h2 class="section-title">¿Cómo está este trabajo?</h2>
+        <div class="status-grid" role="group" aria-label="Estado del pedido">
+          ${C.STATUSES.map(s => `<button type="button" class="status-btn status-${statusClass(s.value)}${o.status === s.value ? ' active' : ''}" data-status="${esc(s.value)}" aria-pressed="${o.status === s.value}">${icon(s.icon)}${esc(s.label)}</button>`).join('')}
+        </div>
+        <div class="action-stack">
+          <div class="action-row">
+            <button type="button" class="btn btn-primary" data-print>${icon('printer')} Imprimir</button>
+            <button type="button" class="btn btn-secondary" data-edit>${icon('pencil')} Modificar</button>
+          </div>
+          <button type="button" class="btn btn-link-danger" data-delete>Borrar este pedido</button>
+        </div>
+      </article>`;
+
+    $$('[data-status]').forEach(b => b.onclick = () => setStatus(o, b.dataset.status));
+    $('[data-print]').onclick = () => printOrder(o);
+    $('[data-delete]').onclick = () => deleteOrder(o);
+    $('[data-edit]').onclick = () => { wizardClosed = false; draft = null; go(`editar/${encodeURIComponent(o.id)}/resumen`); };
+  }
+
+  function setStatus(o, value) {
+    if (o.status === value) return;
+    const before = {status: o.status, completedAt: o.completedAt, updatedAt: o.updatedAt};
+    o.status = value;
+    o.updatedAt = new Date().toISOString();
+    if (value === C.DONE) o.completedAt = o.updatedAt; else delete o.completedAt;
+    if (!save()) return;
+    if (value === C.DONE) {
+      go('pedidos');
+      toast(`Listo: «${o.title}» quedó como terminado.`, () => {
+        Object.assign(o, before);
+        if (!before.completedAt) delete o.completedAt;
+        save();
+        render();
+      });
+    } else {
+      render();
+      toast(`Estado: ${C.statusInfo(value).label}.`);
+    }
+  }
+
+  async function deleteOrder(o) {
+    const ok = await confirmBox({title: '¿Borrar este pedido?', text: `«${o.title}» se va a borrar. Si fue un error, vas a poder deshacerlo enseguida.`, yes: 'Sí, borrar', danger: true});
+    if (!ok) return;
+    const index = state.orders.indexOf(o);
+    state.orders.splice(index, 1);
+    save();
+    go('pedidos', true);
+    toast('Pedido borrado.', () => { state.orders.splice(index, 0, o); save(); render(); });
+  }
+
+  function printOrder(o) {
+    $('#printSheet').innerHTML = `
+      <header class="ps-head"><div><h1>ORDEN DE TRABAJO</h1><p>Intendencia — Cámara Nacional de Apelaciones en lo Comercial</p></div>
+      <div class="ps-num"><span>Número</span><strong>${esc(o.id)}</strong><span>Emitida: ${esc(C.fullDate(o.createdAt))}</span></div></header>
+      <table class="ps-table">
+        <tr><th>Trabajo</th><td colspan="3"><strong>${esc(o.title)}</strong>${C.isUrgent(o) ? ' — URGENTE' : ''}</td></tr>
+        <tr><th>Edificio</th><td>${esc(C.building(o.building)?.address || o.building)}</td><th>Dependencia</th><td>${esc(C.shortDependency(o.dependency) || '—')}</td></tr>
+        <tr><th>Piso / oficina</th><td colspan="3">${esc(o.location || '—')}</td></tr>
+        <tr><th>Oficio</th><td>${esc(C.tradeLabel(o.specialty))}</td><th>Estado</th><td>${esc(C.statusInfo(o.status).label)}</td></tr>
+        <tr><th>Indicaciones</th><td colspan="3" class="ps-tall">${esc(o.description || '')}</td></tr>
+      </table>
+      <section class="ps-lines"><h2>Registro del trabajo</h2>
+        <p>Fecha y hora de inicio:</p><p>Fecha y hora de finalización:</p><p>Materiales utilizados:</p><p>Observaciones:</p></section>
+      <footer class="ps-sign"><p>Firma de quien hizo el trabajo</p><p>Conformidad de la dependencia</p></footer>`;
+    window.print();
+  }
+
+  // ==================== NUEVO PEDIDO (paso a paso) ====================
+  let draft = null;
+  // Al guardar o cancelar, si se vuelve con el botón Atrás a pasos ya cerrados, se siguen salteando.
+  let wizardClosed = false;
+  const STEPS = {oficio: 1, tarea: 1, lugar: 2, urgencia: 3, resumen: 4};
+
+  function startNewOrder() {
+    wizardClosed = false;
+    draft = startDraft('new');
+    go('nuevo/oficio');
+  }
+
+  function startDraft(mode, id) {
+    if (mode === 'edit') {
+      const o = state.orders.find(x => x.id === id);
+      if (!o) return null;
+      return {
+        mode, id, specialty: o.specialty, title: o.title, custom: !(C.TASKS[o.specialty] || []).includes(o.title),
+        building: o.building, dependency: C.shortDependency(o.dependency), location: o.location || '',
+        priority: C.isUrgent(o) ? 'Urgente' : 'Media', description: o.description || ''
+      };
+    }
+    return {mode, specialty: '', title: '', custom: false, building: '', dependency: '', location: '', priority: '', description: ''};
+  }
+
+  function wizardPath(step) {
+    return draft.mode === 'edit' ? `editar/${encodeURIComponent(draft.id)}/${step}` : `nuevo/${step}`;
+  }
+
+  function renderWizard(mode, id, step) {
+    if (!draft || draft.mode !== mode || (mode === 'edit' && draft.id !== id)) {
+      if (wizardClosed) { history.back(); return; }
+      draft = startDraft(mode, id);
+      if (!draft) { go('pedidos', true); return; }
+      if (mode === 'new' && step && step !== 'oficio') { go('nuevo/oficio', true); return; }
+    }
+    step = STEPS[step] ? step : (mode === 'edit' ? 'resumen' : 'oficio');
+    // No se puede saltar pasos sin completar los anteriores.
+    if (step !== 'oficio' && !draft.specialty) return go(wizardPath('oficio'), true);
+    if (STEPS[step] >= 2 && !draft.title) return go(wizardPath('tarea'), true);
+    if (STEPS[step] >= 3 && (!draft.building || !draft.dependency)) return go(wizardPath('lugar'), true);
+    if (STEPS[step] >= 4 && !draft.priority) return go(wizardPath('urgencia'), true);
+
+    const n = STEPS[step];
+    const head = `<div class="wizard-head">
+      <button type="button" class="back" data-cancel>${icon('x')} ${draft.mode === 'edit' ? 'Cancelar cambios' : 'Cancelar'}</button>
+      ${n < 4 ? `<p class="step-count">Paso ${n} de 3</p><div class="progress" aria-hidden="true"><span style="width:${n / 3 * 100}%"></span></div>` : ''}</div>`;
+    const back = prev => `<button type="button" class="btn btn-ghost btn-back" data-step="${prev}">${icon('back')} Atrás</button>`;
+    let body = '';
+
+    if (step === 'oficio') {
+      body = `<h1 class="q">¿Quién tiene que hacer el trabajo?</h1>
+        <div class="tiles">${C.TRADES.map(t => `<button type="button" class="tile${draft.specialty === t.key ? ' selected' : ''}" data-trade="${esc(t.key)}">${icon(t.icon, 'tile-icon')}<span class="tile-label">${esc(t.label)}</span><span class="tile-hint">${esc(t.hint)}</span></button>`).join('')}</div>`;
+    } else if (step === 'tarea') {
+      const tasks = C.TASKS[draft.specialty] || [];
+      const t = C.trade(draft.specialty);
+      body = `<p class="crumb">${icon(t.icon)} ${esc(t.label)}</p><h1 class="q">¿Qué hay que hacer?</h1>
+        <div class="options">${tasks.map(name => `<button type="button" class="option${!draft.custom && draft.title === name ? ' selected' : ''}" data-task="${esc(name)}">${esc(name)}</button>`).join('')}
+        <button type="button" class="option option-other${draft.custom ? ' selected' : ''}" data-other>${icon('pencil')} Otra cosa (escribirla)</button></div>
+        <div class="custom-task" ${draft.custom ? '' : 'hidden'}>
+          <label for="customTask" class="field-label">Escribí qué hay que hacer</label>
+          <input id="customTask" maxlength="90" value="${draft.custom ? esc(draft.title) : ''}" placeholder="Ej.: cambiar el vidrio de la ventana">
+          <button type="button" class="btn btn-primary btn-block" data-custom-ok>Continuar</button>
+        </div>
+        ${back('oficio')}`;
+    } else if (step === 'lugar') {
+      const deps = draft.building ? C.dependenciesForBuilding(draft.building, CATALOG) : [];
+      const groups = [
+        ['Juzgados', deps.filter(d => /^Juzgado/.test(d.name))],
+        ['Salas', deps.filter(d => /^Sala/.test(d.name))],
+        ['Otras oficinas', deps.filter(d => !/^(Juzgado|Sala)/.test(d.name))]
+      ].filter(g => g[1].length);
+      const depButton = d => `<button type="button" class="option${draft.dependency === d.name ? ' selected' : ''}" data-dep="${esc(d.name)}" data-floor="${esc(d.floor)}"><span>${esc(d.name.replace('Juzgado N.º ', 'Juzgado '))}</span>${d.floor ? `<small>${esc(d.floor)}</small>` : ''}</button>`;
+      body = `<h1 class="q">¿Dónde hay que hacerlo?</h1>
+        <h2 class="sub-q">Edificio</h2>
+        <div class="tiles tiles-3">${C.BUILDINGS.map(b => `<button type="button" class="tile tile-building${draft.building === b.id ? ' selected' : ''}" data-bld="${esc(b.id)}"><span class="tile-label">${esc(b.short)}</span><span class="tile-hint">${esc(b.address)}</span></button>`).join('')}</div>
+        ${draft.building ? `<h2 class="sub-q" id="depTitle">Oficina o dependencia</h2>
+          ${groups.map(([title, list]) => `<p class="group-label">${esc(title)}</p><div class="options options-grid">${list.map(depButton).join('')}</div>`).join('')}
+          ${draft.dependency && !deps.some(d => d.name === draft.dependency) ? `<p class="hint">Antes se había cargado: <strong>${esc(draft.dependency)}</strong>. Elegí una de la lista para cambiarla.</p>` : ''}` : ''}
+        ${draft.dependency ? `<div class="field" id="locField">
+          <label for="locInput" class="field-label">Piso, oficina o detalle <span class="optional">(si sabés)</span></label>
+          <input id="locInput" value="${esc(draft.location)}" maxlength="120" placeholder="Ej.: 5º piso, oficina 503, baño de hombres">
+          <button type="button" class="btn btn-primary btn-block" data-loc-ok>Continuar</button></div>` : ''}
+        ${back('tarea')}`;
+    } else if (step === 'urgencia') {
+      body = `<h1 class="q">¿Es urgente?</h1>
+        <div class="tiles tiles-2">
+          <button type="button" class="tile${draft.priority === 'Media' ? ' selected' : ''}" data-prio="Media">${icon('clock', 'tile-icon')}<span class="tile-label">No, es normal</span><span class="tile-hint">Se hace en el orden de llegada</span></button>
+          <button type="button" class="tile tile-urgent${draft.priority === 'Urgente' ? ' selected' : ''}" data-prio="Urgente">${icon('alert', 'tile-icon')}<span class="tile-label">Sí, es urgente</span><span class="tile-hint">Aparece primero en la lista</span></button>
+        </div>
+        <div class="field">
+          <label for="noteInput" class="field-label">¿Algo más que tengan que saber? <span class="optional">(no es obligatorio)</span></label>
+          <textarea id="noteInput" rows="3" maxlength="400" placeholder="Ej.: preguntar por Marta, llevar escalera">${esc(draft.description)}</textarea>
+        </div>
+        <button type="button" class="btn btn-primary btn-block" data-review ${draft.priority ? '' : 'disabled'}>Revisar el pedido →</button>
+        ${back('lugar')}`;
+    } else {
+      draft.reviewed = true;
+      const t = C.trade(draft.specialty);
+      const row = (label, value, stepName) => `<div class="review-row"><div><dt>${label}</dt><dd>${value}</dd></div><button type="button" class="btn btn-small btn-ghost" data-step="${stepName}">Cambiar</button></div>`;
+      body = `<h1 class="q">${draft.mode === 'edit' ? 'Modificar pedido' : '¿Está todo bien?'}</h1>
+        <dl class="review">
+          ${row('Quién lo hace', esc(t.label), 'oficio')}
+          ${row('Qué hay que hacer', esc(draft.title), 'tarea')}
+          ${row('Dónde', esc(C.orderPlace(draft)), 'lugar')}
+          ${row('Urgencia', draft.priority === 'Urgente' ? '<span class="pill pill-urgent">Urgente</span>' : 'Normal', 'urgencia')}
+          ${draft.description ? row('Nota', esc(draft.description), 'urgencia') : ''}
+        </dl>
+        <div class="action-stack">
+          ${draft.mode === 'edit'
+            ? `<button type="button" class="btn btn-primary btn-block" data-save>Guardar cambios</button>`
+            : `<button type="button" class="btn btn-primary btn-block" data-save="print">${icon('printer')} Guardar e imprimir</button>
+               <button type="button" class="btn btn-secondary btn-block" data-save>Guardar sin imprimir</button>`}
+        </div>`;
+    }
+
+    main.innerHTML = `<section class="wizard">${head}${body}</section>`;
+
+    // Después de revisar, cada cambio vuelve directo al resumen.
+    const next = s => go(wizardPath(draft.reviewed ? 'resumen' : s));
+    $('[data-cancel]').onclick = cancelWizard;
+    $$('[data-step]').forEach(b => b.onclick = () => go(wizardPath(b.dataset.step)));
+
+    $$('[data-trade]').forEach(b => b.onclick = () => {
+      if (draft.specialty !== b.dataset.trade) { draft.specialty = b.dataset.trade; draft.title = ''; draft.custom = false; }
+      go(wizardPath('tarea'));
+    });
+    $$('[data-task]').forEach(b => b.onclick = () => { draft.title = b.dataset.task; draft.custom = false; next('lugar'); });
+    const other = $('[data-other]');
+    if (other) other.onclick = () => {
+      $('.custom-task').hidden = false;
+      $$('.option').forEach(x => x.classList.remove('selected'));
+      other.classList.add('selected');
+      $('#customTask').focus();
+    };
+    const okCustom = () => {
+      const v = $('#customTask').value.trim();
+      if (!v) { $('#customTask').focus(); toast('Escribí qué hay que hacer.'); return; }
+      draft.title = v.charAt(0).toUpperCase() + v.slice(1);
+      draft.custom = true;
+      next('lugar');
+    };
+    if ($('[data-custom-ok]')) {
+      $('[data-custom-ok]').onclick = okCustom;
+      $('#customTask').onkeydown = e => { if (e.key === 'Enter') okCustom(); };
+    }
+
+    $$('[data-bld]').forEach(b => b.onclick = () => {
+      if (draft.building !== b.dataset.bld) { draft.building = b.dataset.bld; draft.dependency = ''; draft.location = ''; }
+      renderWizard(mode, id, 'lugar');
+      $('#depTitle')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+    });
+    $$('[data-dep]').forEach(b => b.onclick = () => {
+      if (draft.dependency !== b.dataset.dep) {
+        draft.dependency = b.dataset.dep;
+        draft.location = b.dataset.floor || ''; // el piso de la guía ya queda escrito
+      }
+      renderWizard(mode, id, 'lugar');
+      $('#locField')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+      const input = $('#locInput');
+      if (input) { input.focus({preventScroll: true}); input.setSelectionRange(input.value.length, input.value.length); }
+    });
+    const okLoc = () => { draft.location = $('#locInput').value.trim(); next('urgencia'); };
+    if ($('[data-loc-ok]')) {
+      $('[data-loc-ok]').onclick = okLoc;
+      $('#locInput').onkeydown = e => { if (e.key === 'Enter') okLoc(); };
+    }
+
+    const note = $('#noteInput');
+    if (note) note.oninput = () => { draft.description = note.value; };
+    $$('[data-prio]').forEach(b => b.onclick = () => {
+      draft.priority = b.dataset.prio;
+      $$('[data-prio]').forEach(x => x.classList.toggle('selected', x === b));
+      $('[data-review]').disabled = false;
+    });
+    if ($('[data-review]')) $('[data-review]').onclick = () => { draft.description = note.value.trim(); go(wizardPath('resumen')); };
+
+    $$('[data-save]').forEach(b => b.onclick = () => saveDraft(b.dataset.save === 'print'));
+  }
+
+  async function cancelWizard() {
+    if (draft && (draft.mode === 'edit' || draft.specialty)) {
+      const ok = await confirmBox({
+        title: draft.mode === 'edit' ? '¿Salir sin guardar los cambios?' : '¿Cancelar el pedido?',
+        text: 'Lo que cargaste hasta ahora no se va a guardar.', yes: 'Sí, salir', danger: true
+      });
+      if (!ok) return;
+    }
+    const target = draft?.mode === 'edit' ? `pedido/${encodeURIComponent(draft.id)}` : 'pedidos';
+    draft = null;
+    wizardClosed = true;
+    go(target, true);
+  }
+
+  function saveDraft(andPrint) {
+    const now = new Date().toISOString();
+    const data = {
+      title: draft.title, specialty: draft.specialty, building: draft.building, dependency: draft.dependency,
+      location: draft.location, priority: draft.priority, description: draft.description.trim()
+    };
+    let order;
+    if (draft.mode === 'edit') {
+      order = state.orders.find(o => o.id === draft.id);
+      if (!order) { toast('Ese pedido ya no existe.'); go('pedidos', true); return; }
+      // Prioridades viejas (Alta, Baja) se conservan si no se marcó urgente.
+      const keepOld = !['Media', 'Urgente'].includes(order.priority) && data.priority === 'Media';
+      Object.assign(order, data, keepOld ? {priority: order.priority} : {}, {updatedAt: now});
+    } else {
+      order = {id: C.nextId(state.orders, 'OT'), ...data, status: 'Pendiente', createdAt: now, updatedAt: now};
+      state.orders.push(order);
+    }
+    if (!save()) return;
+    const wasEdit = draft.mode === 'edit';
+    draft = null;
+    wizardClosed = true;
+    go(`pedido/${encodeURIComponent(order.id)}`, true);
+    toast(wasEdit ? 'Cambios guardados.' : 'Pedido guardado.');
+    if (andPrint) setTimeout(() => printOrder(order), 150);
+  }
+
+  // ==================== HERRAMIENTAS ====================
+  const toolView = {q: ''};
+  function renderTools() {
+    const q = C.normalizeText(toolView.q);
+    const list = state.tools
+      .filter(t => !q || C.normalizeText([t.name, t.brand, t.model, t.serial, t.holder].join(' ')).includes(q))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
+    const out = state.tools.filter(t => t.holder).length;
+    const pill = t => t.holder ? `<span class="pill pill-progress">La tiene: ${esc(t.holder)}</span>`
+      : t.toolStatus === 'En reparación' ? '<span class="pill pill-missing">En reparación</span>'
+      : t.toolStatus === 'Fuera de servicio' ? '<span class="pill">Fuera de servicio</span>'
+      : '<span class="pill pill-done">Disponible</span>';
+    main.innerHTML = `
+      <h1 class="page-title">Herramientas</h1>
+      <p class="lead">${state.tools.length ? `${state.tools.length} herramienta${state.tools.length === 1 ? '' : 's'} · ${out} prestada${out === 1 ? '' : 's'}` : 'Anotá acá qué herramientas hay y a quién se prestan.'}</p>
+      <button type="button" class="btn btn-primary btn-block" data-new-tool>${icon('plus')} Agregar herramienta</button>
+      ${state.tools.length > 5 ? `<label class="search"><span class="sr-only">Buscar herramientas</span>${icon('search')}<input type="search" id="toolSearch" placeholder="Buscar herramienta" value="${esc(toolView.q)}" autocomplete="off"></label>` : ''}
+      <div class="list">${list.length ? list.map(t => `<button type="button" class="card tool-card" data-tool="${esc(t.id)}">
+        <span class="card-main"><span class="card-title">${esc(t.name)}</span>
+        <span class="card-sub">${esc([t.brand, t.model].filter(Boolean).join(' ') || 'Sin marca')}${t.serial ? ' · N.º ' + esc(t.serial) : ''}</span></span>
+        <span class="card-side">${pill(t)}</span></button>`).join('')
+        : `<div class="empty"><p>${q ? 'No se encontró esa herramienta.' : 'Todavía no hay herramientas cargadas.'}</p></div>`}</div>`;
+    $('[data-new-tool]').onclick = () => toolForm();
+    $$('[data-tool]').forEach(b => b.onclick = () => toolSheet(state.tools.find(t => t.id === b.dataset.tool)));
+    const s = $('#toolSearch');
+    if (s) s.oninput = () => {
+      toolView.q = s.value;
+      const p = s.selectionStart;
+      renderTools();
+      const a = $('#toolSearch');
+      a.focus();
+      a.setSelectionRange(p, p);
+    };
+  }
+
+  function toolSheet(t) {
+    if (!t) return;
+    const history = (t.returns || []).slice(-3).reverse();
+    openDialog(`<div class="dlg"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">${esc(t.name)}</h2>
+      <p class="muted">${esc([t.brand, t.model].filter(Boolean).join(' '))}${t.serial ? ' · N.º ' + esc(t.serial) : ''}</p>
+      ${t.holder ? `<p class="big-status">La tiene <strong>${esc(t.holder)}</strong>${t.assignedDate ? ` desde ${esc(C.when(t.assignedDate).toLowerCase())}` : ''}.</p>
+        <button type="button" class="btn btn-primary btn-block" data-return>${icon('check')} Ya la devolvió</button>`
+        : `<p class="big-status">${t.toolStatus === 'Disponible' ? 'Está disponible.' : esc(t.toolStatus) + '.'}</p>
+        <h3 class="sub-q">¿A quién se la prestás?</h3>
+        <form class="lend" id="lendForm">
+          <label class="field-label" for="lendName">Nombre de la persona</label>
+          <input id="lendName" list="peopleList" maxlength="60" autocomplete="off" placeholder="Ej.: Carlos Benítez">
+          <datalist id="peopleList">${C.peopleNames(state).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+          <button type="submit" class="btn btn-primary btn-block">${icon('hand')} Prestar</button>
+        </form>`}
+      ${t.notes ? `<p class="muted">Nota: ${esc(t.notes)}</p>` : ''}
+      ${history.length ? `<p class="muted small">Últimas devoluciones: ${history.map(h => esc(`${h.holderName && !C.trade(h.holder) ? h.holderName + ', ' : ''}${C.when(h.returnedAt).toLowerCase()}`)).join(' · ')}</p>` : ''}
+      <div class="dlg-actions"><button type="button" class="btn btn-secondary" data-edit>${icon('pencil')} Modificar</button><button type="button" class="btn btn-link-danger" data-del>Borrar</button></div></div>`, body => {
+      const now = new Date().toISOString();
+      $('[data-return]', body)?.addEventListener('click', () => {
+        t.returns = Array.isArray(t.returns) ? t.returns : [];
+        t.returns.push({holder: t.holder, holderName: t.holder, assignedDate: t.assignedDate || '', returnedAt: now});
+        Object.assign(t, {holder: '', assignedDate: '', toolStatus: 'Disponible', returnedAt: now, updatedAt: now});
+        save(); dialog.close(); renderTools(); toast('Devolución anotada.');
+      });
+      const lend = $('#lendForm', body);
+      if (lend) lend.onsubmit = e => {
+        e.preventDefault();
+        const name = $('#lendName', body).value.trim();
+        if (!name) { $('#lendName', body).focus(); toast('Escribí el nombre de quien se la lleva.'); return; }
+        Object.assign(t, {holder: name, assignedDate: now.slice(0, 10), toolStatus: 'Entregada', updatedAt: now});
+        save(); dialog.close(); renderTools(); toast(`Prestada a ${name}.`);
+      };
+      $('[data-edit]', body).onclick = () => toolForm(t);
+      $('[data-del]', body).onclick = async () => {
+        if (!await confirmBox({title: '¿Borrar esta herramienta?', text: `«${t.name}» se va a quitar de la lista.`, yes: 'Sí, borrar', danger: true})) return;
+        const i = state.tools.indexOf(t);
+        state.tools.splice(i, 1);
+        save(); renderTools();
+        toast('Herramienta borrada.', () => { state.tools.splice(i, 0, t); save(); renderTools(); });
+      };
+    });
+  }
+
+  function toolForm(t) {
+    openDialog(`<form class="dlg" id="toolForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">${t ? 'Modificar herramienta' : 'Agregar herramienta'}</h2>
+      <label class="field-label" for="tName">Qué herramienta es</label><input id="tName" name="name" required maxlength="80" placeholder="Ej.: Taladro" value="${esc(t?.name)}">
+      <label class="field-label" for="tBrand">Marca <span class="optional">(si sabés)</span></label><input id="tBrand" name="brand" maxlength="60" placeholder="Ej.: Bosch" value="${esc(t?.brand)}">
+      <label class="field-label" for="tModel">Modelo <span class="optional">(si sabés)</span></label><input id="tModel" name="model" maxlength="60" value="${esc(t?.model)}">
+      <label class="field-label" for="tSerial">Número de inventario <span class="optional">(si tiene)</span></label><input id="tSerial" name="serial" maxlength="40" value="${esc(t?.serial)}">
+      ${t && !t.holder ? `<label class="field-label" for="tState">Estado</label><select id="tState" name="toolStatus">${['Disponible', 'En reparación', 'Fuera de servicio'].map(s => `<option${t.toolStatus === s ? ' selected' : ''}>${s}</option>`).join('')}</select>` : ''}
+      <label class="field-label" for="tNotes">Nota <span class="optional">(opcional)</span></label><textarea id="tNotes" name="notes" rows="2" maxlength="300">${esc(t?.notes)}</textarea>
+      <div class="dlg-actions"><button class="btn btn-primary" type="submit">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button></div></form>`, body => {
+      $('#tName', body).focus();
+      $('#toolForm', body).onsubmit = e => {
+        e.preventDefault();
+        const f = Object.fromEntries(new FormData(e.target));
+        const now = new Date().toISOString();
+        f.name = f.name.trim();
+        if (!f.name) return;
+        if (t) {
+          Object.assign(t, f, {toolStatus: t.holder ? 'Entregada' : (f.toolStatus || t.toolStatus), updatedAt: now});
+        } else {
+          state.tools.push({id: C.nextId(state.tools, 'H'), ...f, toolStatus: 'Disponible', holder: '', assignedDate: '', createdAt: now, updatedAt: now});
+        }
+        save(); dialog.close(); renderTools(); toast('Herramienta guardada.');
+      };
+    });
+  }
+
+  // ==================== CONTACTOS ====================
+  const contactView = {q: ''};
+  function renderContacts() {
+    const list = C.searchContacts(state.contacts, contactView.q);
+    main.innerHTML = `
+      <h1 class="page-title">Contactos</h1>
+      <label class="search"><span class="sr-only">Buscar contactos</span>${icon('search')}<input type="search" id="contactSearch" placeholder="Buscar: juzgado 5, sala B, biblioteca…" value="${esc(contactView.q)}" autocomplete="off"></label>
+      <div class="list">${list.length ? list.map(c => `<article class="card contact-card">
+        <div class="card-main"><span class="card-title">${esc(c.name)}</span><span class="card-sub">${esc(c.building || '')}</span>
+        ${c.notes && !c.source ? `<span class="card-meta">${esc(c.notes)}</span>` : ''}</div>
+        <div class="contact-actions">
+          ${c.phone ? `<a class="btn btn-small btn-secondary" href="tel:${esc(telNumber(c.phone))}">${icon('phone')} ${esc(c.phone)}</a>` : ''}
+          ${c.email ? `<a class="btn btn-small btn-ghost" href="mailto:${esc(c.email)}">${icon('mail')} Correo</a>` : ''}
+          ${c.source ? '' : `<button type="button" class="btn btn-small btn-ghost" data-contact="${esc(c.id)}">${icon('pencil')} Modificar</button>`}
+        </div></article>`).join('') : '<div class="empty"><p>No se encontró ningún contacto.</p></div>'}</div>
+      <button type="button" class="btn btn-secondary btn-block" data-new-contact>${icon('plus')} Agregar un contacto</button>
+      <p class="muted small">Los datos de juzgados y salas salen de la Guía Judicial del PJN (consultada el 16/09/2026).</p>`;
+    const s = $('#contactSearch');
+    s.oninput = () => {
+      contactView.q = s.value;
+      const p = s.selectionStart;
+      renderContacts();
+      const a = $('#contactSearch');
+      a.focus();
+      a.setSelectionRange(p, p);
+    };
+    $('[data-new-contact]').onclick = () => contactForm();
+    $$('[data-contact]').forEach(b => b.onclick = () => contactForm(state.contacts.find(c => c.id === b.dataset.contact)));
+  }
+  // Primer número del teléfono; si tiene 8 cifras se le agrega el 011.
+  function telNumber(phone) {
+    const first = String(phone).split(/\/| y /)[0].replace(/\D/g, '');
+    return first.length === 8 ? '011' + first : first;
+  }
+
+  function contactForm(c) {
+    openDialog(`<form class="dlg" id="contactForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">${c ? 'Modificar contacto' : 'Agregar contacto'}</h2>
+      <label class="field-label" for="cName">Nombre</label><input id="cName" name="name" required maxlength="80" placeholder="Ej.: Ferretería Pérez" value="${esc(c?.name)}">
+      <label class="field-label" for="cPhone">Teléfono</label><input id="cPhone" name="phone" inputmode="tel" maxlength="40" value="${esc(c?.phone)}">
+      <label class="field-label" for="cMail">Correo <span class="optional">(opcional)</span></label><input id="cMail" name="email" type="email" maxlength="80" value="${esc(c?.email)}">
+      <label class="field-label" for="cNotes">Para qué sirve <span class="optional">(opcional)</span></label><input id="cNotes" name="notes" maxlength="120" placeholder="Ej.: vende repuestos de canillas" value="${esc(c?.notes)}">
+      <div class="dlg-actions"><button class="btn btn-primary" type="submit">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+      ${c ? '<button type="button" class="btn btn-link-danger" data-del>Borrar contacto</button>' : ''}</div></form>`, body => {
+      $('#cName', body).focus();
+      $('#contactForm', body).onsubmit = e => {
+        e.preventDefault();
+        const f = Object.fromEntries(new FormData(e.target));
+        if (!f.name.trim()) return;
+        if (c) Object.assign(c, f, {role: c.role || 'Contacto'});
+        else state.contacts.push({id: 'C-' + Date.now(), ...f, role: 'Contacto', organization: '', building: ''});
+        save(); dialog.close(); renderContacts(); toast('Contacto guardado.');
+      };
+      $('[data-del]', body)?.addEventListener('click', async () => {
+        if (!await confirmBox({title: '¿Borrar este contacto?', text: c.name, yes: 'Sí, borrar', danger: true})) return;
+        const i = state.contacts.indexOf(c);
+        state.contacts.splice(i, 1);
+        save(); renderContacts();
+        toast('Contacto borrado.', () => { state.contacts.splice(i, 0, c); save(); renderContacts(); });
+      });
+    });
+  }
+
+  // ==================== AJUSTES ====================
+  function renderSettings() {
+    const last = lastBackup();
+    const size = prefs.size || 'normal';
+    main.innerHTML = `
+      <h1 class="page-title">Ajustes</h1>
+      <section class="panel">
+        <h2>Tamaño de la letra</h2>
+        <div class="segmented segmented-3" role="group" aria-label="Tamaño de la letra">
+          ${[['normal', 'Normal'], ['grande', 'Grande'], ['muy-grande', 'Muy grande']].map(([v, l]) => `<button type="button" data-size="${v}" class="${size === v ? 'active' : ''}" aria-pressed="${size === v}">${l}</button>`).join('')}
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Copia de seguridad</h2>
+        <p class="muted">Los pedidos se guardan solo en esta computadora. Guardá una copia de vez en cuando (por ejemplo, los viernes).</p>
+        <p><strong>Última copia:</strong> ${last ? esc(C.when(last)) : 'nunca'}</p>
+        <button type="button" class="btn btn-primary btn-block" data-backup>${icon('save')} Guardar una copia</button>
+        <button type="button" class="btn btn-ghost btn-block" data-restore>Recuperar desde una copia</button>
+        <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+      </section>`;
+    $$('[data-size]', main).forEach(b => b.onclick = () => { prefs.size = b.dataset.size; savePrefs(); applyTextSize(); renderSettings(); });
+    bindBackup();
+    $('[data-restore]').onclick = () => $('#restoreFile').click();
+    $('#restoreFile').onchange = restoreBackup;
+  }
+
+  function bindBackup() { $$('[data-backup]').forEach(b => b.onclick = downloadBackup); }
+  function downloadBackup() {
+    const stamp = new Date().toISOString();
+    const blob = new Blob([JSON.stringify({app: 'intendencia', version: 'piloto-1', exportedAt: stamp, data: state}, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `intendencia-copia-${stamp.slice(0, 10)}.json`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    try { localStorage.setItem(C.BACKUP_KEY, stamp); } catch {}
+    render();
+    toast('Copia descargada. Queda en la carpeta Descargas.');
+  }
+  async function restoreBackup(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    let data;
+    try {
+      const parsed = JSON.parse(await file.text());
+      data = parsed && parsed.app === 'intendencia' ? parsed.data : parsed;
+      if (!data || typeof data !== 'object' || !Array.isArray(data.orders)) throw new Error();
+    } catch { toast('Ese archivo no es una copia de Intendencia.'); return; }
+    const ok = await confirmBox({title: '¿Recuperar esta copia?', text: `Se van a reemplazar los datos de esta computadora por los de «${file.name}» (${data.orders.length} pedidos).`, yes: 'Sí, recuperar', danger: true});
+    if (!ok) return;
+    state = C.normalizeState(data, CATALOG);
+    save();
+    go('pedidos', true);
+    toast('Copia recuperada.');
+  }
+
+  // ---------- Inicio ----------
+  load();
+  if (!readStored()) save();
+  render();
+})();
