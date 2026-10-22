@@ -224,12 +224,53 @@
     return Number.isNaN(t) ? Infinity : (now.getTime() - t) / 86400000;
   }
 
+
+  // ---------- Copia semanal en Excel (viernes 12:00, hora de Argentina) ----------
+  const EXCEL_KEY = 'intendencia-ultimo-excel';
+  // Argentina no tiene horario de verano: UTC-3 todo el año.
+  function lastFridayNoon(now = new Date()) {
+    const ar = new Date(now.getTime() - 3 * 3600000);
+    const back = (ar.getUTCDay() - 5 + 7) % 7;
+    let t = Date.UTC(ar.getUTCFullYear(), ar.getUTCMonth(), ar.getUTCDate() - back, 12) + 3 * 3600000;
+    if (t > now.getTime()) t -= 7 * 86400000;
+    return new Date(t);
+  }
+  // Hay que guardar la copia si ya pasó el viernes 12:00 y desde entonces no se descargó el Excel.
+  function weeklyExcelDue(lastExcel, now = new Date()) {
+    const last = lastExcel ? new Date(lastExcel).getTime() : 0;
+    return !(last >= lastFridayNoon(now).getTime());
+  }
+
+  function excelSheets(state, now = new Date()) {
+    const stamp = fullDate(now.toISOString());
+    const byDate = (a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
+    const orders = state.orders.slice().sort(byDate).map(o => [
+      o.id, fullDate(o.createdAt), o.title, tradeLabel(o.specialty), buildingShort(o.building),
+      shortDependency(o.dependency), o.location || '', isUrgent(o) ? 'Sí' : '', statusInfo(o.status).label,
+      isDone(o) && o.completedAt ? fullDate(o.completedAt) : '', o.description || ''
+    ]);
+    const tools = state.tools.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')).map(t => [
+      t.name, [t.brand, t.model].filter(Boolean).join(' '), t.serial || '',
+      t.holder ? 'Prestada' : (t.toolStatus || 'Disponible'), t.holder || '', t.holder && t.assignedDate ? t.assignedDate.split('-').reverse().join('/') : '', t.notes || ''
+    ]);
+    return [
+      {name: 'Pedidos', title: `Intendencia · Pedidos de trabajo · copia del ${stamp}`, rows: orders, columns: [
+        {header: 'Número', width: 9}, {header: 'Fecha del pedido', width: 17}, {header: 'Trabajo', width: 26}, {header: 'Oficio', width: 13},
+        {header: 'Edificio', width: 11}, {header: 'Dependencia', width: 15}, {header: 'Piso / oficina', width: 16}, {header: 'Urgente', width: 8},
+        {header: 'Estado', width: 13}, {header: 'Terminado el', width: 17}, {header: 'Indicaciones', width: 30}]},
+      {name: 'Herramientas', title: `Intendencia · Herramientas · copia del ${stamp}`, rows: tools, columns: [
+        {header: 'Herramienta', width: 24}, {header: 'Marca y modelo', width: 22}, {header: 'N.º de inventario', width: 16},
+        {header: 'Estado', width: 16}, {header: 'La tiene', width: 22}, {header: 'Desde', width: 12}, {header: 'Nota', width: 36}]}
+    ];
+  }
+
   const Core = {
     STORAGE_KEY, BACKUP_KEY, BUILDINGS, TRADES, TASKS, STATUSES, DONE,
     trade, tradeLabel, building, buildingShort, statusInfo, isDone, isUrgent,
     normalizeText, buildingForAddress, shortDependency, dependenciesForBuilding,
     emptyState, normalizeState, nextId, orderPlace, peopleNames,
-    searchOrders, sortOrders, searchContacts, when, fullDate, daysSince
+    searchOrders, sortOrders, searchContacts, when, fullDate, daysSince,
+    EXCEL_KEY, lastFridayNoon, weeklyExcelDue, excelSheets
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   else root.Core = Core;

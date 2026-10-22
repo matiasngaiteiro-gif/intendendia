@@ -155,15 +155,17 @@
     </a>`;
   }
 
-  function lastBackup() { try { return localStorage.getItem(C.BACKUP_KEY); } catch { return null; } }
 
-  // Recordatorio de copia: si nunca se hizo, recién aparece cuando hay pedidos de hace 2 días o más.
+  function lastExcel() { try { return localStorage.getItem(C.EXCEL_KEY); } catch { return null; } }
+
+  // Recordatorio semanal: desde el viernes a las 12:00 hasta que se guarde la copia de esa semana.
   function backupReminder() {
-    if (!state.orders.length) return '';
-    const last = lastBackup();
-    if (last ? C.daysSince(last) < 7 : !state.orders.some(o => C.daysSince(o.createdAt) >= 2)) return '';
-    return `<div class="notice">${icon('save', 'notice-ico')}<div><strong>${last ? 'Hace más de una semana que no guardás una copia.' : 'Todavía no guardaste una copia de los pedidos.'}</strong>
-      <p>Los pedidos quedan en esta computadora. Una copia sirve por si se borran.</p></div><button type="button" class="btn btn-small btn-secondary" data-backup>Guardar copia</button></div>`;
+    if (!state.orders.length && !state.tools.length) return '';
+    if (!C.weeklyExcelDue(lastExcel())) return '';
+    const isFriday = new Date(Date.now() - 3 * 3600000).getUTCDay() === 5;
+    return `<div class="notice" role="status">${icon('save', 'notice-ico')}<div><strong>${isFriday ? 'Es viernes: hay que guardar la copia de la semana.' : 'Falta guardar la copia de esta semana.'}</strong>
+      <p>Se descarga un Excel con todos los pedidos y herramientas para imprimir y archivar, y una copia para recuperar los datos si algo falla.</p></div>
+      <button type="button" class="btn btn-small btn-primary" data-backup>Guardar copia</button></div>`;
   }
 
   function renderOrders(showDone) {
@@ -287,20 +289,23 @@
     toast('Pedido borrado.', () => { state.orders.splice(index, 0, o); save(); render(); });
   }
 
+  // Hoja informativa del pedido para archivo: qué se pidió, dónde y cuándo. Sin estados ni controles.
   function printOrder(o) {
+    const b = C.building(o.building);
+    const row = (label, value) => value ? `<tr><th>${label}</th><td>${value}</td></tr>` : '';
     $('#printSheet').innerHTML = `
-      <header class="ps-head"><div><h1>ORDEN DE TRABAJO</h1><p>Intendencia — Cámara Nacional de Apelaciones en lo Comercial</p></div>
-      <div class="ps-num"><span>Número</span><strong>${esc(o.id)}</strong><span>Emitida: ${esc(C.fullDate(o.createdAt))}</span></div></header>
+      <header class="ps-head">
+        <div><h1>Orden de trabajo</h1><p>Intendencia · Cámara Nacional de Apelaciones en lo Comercial</p></div>
+        <div class="ps-num"><strong>${esc(o.id)}</strong><span>${esc(C.fullDate(o.createdAt))}</span></div>
+      </header>
+      <p class="ps-task">${esc(o.title)}${C.isUrgent(o) ? '<span class="ps-urgent">Urgente</span>' : ''}</p>
       <table class="ps-table">
-        <tr><th>Trabajo</th><td colspan="3"><strong>${esc(o.title)}</strong>${C.isUrgent(o) ? ' — URGENTE' : ''}</td></tr>
-        <tr><th>Edificio</th><td>${esc(C.building(o.building)?.address || o.building)}</td><th>Dependencia</th><td>${esc(C.shortDependency(o.dependency) || '—')}</td></tr>
-        <tr><th>Piso / oficina</th><td colspan="3">${esc(o.location || '—')}</td></tr>
-        <tr><th>Oficio</th><td>${esc(C.tradeLabel(o.specialty))}</td><th>Estado</th><td>${esc(C.statusInfo(o.status).label)}</td></tr>
-        <tr><th>Indicaciones</th><td colspan="3" class="ps-tall">${esc(o.description || '')}</td></tr>
-      </table>
-      <section class="ps-lines"><h2>Registro del trabajo</h2>
-        <p>Fecha y hora de inicio:</p><p>Fecha y hora de finalización:</p><p>Materiales utilizados:</p><p>Observaciones:</p></section>
-      <footer class="ps-sign"><p>Firma de quien hizo el trabajo</p><p>Conformidad de la dependencia</p></footer>`;
+        ${row('Edificio', esc(b ? `${b.short} · ${b.address}` : o.building))}
+        ${row('Dependencia', esc(C.shortDependency(o.dependency)))}
+        ${row('Piso / oficina', esc(o.location))}
+        ${row('Oficio', esc(C.tradeLabel(o.specialty)))}
+        ${row('Indicaciones', esc(o.description))}
+      </table>`;
     window.print();
   }
 
@@ -696,7 +701,6 @@
 
   // ==================== AJUSTES ====================
   function renderSettings() {
-    const last = lastBackup();
     const size = prefs.size || 'normal';
     main.innerHTML = `
       <h1 class="page-title">Ajustes</h1>
@@ -708,34 +712,56 @@
       </section>
       <section class="panel">
         <h2>Copia de seguridad</h2>
-        <p class="muted">Los pedidos se guardan solo en esta computadora. Guardá una copia de vez en cuando (por ejemplo, los viernes).</p>
-        <p><strong>Última copia:</strong> ${last ? esc(C.when(last)) : 'nunca'}</p>
-        <button type="button" class="btn btn-primary btn-block" data-backup>${icon('save')} Guardar una copia</button>
+        <p class="muted">Los pedidos se guardan solo en esta computadora. Todos los viernes desde las 12:00 la aplicación pide guardar la copia de la semana.</p>
+        <p><strong>Última copia en Excel:</strong> ${lastExcel() ? esc(C.when(lastExcel())) : 'nunca'}</p>
+        <button type="button" class="btn btn-primary btn-block" data-backup>${icon('save')} Guardar copia de la semana</button>
+        <div class="action-row">
+          <button type="button" class="btn btn-secondary" data-excel>Solo el Excel</button>
+          <button type="button" class="btn btn-secondary" data-json>Solo la copia para recuperar</button>
+        </div>
         <button type="button" class="btn btn-ghost btn-block" data-restore>Recuperar desde una copia</button>
         <input type="file" id="restoreFile" accept="application/json,.json" hidden>
       </section>`;
     $$('[data-size]', main).forEach(b => b.onclick = () => { prefs.size = b.dataset.size; savePrefs(); applyTextSize(); renderSettings(); });
     bindBackup();
+    $('[data-excel]').onclick = () => { downloadExcel(); toast('Excel descargado.'); renderSettings(); };
+    $('[data-json]').onclick = () => { downloadRestoreCopy(); toast('Copia para recuperar descargada.'); renderSettings(); };
     $('[data-restore]').onclick = () => $('#restoreFile').click();
     $('#restoreFile').onchange = restoreBackup;
   }
 
-  function bindBackup() { $$('[data-backup]').forEach(b => b.onclick = downloadBackup); }
-  function downloadBackup() {
-    const stamp = new Date().toISOString();
-    const blob = new Blob([JSON.stringify({app: 'intendencia', version: 'piloto-1', exportedAt: stamp, data: state}, null, 2)], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
+  function bindBackup() { $$('[data-backup]').forEach(b => b.onclick = weeklyBackup); }
+
+  function downloadFile(bytes, name, type) {
+    const url = URL.createObjectURL(new Blob([bytes], {type}));
     const a = document.createElement('a');
     a.href = url;
-    a.download = `intendencia-copia-${stamp.slice(0, 10)}.json`;
+    a.download = name;
     document.body.append(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    try { localStorage.setItem(C.BACKUP_KEY, stamp); } catch {}
-    render();
-    toast('Copia descargada. Queda en la carpeta Descargas.');
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
+  const fileDate = d => d.toISOString().slice(0, 10);
+
+  // Excel para imprimir y archivar.
+  function downloadExcel() {
+    const now = new Date();
+    downloadFile(window.Xlsx.workbook(C.excelSheets(state, now)), `intendencia-pedidos-${fileDate(now)}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    try { localStorage.setItem(C.EXCEL_KEY, now.toISOString()); } catch {}
+  }
+  // Copia completa para recuperar los datos en esta u otra computadora.
+  function downloadRestoreCopy() {
+    const now = new Date();
+    downloadFile(JSON.stringify({app: 'intendencia', version: 'piloto', exportedAt: now.toISOString(), data: state}, null, 2), `intendencia-copia-${fileDate(now)}.json`, 'application/json');
+    try { localStorage.setItem(C.BACKUP_KEY, now.toISOString()); } catch {}
+  }
+  function weeklyBackup() {
+    downloadExcel();
+    setTimeout(() => { downloadRestoreCopy(); render(); }, 700);
+    toast('Copia guardada en la carpeta Descargas: el Excel y la copia para recuperar.');
+  }
+
   async function restoreBackup(e) {
     const file = e.target.files[0];
     e.target.value = '';
@@ -753,6 +779,13 @@
     go('pedidos', true);
     toast('Copia recuperada.');
   }
+
+  // Si la lista está abierta cuando llega el viernes a las 12:00, el aviso aparece solo.
+  let dueShown = C.weeklyExcelDue(lastExcel());
+  setInterval(() => {
+    const due = C.weeklyExcelDue(lastExcel());
+    if (due !== dueShown) { dueShown = due; if (route().name === 'pedidos' && !dialog.open) renderOrders(route().parts[1] === 'terminados'); }
+  }, 60000);
 
   // ---------- Inicio ----------
   load();

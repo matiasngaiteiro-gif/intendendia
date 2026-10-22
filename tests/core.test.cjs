@@ -92,4 +92,31 @@ test('búsqueda de contactos por número de juzgado', () => {
   assert.equal(C.searchContacts(CATALOG, 'biblioteca')[0].name, 'Biblioteca');
 });
 
+test('recordatorio del viernes a las 12:00 (Argentina)', () => {
+  const thu = new Date('2026-10-22T15:00:00-03:00');
+  assert.equal(C.lastFridayNoon(thu).toISOString(), '2026-10-16T15:00:00.000Z');
+  const friBefore = new Date('2026-10-23T11:59:00-03:00');
+  assert.equal(C.lastFridayNoon(friBefore).toISOString(), '2026-10-16T15:00:00.000Z');
+  const friAfter = new Date('2026-10-23T12:00:00-03:00');
+  assert.equal(C.lastFridayNoon(friAfter).toISOString(), '2026-10-23T15:00:00.000Z');
+  assert.equal(C.weeklyExcelDue('2026-10-20T10:00:00-03:00', thu), false, 'ya se guardó esta semana');
+  assert.equal(C.weeklyExcelDue('2026-10-20T10:00:00-03:00', friBefore), false, 'antes de las 12 todavía no');
+  assert.equal(C.weeklyExcelDue('2026-10-20T10:00:00-03:00', friAfter), true, 'desde las 12 del viernes pide la copia');
+  assert.equal(C.weeklyExcelDue('2026-10-23T12:05:00-03:00', new Date('2026-10-26T09:00:00-03:00')), false);
+  assert.equal(C.weeklyExcelDue(null, thu), true, 'nunca se guardó');
+});
+
+test('Excel válido con pedidos y herramientas', () => {
+  const X = require('../xlsx.js');
+  const s = C.normalizeState({orders: [{id: 'OT-0001', title: 'Pérdida en canilla <baño>', specialty: 'Plomería', building: C.BUILDINGS[1].id, dependency: 'Portería', priority: 'Urgente', status: 'Pendiente', createdAt: '2026-10-22T11:00:00Z', description: 'Línea 1\nLínea 2 & más'}], tools: [{name: 'Taladro', holder: 'Carlos Benítez', assignedDate: '2026-10-20'}]}, CATALOG);
+  const sheets = C.excelSheets(s, new Date('2026-10-23T15:00:00Z'));
+  assert.deepEqual(sheets[0].rows[0].slice(0, 5), ['OT-0001', '22/10/2026, 08:00 h', 'Pérdida en canilla <baño>', 'Plomero', 'Callao']);
+  assert.equal(sheets[0].rows[0][7], 'Sí');
+  assert.deepEqual(sheets[1].rows[0].slice(3, 6), ['Prestada', 'Carlos Benítez', '20/10/2026']);
+  const bytes = X.workbook(sheets);
+  fs.writeFileSync(path.join(require('os').tmpdir(), 'intendencia-test.xlsx'), bytes);
+  assert.equal(Buffer.from(bytes.slice(0, 4)).toString('hex'), '504b0304');
+  assert.equal(X.crc32(new TextEncoder().encode('123456789')), 0xCBF43926);
+});
+
 console.log(`${n} pruebas de la prueba piloto: OK`);

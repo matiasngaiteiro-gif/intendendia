@@ -13,10 +13,16 @@ Esta versión es la **primera prueba piloto**: se dejó solo lo esencial y se re
 
   Antes de guardar se muestra un resumen. Desde ahí se puede «Guardar e imprimir» para archivar la orden en papel.
 - **Lista de pedidos**: «Por hacer» y «Terminados». Los urgentes aparecen primero. Cuando hay muchos pedidos aparecen un buscador y botones por edificio.
-- **Cada pedido**: cuatro botones de estado (Pendiente, En curso, Faltan materiales, Terminado). También se puede imprimir la orden en A4 (blanco y negro, Arial) para el archivo, modificarlo o borrarlo. Terminar o borrar se puede **deshacer** durante unos segundos.
+- **Cada pedido**: cuatro botones de estado (Pendiente, En curso, Faltan materiales, Terminado). También se puede imprimir, modificar o borrar.
+- **Orden impresa**: hoja A4 informativa, en blanco y negro y con Arial. Lleva número, fecha del pedido, trabajo, edificio, dependencia, piso u oficina, oficio e indicaciones, y marca «Urgente» cuando corresponde. No incluye el estado, los horarios de inicio y fin, los materiales ni firmas: informa, no controla. Los márgenes son amplios para que no se corten al imprimir. Terminar o borrar se puede **deshacer** durante unos segundos.
 - **Herramientas**: qué hay y a qué persona se le prestó (se escribe el nombre; los nombres ya usados se sugieren solos). Tiene el botón «Ya la devolvió».
 - **Contactos**: guía de juzgados, salas y oficinas. El teléfono se puede tocar para llamar. También se pueden agregar contactos propios.
 - **Ajustes**: tamaño de letra (Normal, Grande, Muy grande) y la copia de seguridad.
+- **Copia de los viernes**: todos los viernes desde las 12:00 (hora de Argentina) aparece un aviso en Pedidos para guardar la copia de la semana, en cada computadora donde se use. El botón descarga dos archivos:
+  - Un Excel (`intendencia-pedidos-AAAA-MM-DD.xlsx`) con las hojas Pedidos y Herramientas, listo para imprimir en A4 apaisado y archivar en papel.
+  - Una copia para recuperar los datos (`.json`).
+
+  El aviso queda visible hasta que se guarde la copia. La primera vez, el navegador puede preguntar si se permite descargar varios archivos: hay que responder que sí.
 
 Diseño sobrio: íconos de línea en un solo color, sin emojis.
 
@@ -36,7 +42,7 @@ Diseño sobrio: íconos de línea en un solo color, sin emojis.
 En el navegador de cada computadora (`localStorage`, misma clave que la versión 19: `intendencia-estado-v2`). Al actualizar desde la versión 19 **no se pierde nada**: los datos existentes se adaptan solos la primera vez que se abre.
 
 - Cada computadora tiene sus propios datos. Si se borra el historial del navegador, se pierden.
-- **Guardar una copia** (Ajustes) descarga un archivo `.json`. Si hace más de una semana que no se guarda, la pantalla de pedidos lo recuerda.
+- **Guardar copia de la semana** (en el aviso de los viernes o en Ajustes) descarga el Excel y la copia para recuperar. En Ajustes también se puede descargar cada uno por separado.
 - **Recuperar desde una copia** reemplaza los datos de esa computadora. Acepta también las copias de la versión 19.
 
 ## Archivos
@@ -45,6 +51,7 @@ En el navegador de cada computadora (`localStorage`, misma clave que la versión
 - `styles.css`: diseño, incluida la hoja impresa.
 - `core.js`: lógica sin pantalla (oficios, tareas, dependencias, mensajes, adaptación de datos viejos).
 - `app.js`: pantallas.
+- `xlsx.js`: genera el Excel sin librerías externas.
 - `contacts-data.js`: guía PJN transcrita el 16/09/2026.
 - `tests/core.test.cjs`: pruebas. Se corren con `node tests/core.test.cjs`.
 
