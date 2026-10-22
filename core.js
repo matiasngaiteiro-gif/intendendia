@@ -16,15 +16,15 @@
   // En lugar de nombres de empleados se trabaja con oficios.
   // "key" es el valor que ya usaban las órdenes guardadas (especialidad).
   const TRADES = [
-    {key: 'Electricidad', label: 'Electricista', icon: '💡', hint: 'Luces, enchufes, timbres'},
-    {key: 'Plomería', label: 'Plomero', icon: '🚰', hint: 'Canillas, baños, pérdidas'},
-    {key: 'Carpintería', label: 'Carpintero', icon: '🚪', hint: 'Puertas, cerraduras, muebles'},
-    {key: 'Aires Acondicionados', label: 'Técnico de aire', icon: '❄️', hint: 'Aire acondicionado'},
-    {key: 'Pintura', label: 'Pintor', icon: '🎨', hint: 'Paredes, puertas, retoques'},
-    {key: 'Albañilería', label: 'Albañil', icon: '🧱', hint: 'Revoque, baldosas, filtraciones'},
-    {key: 'Tapicería', label: 'Tapicero', icon: '🪑', hint: 'Sillas y asientos'},
-    {key: 'Ayudante', label: 'Ayudante', icon: '📦', hint: 'Traslados, limpieza, carteles'},
-    {key: 'Administrativo', label: 'Administrativo', icon: '📋', hint: 'Papeles, pedidos, proveedores'}
+    {key: 'Electricidad', label: 'Electricista', icon: 'bolt', hint: 'Luces, enchufes, timbres'},
+    {key: 'Plomería', label: 'Plomero', icon: 'drop', hint: 'Canillas, baños, pérdidas'},
+    {key: 'Carpintería', label: 'Carpintero', icon: 'door', hint: 'Puertas, cerraduras, muebles'},
+    {key: 'Aires Acondicionados', label: 'Técnico de aire', icon: 'snow', hint: 'Aire acondicionado'},
+    {key: 'Pintura', label: 'Pintor', icon: 'roller', hint: 'Paredes, puertas, retoques'},
+    {key: 'Albañilería', label: 'Albañil', icon: 'bricks', hint: 'Revoque, baldosas, filtraciones'},
+    {key: 'Tapicería', label: 'Tapicero', icon: 'chair', hint: 'Sillas y asientos'},
+    {key: 'Ayudante', label: 'Ayudante', icon: 'box', hint: 'Traslados, limpieza, carteles'},
+    {key: 'Administrativo', label: 'Administrativo', icon: 'clipboard', hint: 'Papeles, pedidos, proveedores'}
   ];
 
   const TASKS = {
@@ -41,10 +41,10 @@
 
   // Estados guardados → cómo se muestran. Se mantienen los valores que ya existían.
   const STATUSES = [
-    {value: 'Pendiente', label: 'Pendiente', icon: '⏳'},
-    {value: 'En proceso', label: 'En curso', icon: '🔧'},
-    {value: 'Faltan insumos', label: 'Faltan materiales', icon: '⚠️'},
-    {value: 'Resuelto', label: 'Terminado', icon: '✅'}
+    {value: 'Pendiente', label: 'Pendiente', icon: 'clock'},
+    {value: 'En proceso', label: 'En curso', icon: 'wrench'},
+    {value: 'Faltan insumos', label: 'Faltan materiales', icon: 'alert'},
+    {value: 'Resuelto', label: 'Terminado', icon: 'check'}
   ];
   const DONE = 'Resuelto';
 
@@ -109,7 +109,7 @@
 
   // ---------- Datos guardados ----------
   function emptyState(catalog) {
-    return {orders: [], tools: [], contacts: structuredClone(catalog || []), trades: {}, people: []};
+    return {orders: [], tools: [], contacts: structuredClone(catalog || []), people: []};
   }
 
   // Ordena y completa los datos, también los que vienen de versiones anteriores.
@@ -117,24 +117,12 @@
   function normalizeState(input, catalog) {
     const s = input && typeof input === 'object' ? input : emptyState(catalog);
     ['orders', 'tools', 'contacts', 'people'].forEach(k => { if (!Array.isArray(s[k])) s[k] = []; });
-    if (!s.trades || typeof s.trades !== 'object' || Array.isArray(s.trades)) s.trades = {};
 
     const roleMap = {'Mantenimiento general': 'Ayudante', 'Servicios y traslados': 'Ayudante', 'Patrimonio': 'Carpintería', 'Sanitarios': 'Plomería', 'Aire acondicionado': 'Aires Acondicionados'};
     const roleOf = id => {
       const p = s.people.find(x => x.id === id);
       return p ? (roleMap[p.role] || p.role) : '';
     };
-
-    // Teléfono de cada oficio: si todavía no tiene, toma el primero cargado en el personal anterior.
-    TRADES.forEach(t => {
-      const entry = s.trades[t.key] && typeof s.trades[t.key] === 'object' ? s.trades[t.key] : {};
-      if (typeof entry.phone !== 'string') entry.phone = '';
-      if (!entry.phone) {
-        const p = s.people.find(x => (roleMap[x.role] || x.role) === t.key && x.phone);
-        if (p) entry.phone = String(p.phone);
-      }
-      s.trades[t.key] = entry;
-    });
 
     const categoryTrade = {'Carpintería': 'Carpintería', 'Aire acondicionado': 'Aires Acondicionados', 'Electricidad': 'Electricidad', 'Sanitarios': 'Plomería', 'Pintura': 'Pintura', 'Albañilería': 'Albañilería', 'Tapicería': 'Tapicería', 'Administrativo': 'Administrativo', 'Ascensores': 'Electricidad', 'Seguridad': 'Electricidad'};
     s.orders.forEach(o => {
@@ -143,9 +131,12 @@
       if (!o.priority) o.priority = 'Media';
     });
 
-    // Herramientas: "entregada a" pasa a ser un oficio.
+    // Herramientas: "entregada a" se guarda como el nombre de la persona.
+    // En la versión anterior era el código de un empleado (p1, p2…): se reemplaza por su nombre.
     s.tools.forEach(t => {
-      if (t.holder && !trade(t.holder)) t.holder = roleOf(t.holder) || '';
+      const p = t.holder && s.people.find(x => x.id === t.holder);
+      if (p) t.holder = String(p.name || '').trim();
+      t.holder = String(t.holder || '').trim();
       if (t.holder) t.toolStatus = 'Entregada';
       else if (!t.toolStatus || t.toolStatus === 'Entregada') t.toolStatus = 'Disponible';
     });
@@ -164,23 +155,10 @@
     return [buildingShort(o.building), shortDependency(o.dependency), o.location].filter(Boolean).join(' · ');
   }
 
-  function whatsappText(o) {
-    const task = String(o.title || 'esta tarea').replace(/^./, c => c.toLowerCase());
-    const place = [buildingShort(o.building), shortDependency(o.dependency), o.location].filter(x => x && x !== 'Otro lugar').join(', ');
-    return [
-      `Hola, podés encargarte de ${task}?`,
-      place ? `${place}.` : '',
-      o.description ? String(o.description).trim() : '',
-      isUrgent(o) ? 'Es urgente, darle prioridad.' : '',
-      'Avisame cuando esté listo. Gracias!'
-    ].filter(Boolean).join('\n').replace(/[¿¡]/g, '');
-  }
-
-  function whatsappLink(o, phone) {
-    let digits = String(phone || '').replace(/\D/g, '');
-    // Celular argentino cargado como 11xxxxxxxx: se agrega el código de país.
-    if (digits && digits.length === 10) digits = '549' + digits;
-    return `https://wa.me/${digits}?text=${encodeURIComponent(whatsappText(o))}`;
+  // Nombres para sugerir al prestar una herramienta: los del personal anterior y los ya usados.
+  function peopleNames(state) {
+    const names = [...(state.people || []).map(p => p.name), ...(state.tools || []).flatMap(t => [t.holder, ...(t.returns || []).map(r => r.holderName)])];
+    return [...new Set(names.map(n => String(n || '').trim()).filter(n => n && !/^p\d+$/.test(n)))].sort((a, b) => a.localeCompare(b, 'es'));
   }
 
   function searchOrders(orders, q) {
@@ -250,7 +228,7 @@
     STORAGE_KEY, BACKUP_KEY, BUILDINGS, TRADES, TASKS, STATUSES, DONE,
     trade, tradeLabel, building, buildingShort, statusInfo, isDone, isUrgent,
     normalizeText, buildingForAddress, shortDependency, dependenciesForBuilding,
-    emptyState, normalizeState, nextId, orderPlace, whatsappText, whatsappLink,
+    emptyState, normalizeState, nextId, orderPlace, peopleNames,
     searchOrders, sortOrders, searchContacts, when, fullDate, daysSince
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;

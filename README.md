@@ -11,20 +11,23 @@ Esta versión es la **primera prueba piloto**: se dejó solo lo esencial y se re
   2. ¿Dónde? Edificio y dependencia. El piso sale solo de la Guía Judicial PJN; se puede agregar la oficina.
   3. ¿Es urgente? Sí o no, y una nota opcional.
 
-  Antes de guardar se muestra un resumen. Desde ahí se puede guardar y avisar por WhatsApp.
+  Antes de guardar se muestra un resumen. Desde ahí se puede «Guardar e imprimir» para archivar la orden en papel.
 - **Lista de pedidos**: «Por hacer» y «Terminados». Los urgentes aparecen primero. Cuando hay muchos pedidos aparecen un buscador y botones por edificio.
-- **Cada pedido**: cuatro botones de estado (Pendiente, En curso, Faltan materiales, Terminado). También se puede avisar por WhatsApp, imprimir la orden en A4 (blanco y negro, Arial), modificarlo o borrarlo. Terminar o borrar se puede **deshacer** durante unos segundos.
-- **Herramientas**: qué hay y a qué oficio se le prestó. Tiene el botón «Ya la devolvió».
+- **Cada pedido**: cuatro botones de estado (Pendiente, En curso, Faltan materiales, Terminado). También se puede imprimir la orden en A4 (blanco y negro, Arial) para el archivo, modificarlo o borrarlo. Terminar o borrar se puede **deshacer** durante unos segundos.
+- **Herramientas**: qué hay y a qué persona se le prestó (se escribe el nombre; los nombres ya usados se sugieren solos). Tiene el botón «Ya la devolvió».
 - **Contactos**: guía de juzgados, salas y oficinas. El teléfono se puede tocar para llamar. También se pueden agregar contactos propios.
-- **Ajustes**: tamaño de letra (Normal, Grande, Muy grande), el número de WhatsApp de cada oficio y la copia de seguridad.
+- **Ajustes**: tamaño de letra (Normal, Grande, Muy grande) y la copia de seguridad.
+
+Diseño sobrio: íconos de línea en un solo color, sin emojis.
 
 ## Qué cambió respecto de la versión 19
 
-- No hay nombres de empleados: se trabaja con **oficios**. El número de WhatsApp se carga una vez por oficio en Ajustes.
+- Los pedidos no llevan nombres de empleados: se asignan a un **oficio**. Las herramientas, en cambio, se prestan a una **persona**.
+- Se quitó WhatsApp en esta prueba: el registro de lo pedido es la orden impresa.
 - Quedan ocultos: Recordatorios, Obras, Guías, Servicios, Insumos y el panel de métricas. **Sus datos no se borran**: siguen guardados en el navegador y en las copias de seguridad, por si se vuelven a activar.
 - Prioridad simplificada: «Normal» o «Urgente». Los pedidos viejos con Alta o Baja se ven como normales y conservan su valor.
 - Estados: «Sin asignar» pasa a «Pendiente»; «En proceso» se muestra como «En curso» y «Faltan insumos» como «Faltan materiales».
-- Las herramientas que estaban prestadas a una persona pasan a figurar prestadas a su oficio.
+- Las herramientas prestadas en la versión 19 conservan el nombre de la persona.
 - No se cargan pedidos ni herramientas de ejemplo: la aplicación arranca vacía.
 - Se quitaron los atajos de teclado y los filtros avanzados. El botón Atrás del navegador funciona en todas las pantallas.
 

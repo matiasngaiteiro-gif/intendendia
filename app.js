@@ -8,6 +8,39 @@
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
   const main = $('#main');
 
+  // Íconos de línea, simples y en un solo color (toman el color del texto).
+  const ICON_PATHS = {
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+    list: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3.5h6v3H9z"/><path d="M9 11h6M9 15h6"/>',
+    toolbox: '<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V5h6v3M3 13h18M10 13v2h4v-2"/>',
+    phone: '<path d="M5 4h3.5l1.8 4.5-2.3 1.4a11 11 0 0 0 6.1 6.1l1.4-2.3L20 15.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+    sliders: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+    printer: '<path d="M7 9V4h10v5"/><rect x="3.5" y="9" width="17" height="8" rx="1.5"/><path d="M7 14h10v6H7z"/>',
+    pencil: '<path d="M4 20l4.5-1 10.3-10.3a2 2 0 0 0-3.5-3.5L5 15.5z"/><path d="M14 6.5l3.5 3.5"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.3 5.3L4 17l3 3 5.4-5.4a4 4 0 0 0 5.3-5.3l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+    alert: '<path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.2v.3"/>',
+    back: '<path d="M15 5l-7 7 7 7"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>',
+    save: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/>',
+    hand: '<path d="M5 12h4l3-3h4a2 2 0 0 1 0 4h-3M5 18h9l5-4a1.5 1.5 0 0 0-2-2.2L14 13"/><path d="M2 11v8"/>',
+    bolt: '<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/>',
+    drop: '<path d="M12 3.5s6 6.8 6 11a6 6 0 0 1-12 0c0-4.2 6-11 6-11z"/>',
+    door: '<rect x="6" y="3" width="12" height="18" rx="1"/><path d="M3.5 21h17"/><circle cx="14.5" cy="12" r=".9" fill="currentColor"/>',
+    snow: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5"/>',
+    roller: '<rect x="4" y="4" width="13" height="5" rx="1"/><path d="M17 6.5h3v5h-8v3"/><rect x="10.5" y="14.5" width="3" height="6" rx="1"/>',
+    bricks: '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9.7h18M3 14.3h18M9 5v4.7M15 9.7v4.6M9 14.3V19"/>',
+    chair: '<path d="M7 3v18M17 13v8M7 13h10M7 3h7a3 3 0 0 1 3 3v3H7"/>',
+    box: '<path d="M3.5 7.5L12 3.5l8.5 4v9L12 20.5l-8.5-4z"/><path d="M3.5 7.5L12 11.5l8.5-4M12 11.5v9"/>',
+    clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3.5h6v3H9z"/><path d="M9 12h6M9 16h4"/>',
+    building: '<path d="M4 21V5l8-2v18M12 8h8v13M8 8v.01M8 12v.01M8 16v.01M16 12v.01M16 16v.01M2.5 21h19"/>'
+  };
+  const icon = (name, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON_PATHS[name] || ICON_PATHS.wrench}</svg>`;
+  $$('[data-nav-icon]').forEach(el => { el.innerHTML = icon(el.dataset.navIcon); });
+
   // ---------- Guardado en este navegador ----------
   let state, revision = 0;
   function readStored() {
@@ -36,7 +69,7 @@
   const PREF_KEY = 'intendencia-preferencias';
   const prefs = (() => { try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; } catch { return {}; } })();
   const savePrefs = () => { try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch {} };
-  const applyTextSize = () => { document.documentElement.dataset.size = prefs.size || 'normal'; };
+  const applyTextSize = () => { document.documentElement.dataset.textSize = prefs.size || 'normal'; };
   applyTextSize();
 
   // ---------- Avisos ----------
@@ -112,7 +145,7 @@
     const t = C.trade(o.specialty);
     const urgentOpen = C.isUrgent(o) && !C.isDone(o);
     return `<a class="card order-card${urgentOpen ? ' is-urgent' : ''}" href="#/pedido/${encodeURIComponent(o.id)}">
-      <span class="card-icon" aria-hidden="true">${t?.icon || '🛠️'}</span>
+      <span class="card-icon">${icon(t?.icon)}</span>
       <span class="card-main">
         <span class="card-title">${esc(o.title)}</span>
         <span class="card-sub">${esc(C.orderPlace(o))}</span>
@@ -129,7 +162,7 @@
     if (!state.orders.length) return '';
     const last = lastBackup();
     if (last ? C.daysSince(last) < 7 : !state.orders.some(o => C.daysSince(o.createdAt) >= 2)) return '';
-    return `<div class="notice"><span aria-hidden="true">💾</span><div><strong>${last ? 'Hace más de una semana que no guardás una copia.' : 'Todavía no guardaste una copia de los pedidos.'}</strong>
+    return `<div class="notice">${icon('save', 'notice-ico')}<div><strong>${last ? 'Hace más de una semana que no guardás una copia.' : 'Todavía no guardaste una copia de los pedidos.'}</strong>
       <p>Los pedidos quedan en esta computadora. Una copia sirve por si se borran.</p></div><button type="button" class="btn btn-small btn-secondary" data-backup>Guardar copia</button></div>`;
   }
 
@@ -142,7 +175,7 @@
     const filtering = listView.q || listView.building;
 
     main.innerHTML = `
-      <button type="button" class="btn btn-primary btn-hero" data-new-order><span aria-hidden="true">＋</span> Nuevo pedido</button>
+      <button type="button" class="btn btn-primary btn-hero" data-new-order>${icon('plus')} Nuevo pedido</button>
       ${backupReminder()}
       <div class="segmented" role="tablist" aria-label="Qué pedidos ver">
         <a role="tab" href="#/pedidos" aria-selected="${!showDone}" class="${showDone ? '' : 'active'}">Por hacer <b>${open.length}</b></a>
@@ -150,7 +183,7 @@
       </div>
       ${!showDone && urgent ? `<p class="summary-line"><span class="pill pill-urgent">${urgent} urgente${urgent === 1 ? '' : 's'}</span> aparece${urgent === 1 ? '' : 'n'} primero.</p>` : ''}
       ${base.length > 4 || filtering ? `<div class="filters">
-        <label class="search"><span class="sr-only">Buscar pedidos</span><span aria-hidden="true">🔍</span><input type="search" id="orderSearch" placeholder="Buscar: luz, juzgado 5, plomero…" value="${esc(listView.q)}" autocomplete="off"></label>
+        <label class="search"><span class="sr-only">Buscar pedidos</span>${icon('search')}<input type="search" id="orderSearch" placeholder="Buscar: luz, juzgado 5, plomero…" value="${esc(listView.q)}" autocomplete="off"></label>
         <div class="chips" role="group" aria-label="Edificio">
           <button type="button" class="chip${listView.building ? '' : ' active'}" data-building="">Todos</button>
           ${C.BUILDINGS.map(b => `<button type="button" class="chip${listView.building === b.id ? ' active' : ''}" data-building="${esc(b.id)}">${esc(b.short)}</button>`).join('')}
@@ -161,8 +194,8 @@
       if (filtered.length) return filtered.map(orderCard).join('');
       if (filtering) return `<div class="empty"><p>No hay pedidos que coincidan.</p><button type="button" class="btn btn-ghost" data-clear>Ver todos</button></div>`;
       return showDone
-        ? `<div class="empty"><span aria-hidden="true">📭</span><p>Todavía no hay pedidos terminados.</p></div>`
-        : `<div class="empty"><span aria-hidden="true">👍</span><p><strong>No hay nada pendiente.</strong></p><p>Cuando haya un trabajo para hacer, tocá «Nuevo pedido».</p></div>`;
+        ? `<div class="empty"><p>Todavía no hay pedidos terminados.</p></div>`
+        : `<div class="empty"><p><strong>No hay nada pendiente.</strong></p><p>Cuando haya un trabajo para hacer, tocá «Nuevo pedido».</p></div>`;
     }
 
     const search = $('#orderSearch');
@@ -189,12 +222,11 @@
       return;
     }
     const t = C.trade(o.specialty);
-    const phone = state.trades[o.specialty]?.phone;
     main.innerHTML = `
-      <a class="back" href="#/pedidos${C.isDone(o) ? '/terminados' : ''}">← Volver a pedidos</a>
+      <a class="back" href="#/pedidos${C.isDone(o) ? '/terminados' : ''}">${icon('back')} Volver a pedidos</a>
       <article class="detail">
         <div class="detail-head">
-          <span class="card-icon big" aria-hidden="true">${t?.icon || '🛠️'}</span>
+          <span class="card-icon big">${icon(t?.icon)}</span>
           <div><p class="eyebrow">Pedido ${esc(o.id)}</p><h1>${esc(o.title)}</h1>
           ${C.isUrgent(o) ? '<span class="pill pill-urgent">Urgente</span>' : ''}</div>
         </div>
@@ -207,14 +239,12 @@
         </dl>
         <h2 class="section-title">¿Cómo está este trabajo?</h2>
         <div class="status-grid" role="group" aria-label="Estado del pedido">
-          ${C.STATUSES.map(s => `<button type="button" class="status-btn status-${statusClass(s.value)}${o.status === s.value ? ' active' : ''}" data-status="${esc(s.value)}" aria-pressed="${o.status === s.value}"><span aria-hidden="true">${s.icon}</span>${esc(s.label)}</button>`).join('')}
+          ${C.STATUSES.map(s => `<button type="button" class="status-btn status-${statusClass(s.value)}${o.status === s.value ? ' active' : ''}" data-status="${esc(s.value)}" aria-pressed="${o.status === s.value}">${icon(s.icon)}${esc(s.label)}</button>`).join('')}
         </div>
         <div class="action-stack">
-          <a class="btn btn-whatsapp" href="${esc(C.whatsappLink(o, phone))}" target="_blank" rel="noopener"><span aria-hidden="true">💬</span> Avisar por WhatsApp</a>
-          ${phone ? '' : `<p class="hint">El ${esc(C.tradeLabel(o.specialty).toLowerCase())} no tiene número cargado: WhatsApp te va a pedir que elijas el contacto. Podés cargarlo en <a href="#/ajustes">Ajustes</a>.</p>`}
           <div class="action-row">
-            <button type="button" class="btn btn-secondary" data-print><span aria-hidden="true">🖨️</span> Imprimir</button>
-            <button type="button" class="btn btn-secondary" data-edit><span aria-hidden="true">✏️</span> Modificar</button>
+            <button type="button" class="btn btn-primary" data-print>${icon('printer')} Imprimir</button>
+            <button type="button" class="btn btn-secondary" data-edit>${icon('pencil')} Modificar</button>
           </div>
           <button type="button" class="btn btn-link-danger" data-delete>Borrar este pedido</button>
         </div>
@@ -319,20 +349,20 @@
 
     const n = STEPS[step];
     const head = `<div class="wizard-head">
-      <button type="button" class="back" data-cancel>✕ ${draft.mode === 'edit' ? 'Cancelar cambios' : 'Cancelar'}</button>
+      <button type="button" class="back" data-cancel>${icon('x')} ${draft.mode === 'edit' ? 'Cancelar cambios' : 'Cancelar'}</button>
       ${n < 4 ? `<p class="step-count">Paso ${n} de 3</p><div class="progress" aria-hidden="true"><span style="width:${n / 3 * 100}%"></span></div>` : ''}</div>`;
-    const back = prev => `<button type="button" class="btn btn-ghost btn-back" data-step="${prev}">← Atrás</button>`;
+    const back = prev => `<button type="button" class="btn btn-ghost btn-back" data-step="${prev}">${icon('back')} Atrás</button>`;
     let body = '';
 
     if (step === 'oficio') {
       body = `<h1 class="q">¿Quién tiene que hacer el trabajo?</h1>
-        <div class="tiles">${C.TRADES.map(t => `<button type="button" class="tile${draft.specialty === t.key ? ' selected' : ''}" data-trade="${esc(t.key)}"><span class="tile-icon" aria-hidden="true">${t.icon}</span><span class="tile-label">${esc(t.label)}</span><span class="tile-hint">${esc(t.hint)}</span></button>`).join('')}</div>`;
+        <div class="tiles">${C.TRADES.map(t => `<button type="button" class="tile${draft.specialty === t.key ? ' selected' : ''}" data-trade="${esc(t.key)}">${icon(t.icon, 'tile-icon')}<span class="tile-label">${esc(t.label)}</span><span class="tile-hint">${esc(t.hint)}</span></button>`).join('')}</div>`;
     } else if (step === 'tarea') {
       const tasks = C.TASKS[draft.specialty] || [];
       const t = C.trade(draft.specialty);
-      body = `<p class="crumb">${t.icon} ${esc(t.label)}</p><h1 class="q">¿Qué hay que hacer?</h1>
+      body = `<p class="crumb">${icon(t.icon)} ${esc(t.label)}</p><h1 class="q">¿Qué hay que hacer?</h1>
         <div class="options">${tasks.map(name => `<button type="button" class="option${!draft.custom && draft.title === name ? ' selected' : ''}" data-task="${esc(name)}">${esc(name)}</button>`).join('')}
-        <button type="button" class="option option-other${draft.custom ? ' selected' : ''}" data-other>✏️ Otra cosa (escribirla)</button></div>
+        <button type="button" class="option option-other${draft.custom ? ' selected' : ''}" data-other>${icon('pencil')} Otra cosa (escribirla)</button></div>
         <div class="custom-task" ${draft.custom ? '' : 'hidden'}>
           <label for="customTask" class="field-label">Escribí qué hay que hacer</label>
           <input id="customTask" maxlength="90" value="${draft.custom ? esc(draft.title) : ''}" placeholder="Ej.: cambiar el vidrio de la ventana">
@@ -361,8 +391,8 @@
     } else if (step === 'urgencia') {
       body = `<h1 class="q">¿Es urgente?</h1>
         <div class="tiles tiles-2">
-          <button type="button" class="tile${draft.priority === 'Media' ? ' selected' : ''}" data-prio="Media"><span class="tile-icon" aria-hidden="true">🙂</span><span class="tile-label">No, es normal</span><span class="tile-hint">Se hace en el orden de llegada</span></button>
-          <button type="button" class="tile tile-urgent${draft.priority === 'Urgente' ? ' selected' : ''}" data-prio="Urgente"><span class="tile-icon" aria-hidden="true">🚨</span><span class="tile-label">Sí, es urgente</span><span class="tile-hint">Aparece primero en la lista</span></button>
+          <button type="button" class="tile${draft.priority === 'Media' ? ' selected' : ''}" data-prio="Media">${icon('clock', 'tile-icon')}<span class="tile-label">No, es normal</span><span class="tile-hint">Se hace en el orden de llegada</span></button>
+          <button type="button" class="tile tile-urgent${draft.priority === 'Urgente' ? ' selected' : ''}" data-prio="Urgente">${icon('alert', 'tile-icon')}<span class="tile-label">Sí, es urgente</span><span class="tile-hint">Aparece primero en la lista</span></button>
         </div>
         <div class="field">
           <label for="noteInput" class="field-label">¿Algo más que tengan que saber? <span class="optional">(no es obligatorio)</span></label>
@@ -376,7 +406,7 @@
       const row = (label, value, stepName) => `<div class="review-row"><div><dt>${label}</dt><dd>${value}</dd></div><button type="button" class="btn btn-small btn-ghost" data-step="${stepName}">Cambiar</button></div>`;
       body = `<h1 class="q">${draft.mode === 'edit' ? 'Modificar pedido' : '¿Está todo bien?'}</h1>
         <dl class="review">
-          ${row('Quién lo hace', `${t.icon} ${esc(t.label)}`, 'oficio')}
+          ${row('Quién lo hace', esc(t.label), 'oficio')}
           ${row('Qué hay que hacer', esc(draft.title), 'tarea')}
           ${row('Dónde', esc(C.orderPlace(draft)), 'lugar')}
           ${row('Urgencia', draft.priority === 'Urgente' ? '<span class="pill pill-urgent">Urgente</span>' : 'Normal', 'urgencia')}
@@ -385,8 +415,8 @@
         <div class="action-stack">
           ${draft.mode === 'edit'
             ? `<button type="button" class="btn btn-primary btn-block" data-save>Guardar cambios</button>`
-            : `<button type="button" class="btn btn-whatsapp btn-block" data-save="whatsapp"><span aria-hidden="true">💬</span> Guardar y avisar por WhatsApp</button>
-               <button type="button" class="btn btn-secondary btn-block" data-save>Guardar sin avisar</button>`}
+            : `<button type="button" class="btn btn-primary btn-block" data-save="print">${icon('printer')} Guardar e imprimir</button>
+               <button type="button" class="btn btn-secondary btn-block" data-save>Guardar sin imprimir</button>`}
         </div>`;
     }
 
@@ -451,7 +481,7 @@
     });
     if ($('[data-review]')) $('[data-review]').onclick = () => { draft.description = note.value.trim(); go(wizardPath('resumen')); };
 
-    $$('[data-save]').forEach(b => b.onclick = () => saveDraft(b.dataset.save === 'whatsapp'));
+    $$('[data-save]').forEach(b => b.onclick = () => saveDraft(b.dataset.save === 'print'));
   }
 
   async function cancelWizard() {
@@ -468,7 +498,7 @@
     go(target, true);
   }
 
-  function saveDraft(sendWhatsapp) {
+  function saveDraft(andPrint) {
     const now = new Date().toISOString();
     const data = {
       title: draft.title, specialty: draft.specialty, building: draft.building, dependency: draft.dependency,
@@ -486,12 +516,12 @@
       state.orders.push(order);
     }
     if (!save()) return;
-    if (sendWhatsapp) window.open(C.whatsappLink(order, state.trades[order.specialty]?.phone), '_blank', 'noopener');
     const wasEdit = draft.mode === 'edit';
     draft = null;
     wizardClosed = true;
     go(`pedido/${encodeURIComponent(order.id)}`, true);
     toast(wasEdit ? 'Cambios guardados.' : 'Pedido guardado.');
+    if (andPrint) setTimeout(() => printOrder(order), 150);
   }
 
   // ==================== HERRAMIENTAS ====================
@@ -499,23 +529,23 @@
   function renderTools() {
     const q = C.normalizeText(toolView.q);
     const list = state.tools
-      .filter(t => !q || C.normalizeText([t.name, t.brand, t.model, t.serial, t.holder ? C.tradeLabel(t.holder) : ''].join(' ')).includes(q))
+      .filter(t => !q || C.normalizeText([t.name, t.brand, t.model, t.serial, t.holder].join(' ')).includes(q))
       .sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
     const out = state.tools.filter(t => t.holder).length;
-    const pill = t => t.holder ? `<span class="pill pill-progress">La tiene: ${esc(C.tradeLabel(t.holder))}</span>`
+    const pill = t => t.holder ? `<span class="pill pill-progress">La tiene: ${esc(t.holder)}</span>`
       : t.toolStatus === 'En reparación' ? '<span class="pill pill-missing">En reparación</span>'
       : t.toolStatus === 'Fuera de servicio' ? '<span class="pill">Fuera de servicio</span>'
       : '<span class="pill pill-done">Disponible</span>';
     main.innerHTML = `
       <h1 class="page-title">Herramientas</h1>
       <p class="lead">${state.tools.length ? `${state.tools.length} herramienta${state.tools.length === 1 ? '' : 's'} · ${out} prestada${out === 1 ? '' : 's'}` : 'Anotá acá qué herramientas hay y a quién se prestan.'}</p>
-      <button type="button" class="btn btn-primary btn-block" data-new-tool><span aria-hidden="true">＋</span> Agregar herramienta</button>
-      ${state.tools.length > 5 ? `<label class="search"><span class="sr-only">Buscar herramientas</span><span aria-hidden="true">🔍</span><input type="search" id="toolSearch" placeholder="Buscar herramienta" value="${esc(toolView.q)}" autocomplete="off"></label>` : ''}
+      <button type="button" class="btn btn-primary btn-block" data-new-tool>${icon('plus')} Agregar herramienta</button>
+      ${state.tools.length > 5 ? `<label class="search"><span class="sr-only">Buscar herramientas</span>${icon('search')}<input type="search" id="toolSearch" placeholder="Buscar herramienta" value="${esc(toolView.q)}" autocomplete="off"></label>` : ''}
       <div class="list">${list.length ? list.map(t => `<button type="button" class="card tool-card" data-tool="${esc(t.id)}">
         <span class="card-main"><span class="card-title">${esc(t.name)}</span>
         <span class="card-sub">${esc([t.brand, t.model].filter(Boolean).join(' ') || 'Sin marca')}${t.serial ? ' · N.º ' + esc(t.serial) : ''}</span></span>
         <span class="card-side">${pill(t)}</span></button>`).join('')
-        : `<div class="empty"><span aria-hidden="true">🧰</span><p>${q ? 'No se encontró esa herramienta.' : 'Todavía no hay herramientas cargadas.'}</p></div>`}</div>`;
+        : `<div class="empty"><p>${q ? 'No se encontró esa herramienta.' : 'Todavía no hay herramientas cargadas.'}</p></div>`}</div>`;
     $('[data-new-tool]').onclick = () => toolForm();
     $$('[data-tool]').forEach(b => b.onclick = () => toolSheet(state.tools.find(t => t.id === b.dataset.tool)));
     const s = $('#toolSearch');
@@ -532,28 +562,37 @@
   function toolSheet(t) {
     if (!t) return;
     const history = (t.returns || []).slice(-3).reverse();
-    openDialog(`<div class="dlg"><button type="button" class="dlg-x" data-close aria-label="Cerrar">✕</button>
+    openDialog(`<div class="dlg"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
       <h2 id="dialogTitle">${esc(t.name)}</h2>
       <p class="muted">${esc([t.brand, t.model].filter(Boolean).join(' '))}${t.serial ? ' · N.º ' + esc(t.serial) : ''}</p>
-      ${t.holder ? `<p class="big-status">La tiene el <strong>${esc(C.tradeLabel(t.holder).toLowerCase())}</strong>${t.assignedDate ? ` desde ${esc(C.when(t.assignedDate).toLowerCase())}` : ''}.</p>
-        <button type="button" class="btn btn-primary btn-block" data-return>✅ Ya la devolvió</button>`
+      ${t.holder ? `<p class="big-status">La tiene <strong>${esc(t.holder)}</strong>${t.assignedDate ? ` desde ${esc(C.when(t.assignedDate).toLowerCase())}` : ''}.</p>
+        <button type="button" class="btn btn-primary btn-block" data-return>${icon('check')} Ya la devolvió</button>`
         : `<p class="big-status">${t.toolStatus === 'Disponible' ? 'Está disponible.' : esc(t.toolStatus) + '.'}</p>
         <h3 class="sub-q">¿A quién se la prestás?</h3>
-        <div class="tiles tiles-compact">${C.TRADES.map(x => `<button type="button" class="tile" data-lend="${esc(x.key)}"><span class="tile-icon" aria-hidden="true">${x.icon}</span><span class="tile-label">${esc(x.label)}</span></button>`).join('')}</div>`}
+        <form class="lend" id="lendForm">
+          <label class="field-label" for="lendName">Nombre de la persona</label>
+          <input id="lendName" list="peopleList" maxlength="60" autocomplete="off" placeholder="Ej.: Carlos Benítez">
+          <datalist id="peopleList">${C.peopleNames(state).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+          <button type="submit" class="btn btn-primary btn-block">${icon('hand')} Prestar</button>
+        </form>`}
       ${t.notes ? `<p class="muted">Nota: ${esc(t.notes)}</p>` : ''}
-      ${history.length ? `<p class="muted small">Últimas devoluciones: ${history.map(h => esc(`${C.trade(h.holder) ? C.tradeLabel(h.holder) + ', ' : ''}${C.when(h.returnedAt).toLowerCase()}`)).join(' · ')}</p>` : ''}
-      <div class="dlg-actions"><button type="button" class="btn btn-secondary" data-edit>✏️ Modificar</button><button type="button" class="btn btn-link-danger" data-del>Borrar</button></div></div>`, body => {
+      ${history.length ? `<p class="muted small">Últimas devoluciones: ${history.map(h => esc(`${h.holderName && !C.trade(h.holder) ? h.holderName + ', ' : ''}${C.when(h.returnedAt).toLowerCase()}`)).join(' · ')}</p>` : ''}
+      <div class="dlg-actions"><button type="button" class="btn btn-secondary" data-edit>${icon('pencil')} Modificar</button><button type="button" class="btn btn-link-danger" data-del>Borrar</button></div></div>`, body => {
       const now = new Date().toISOString();
       $('[data-return]', body)?.addEventListener('click', () => {
         t.returns = Array.isArray(t.returns) ? t.returns : [];
-        t.returns.push({holder: t.holder, holderName: C.tradeLabel(t.holder), assignedDate: t.assignedDate || '', returnedAt: now});
+        t.returns.push({holder: t.holder, holderName: t.holder, assignedDate: t.assignedDate || '', returnedAt: now});
         Object.assign(t, {holder: '', assignedDate: '', toolStatus: 'Disponible', returnedAt: now, updatedAt: now});
         save(); dialog.close(); renderTools(); toast('Devolución anotada.');
       });
-      $$('[data-lend]', body).forEach(b => b.onclick = () => {
-        Object.assign(t, {holder: b.dataset.lend, assignedDate: now.slice(0, 10), toolStatus: 'Entregada', updatedAt: now});
-        save(); dialog.close(); renderTools(); toast(`Prestada al ${C.tradeLabel(t.holder).toLowerCase()}.`);
-      });
+      const lend = $('#lendForm', body);
+      if (lend) lend.onsubmit = e => {
+        e.preventDefault();
+        const name = $('#lendName', body).value.trim();
+        if (!name) { $('#lendName', body).focus(); toast('Escribí el nombre de quien se la lleva.'); return; }
+        Object.assign(t, {holder: name, assignedDate: now.slice(0, 10), toolStatus: 'Entregada', updatedAt: now});
+        save(); dialog.close(); renderTools(); toast(`Prestada a ${name}.`);
+      };
       $('[data-edit]', body).onclick = () => toolForm(t);
       $('[data-del]', body).onclick = async () => {
         if (!await confirmBox({title: '¿Borrar esta herramienta?', text: `«${t.name}» se va a quitar de la lista.`, yes: 'Sí, borrar', danger: true})) return;
@@ -566,7 +605,7 @@
   }
 
   function toolForm(t) {
-    openDialog(`<form class="dlg" id="toolForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">✕</button>
+    openDialog(`<form class="dlg" id="toolForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
       <h2 id="dialogTitle">${t ? 'Modificar herramienta' : 'Agregar herramienta'}</h2>
       <label class="field-label" for="tName">Qué herramienta es</label><input id="tName" name="name" required maxlength="80" placeholder="Ej.: Taladro" value="${esc(t?.name)}">
       <label class="field-label" for="tBrand">Marca <span class="optional">(si sabés)</span></label><input id="tBrand" name="brand" maxlength="60" placeholder="Ej.: Bosch" value="${esc(t?.brand)}">
@@ -598,16 +637,16 @@
     const list = C.searchContacts(state.contacts, contactView.q);
     main.innerHTML = `
       <h1 class="page-title">Contactos</h1>
-      <label class="search"><span class="sr-only">Buscar contactos</span><span aria-hidden="true">🔍</span><input type="search" id="contactSearch" placeholder="Buscar: juzgado 5, sala B, biblioteca…" value="${esc(contactView.q)}" autocomplete="off"></label>
+      <label class="search"><span class="sr-only">Buscar contactos</span>${icon('search')}<input type="search" id="contactSearch" placeholder="Buscar: juzgado 5, sala B, biblioteca…" value="${esc(contactView.q)}" autocomplete="off"></label>
       <div class="list">${list.length ? list.map(c => `<article class="card contact-card">
         <div class="card-main"><span class="card-title">${esc(c.name)}</span><span class="card-sub">${esc(c.building || '')}</span>
         ${c.notes && !c.source ? `<span class="card-meta">${esc(c.notes)}</span>` : ''}</div>
         <div class="contact-actions">
-          ${c.phone ? `<a class="btn btn-small btn-secondary" href="tel:${esc(telNumber(c.phone))}">📞 ${esc(c.phone)}</a>` : ''}
-          ${c.email ? `<a class="btn btn-small btn-ghost" href="mailto:${esc(c.email)}">✉️ Correo</a>` : ''}
-          ${c.source ? '' : `<button type="button" class="btn btn-small btn-ghost" data-contact="${esc(c.id)}">✏️ Modificar</button>`}
+          ${c.phone ? `<a class="btn btn-small btn-secondary" href="tel:${esc(telNumber(c.phone))}">${icon('phone')} ${esc(c.phone)}</a>` : ''}
+          ${c.email ? `<a class="btn btn-small btn-ghost" href="mailto:${esc(c.email)}">${icon('mail')} Correo</a>` : ''}
+          ${c.source ? '' : `<button type="button" class="btn btn-small btn-ghost" data-contact="${esc(c.id)}">${icon('pencil')} Modificar</button>`}
         </div></article>`).join('') : '<div class="empty"><p>No se encontró ningún contacto.</p></div>'}</div>
-      <button type="button" class="btn btn-secondary btn-block" data-new-contact><span aria-hidden="true">＋</span> Agregar un contacto</button>
+      <button type="button" class="btn btn-secondary btn-block" data-new-contact>${icon('plus')} Agregar un contacto</button>
       <p class="muted small">Los datos de juzgados y salas salen de la Guía Judicial del PJN (consultada el 16/09/2026).</p>`;
     const s = $('#contactSearch');
     s.oninput = () => {
@@ -628,7 +667,7 @@
   }
 
   function contactForm(c) {
-    openDialog(`<form class="dlg" id="contactForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">✕</button>
+    openDialog(`<form class="dlg" id="contactForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
       <h2 id="dialogTitle">${c ? 'Modificar contacto' : 'Agregar contacto'}</h2>
       <label class="field-label" for="cName">Nombre</label><input id="cName" name="name" required maxlength="80" placeholder="Ej.: Ferretería Pérez" value="${esc(c?.name)}">
       <label class="field-label" for="cPhone">Teléfono</label><input id="cPhone" name="phone" inputmode="tel" maxlength="40" value="${esc(c?.phone)}">
@@ -668,29 +707,14 @@
         </div>
       </section>
       <section class="panel">
-        <h2>WhatsApp de cada oficio</h2>
-        <p class="muted">Con el número cargado, el botón «Avisar por WhatsApp» abre directamente la conversación con esa persona.</p>
-        <form id="tradesForm" class="trade-phones">
-          ${C.TRADES.map(t => `<label class="trade-phone"><span><span aria-hidden="true">${t.icon}</span> ${esc(t.label)}</span>
-            <input name="${esc(t.key)}" inputmode="tel" maxlength="20" placeholder="Ej.: 11 5555 1234" value="${esc(state.trades[t.key]?.phone)}"></label>`).join('')}
-          <button type="submit" class="btn btn-primary btn-block">Guardar números</button>
-        </form>
-      </section>
-      <section class="panel">
         <h2>Copia de seguridad</h2>
         <p class="muted">Los pedidos se guardan solo en esta computadora. Guardá una copia de vez en cuando (por ejemplo, los viernes).</p>
         <p><strong>Última copia:</strong> ${last ? esc(C.when(last)) : 'nunca'}</p>
-        <button type="button" class="btn btn-primary btn-block" data-backup>💾 Guardar una copia</button>
+        <button type="button" class="btn btn-primary btn-block" data-backup>${icon('save')} Guardar una copia</button>
         <button type="button" class="btn btn-ghost btn-block" data-restore>Recuperar desde una copia</button>
         <input type="file" id="restoreFile" accept="application/json,.json" hidden>
       </section>`;
-    $$('[data-size]').forEach(b => b.onclick = () => { prefs.size = b.dataset.size; savePrefs(); applyTextSize(); renderSettings(); });
-    $('#tradesForm').onsubmit = e => {
-      e.preventDefault();
-      const f = new FormData(e.target);
-      C.TRADES.forEach(t => { state.trades[t.key].phone = String(f.get(t.key) || '').trim(); });
-      if (save()) toast('Números guardados.');
-    };
+    $$('[data-size]', main).forEach(b => b.onclick = () => { prefs.size = b.dataset.size; savePrefs(); applyTextSize(); renderSettings(); });
     bindBackup();
     $('[data-restore]').onclick = () => $('#restoreFile').click();
     $('#restoreFile').onchange = restoreBackup;

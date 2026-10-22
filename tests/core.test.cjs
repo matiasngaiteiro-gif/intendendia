@@ -36,7 +36,7 @@ test('dependencias por edificio, con piso y ordenadas', () => {
   assert.deepEqual(mvd.filter(x => x.startsWith('Juzgado')), ['Juzgado N.º 27', 'Juzgado N.º 28', 'Juzgado N.º 29', 'Juzgado N.º 30', 'Juzgado N.º 31']);
 });
 
-test('datos de la versión anterior: oficios en lugar de nombres, sin perder secciones ocultas', () => {
+test('datos de la versión anterior: pedidos por oficio, herramientas por persona, sin perder secciones ocultas', () => {
   const old = {
     people: [{id: 'p1', name: 'Carlos Benítez', role: 'Ayudante', phone: '1155551234'}, {id: 'p4', name: 'Laura Gómez', role: 'Electricidad'}],
     orders: [
@@ -51,10 +51,9 @@ test('datos de la versión anterior: oficios en lugar de nombres, sin perder sec
   assert.equal(s.orders[0].status, 'Pendiente');
   assert.equal(s.orders[1].specialty, 'Plomería');
   assert.equal(s.orders[1].status, 'Faltan insumos');
-  assert.equal(s.tools[0].holder, 'Ayudante');
+  assert.equal(s.tools[0].holder, 'Carlos Benítez');
   assert.equal(s.tools[1].toolStatus, 'Disponible');
-  assert.equal(s.trades.Ayudante.phone, '1155551234');
-  assert.equal(s.trades.Electricidad.phone, '');
+  assert.deepEqual(C.peopleNames(s), ['Carlos Benítez', 'Laura Gómez']);
   ['works', 'guides', 'reminders', 'services', 'supplies'].forEach(k => assert.ok(s[k], k));
   assert.ok(s.contacts.length >= 50, 'carga la guía PJN si no había contactos');
 });
@@ -63,17 +62,6 @@ test('estado vacío arranca sin pedidos de ejemplo', () => {
   const s = C.normalizeState(null, CATALOG);
   assert.equal(s.orders.length, 0);
   assert.equal(s.tools.length, 0);
-});
-
-test('mensaje de WhatsApp sin nombres ni signos de apertura', () => {
-  const o = {title: 'Cambio de tubo de luz', building: C.BUILDINGS[0].id, dependency: 'Juzgado N.º 5', location: '8º piso, oficina 803', priority: 'Urgente', description: 'Llevar escalera'};
-  assert.equal(C.whatsappText(o), 'Hola, podés encargarte de cambio de tubo de luz?\nDiagonal, Juzgado N.º 5, 8º piso, oficina 803.\nLlevar escalera\nEs urgente, darle prioridad.\nAvisame cuando esté listo. Gracias!');
-  const normal = C.whatsappText({...o, priority: 'Media', description: '', dependency: 'Otro lugar', location: ''});
-  assert.ok(!/urgente/i.test(normal));
-  assert.ok(normal.includes('Diagonal.'));
-  assert.ok(!/[¿¡]/.test(normal));
-  assert.ok(C.whatsappLink(o, '11 5555-1234').startsWith('https://wa.me/5491155551234?text='));
-  assert.ok(C.whatsappLink(o, '').startsWith('https://wa.me/?text='));
 });
 
 test('búsqueda sin tildes y por oficio; urgentes primero', () => {
