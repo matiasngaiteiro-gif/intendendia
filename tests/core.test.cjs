@@ -144,7 +144,7 @@ test('stock: entradas, salidas y recuentos con historial', () => {
   assert.deepEqual(r.item.movements[0], {at: '2026-10-22T13:00:00Z', type: 'out', amount: 3, balance: 5, reason: 'OT-0004'});
   r = C.applyMovement(r.item, {type: 'in', amount: 10, reason: 'Compra', at: '2026-10-22T14:00:00Z'});
   assert.equal(r.item.quantity, 15);
-  assert.match(C.applyMovement(r.item, {type: 'out', amount: 16}).error, /quedan 15/);
+  assert.match(C.applyMovement(r.item, {type: 'out', amount: 16}).error, /quedan 15 pomos/);
   assert.match(C.applyMovement(r.item, {type: 'in', amount: 0}).error, /mayor que cero/);
   r = C.applyMovement(r.item, {type: 'count', amount: 12, at: '2026-10-22T15:00:00Z'});
   assert.equal(r.item.quantity, 12);
@@ -174,6 +174,23 @@ test('inventario: filtros por categoría, estado, ubicación, stock y texto', ()
   assert.deepEqual(names(C.filterItems(items, {status: 'Cerrado / nuevo', q: '20'})), ['Pincel N° 20']);
   assert.deepEqual(names(C.filterItems(items, {location: 'Depósito'})), ['Pincel N° 20']);
   assert.deepEqual(names(C.filterItems(items, {q: 'latex'})), ['Látex']);
+});
+
+test('unidades en singular y plural', () => {
+  assert.equal(C.qtyWithUnit(7, 'Rollo'), '7 rollos');
+  assert.equal(C.qtyWithUnit(1, 'Rollo'), '1 rollo');
+  assert.equal(C.qtyWithUnit(0, 'Caja'), '0 cajas');
+  assert.equal(C.qtyWithUnit(3, 'Unidad'), '3 unidades');
+  assert.equal(C.qtyWithUnit(2.5, 'Lata'), '2.5 latas');
+  assert.equal(C.qtyWithUnit(4, 'Pomos'), '4 pomos');
+  assert.equal(C.qtyWithUnit(2, 'Caja x 50'), '2 cajas x 50');
+  assert.equal(C.qtyWithUnit(5, ''), '5');
+  assert.equal(C.remainingText(1, 'Bolsa'), 'Queda 1 bolsa');
+  assert.equal(C.remainingText(8, 'Tarro'), 'Quedan 8 tarros');
+  assert.equal(C.isFeminineUnit('Caja'), true);
+  assert.equal(C.isFeminineUnit('Unidad'), true);
+  assert.equal(C.isFeminineUnit('Rollo'), false);
+  assert.match(C.applyMovement({quantity: 8, unit: 'Pomo'}, {type: 'out', amount: 9}).error, /quedan 8 pomos/);
 });
 
 console.log(`${n} pruebas de la prueba piloto: OK`);

@@ -781,7 +781,7 @@
       </button>
       <div class="qty" role="group" aria-label="Cantidad de ${esc(i.name)}">
         <button type="button" class="qty-btn" data-qty="-1" data-id="${esc(i.id)}" aria-label="Uno menos" ${i.quantity ? '' : 'disabled'}>${icon('minus')}</button>
-        <button type="button" class="qty-value" data-move="${esc(i.id)}" aria-label="Registrar entrada o salida de ${esc(i.name)}"><b>${esc(qty)}</b><small>${esc(i.quantity === null || i.quantity === undefined ? 'sin contar' : (i.unit || ''))}</small></button>
+        <button type="button" class="qty-value" data-move="${esc(i.id)}" aria-label="Registrar entrada o salida de ${esc(i.name)}"><b>${esc(qty)}</b><small>${esc(i.quantity === null || i.quantity === undefined ? 'sin contar' : C.unitText(i.unit, i.quantity))}</small></button>
         <button type="button" class="qty-btn" data-qty="1" data-id="${esc(i.id)}" aria-label="Uno más">${icon('plus')}</button>
       </div>
     </div>`;
@@ -826,7 +826,7 @@
     openDialog(`<form class="dlg" id="stockForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
       <h2 id="dialogTitle">${esc(item.name)}</h2>
       ${item.detail ? `<p class="muted">${esc(item.detail)}</p>` : ''}
-      <p class="big-status">Hay ahora: <strong>${counted ? esc(item.quantity) + ' ' + esc(unit) : 'sin contar'}</strong></p>
+      <p class="big-status">Hay ahora: <strong>${counted ? esc(C.qtyWithUnit(item.quantity, unit)) : 'sin contar'}</strong></p>
       <div class="segmented segmented-3 stock-modes" role="group" aria-label="Qué querés registrar">
         ${modes.map(([m, label, ic]) => `<button type="button" data-mode="${m}" class="${mode === m ? 'active' : ''}" aria-pressed="${mode === m}" ${m === 'out' && !counted ? 'disabled' : ''}>${icon(ic)} ${label}</button>`).join('')}
       </div>
@@ -842,15 +842,16 @@
       ${datalist('reasonList', ['Compra', 'Reposición', 'Para un trabajo', 'Devolución', 'Corrección de conteo', ...openOrders])}
       <p class="move-preview" id="movePreview" role="status"></p>
       <div class="dlg-actions"><button class="btn btn-primary" type="submit" id="moveSave">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button></div>
-      ${recent.length ? `<h3 class="sub-q">Últimos movimientos</h3><ul class="moves">${recent.map(m => `<li><span class="move-${m.type}">${esc(C.MOVE_LABELS[m.type])} ${m.type === 'count' ? esc(m.amount) : (m.type === 'in' ? '+' : '−') + esc(m.amount)}</span><span>${esc(C.when(m.at))}${m.reason && m.reason !== 'Ajuste rápido' ? ' · ' + esc(m.reason) : ''}</span><span>quedó ${esc(m.balance)}</span></li>`).join('')}</ul>` : ''}
+      ${recent.length ? `<h3 class="sub-q">Últimos movimientos</h3><ul class="moves">${recent.map(m => `<li><span class="move-${m.type}">${esc(C.MOVE_LABELS[m.type])} ${m.type === 'count' ? esc(m.amount) : (m.type === 'in' ? '+' : '−') + esc(m.amount)}</span><span>${esc(C.when(m.at))}${m.reason && m.reason !== 'Ajuste rápido' ? ' · ' + esc(m.reason) : ''}</span><span>${Number(m.balance) === 1 ? 'quedó' : 'quedaron'} ${esc(C.qtyWithUnit(m.balance, unit))}</span></li>`).join('')}</ul>` : ''}
     </form>`, body => {
       const amount = $('#moveAmount', body);
       const update = () => {
         $$('[data-mode]', body).forEach(b => { b.classList.toggle('active', b.dataset.mode === mode); b.setAttribute('aria-pressed', String(b.dataset.mode === mode)); });
-        $('#moveLabel', body).textContent = mode === 'out' ? `¿Cuántos salen?` : mode === 'in' ? '¿Cuántos entran?' : '¿Cuántos hay en total?';
+        const cuantos = C.isFeminineUnit(unit) ? '¿Cuántas' : '¿Cuántos';
+        $('#moveLabel', body).textContent = mode === 'out' ? `${cuantos} salen?` : mode === 'in' ? `${cuantos} entran?` : `${cuantos} hay en total?`;
         $('#moveChips', body).hidden = mode === 'count';
         const r = C.applyMovement(item, {type: mode, amount: C.parseQuantity(amount.value) ?? NaN});
-        $('#movePreview', body).textContent = r.error ? r.error : `Va a quedar: ${r.item.quantity} ${unit}`;
+        $('#movePreview', body).textContent = r.error ? r.error : `${Number(r.item.quantity) === 1 ? 'Va a quedar' : 'Van a quedar'}: ${C.qtyWithUnit(r.item.quantity, unit)}`;
         $('#movePreview', body).classList.toggle('is-error', !!r.error);
         $('#moveSave', body).disabled = !!r.error;
       };
@@ -879,7 +880,7 @@
         const y = window.scrollY;
         renderInventory();
         window.scrollTo(0, y);
-        toast(`${C.MOVE_LABELS[mode]} guardada. Quedan ${r.item.quantity} ${unit}.`);
+        toast(`${C.MOVE_LABELS[mode]} guardada. ${C.remainingText(r.item.quantity, unit)}.`);
       };
     });
   }
