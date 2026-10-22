@@ -68,4 +68,19 @@ test('una fila editada a mano en la columna de datos no rompe la lectura', () =>
   assert.equal(g.handle({key: 'k', action: 'load'}).data.orders.length, 1);
 });
 
+test('inventario: importar asigna códigos a los nuevos y lee la pestaña Inventario', () => {
+  const g = loadScript('k');
+  const nuevos = [{category: 'Pinturas', name: 'Silicona', quantity: 8, unit: 'Pomo'}, {category: 'Pinturas', name: 'Látex', quantity: null}]
+    .map(item => ({kind: 'item', item, row: C.itemRow({...item, id: ''})}));
+  const r = g.handle({key: 'k', action: 'import', items: nuevos});
+  assert.equal(r.count, 2);
+  assert.deepEqual(r.items.map(i => i.id), ['I-0001', 'I-0002']);
+  const hoja = g.book.getSheetByName('Inventario');
+  assert.equal(hoja.rows[0][1], 'Categoría');
+  assert.equal(hoja.rows[2][4], 'Sin contar');
+  const data = g.handle({key: 'k', action: 'load'}).data;
+  assert.equal(data.items.length, 2);
+  assert.equal(data.version, 2);
+});
+
 console.log(`${n} pruebas de la planilla: OK`);

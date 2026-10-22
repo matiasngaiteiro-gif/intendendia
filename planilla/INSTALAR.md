@@ -46,7 +46,7 @@ Arriba de la pantalla aparece el estado de la conexión: **Al día**, **Guardand
 
 ## La planilla
 
-- Tiene tres pestañas: **Pedidos**, **Herramientas** y **Contactos**. Se crean solas con el primer dato.
+- Tiene cuatro pestañas: **Pedidos**, **Herramientas**, **Contactos** e **Inventario**. Se crean solas con el primer dato.
 - Se puede mirar, filtrar, ordenar e imprimir sin problema.
 - **No cambies los títulos ni el orden de las columnas, y no borres la columna oculta «datos».** Ahí está la información que usa la aplicación.
 - Para corregir un pedido, usá la aplicación. Lo que se escribe a mano en la planilla se pisa con el próximo cambio desde la aplicación.

@@ -109,14 +109,14 @@
 
   // ---------- Datos guardados ----------
   function emptyState(catalog) {
-    return {orders: [], tools: [], contacts: structuredClone(catalog || []), people: []};
+    return {orders: [], tools: [], items: [], contacts: structuredClone(catalog || []), people: []};
   }
 
   // Ordena y completa los datos, también los que vienen de versiones anteriores.
   // No borra información de secciones ocultas (obras, guías, insumos…): solo la deja guardada.
   function normalizeState(input, catalog) {
     const s = input && typeof input === 'object' ? input : emptyState(catalog);
-    ['orders', 'tools', 'contacts', 'people'].forEach(k => { if (!Array.isArray(s[k])) s[k] = []; });
+    ['orders', 'tools', 'contacts', 'people', 'items'].forEach(k => { if (!Array.isArray(s[k])) s[k] = []; });
 
     const roleMap = {'Mantenimiento general': 'Ayudante', 'Servicios y traslados': 'Ayudante', 'Patrimonio': 'Carpintería', 'Sanitarios': 'Plomería', 'Aire acondicionado': 'Aires Acondicionados'};
     const roleOf = id => {
@@ -263,8 +263,96 @@
     t.holder && t.assignedDate ? String(t.assignedDate).split('-').reverse().join('/') : '', t.notes || ''
   ];
   const contactRow = c => [c.id, c.name || '', c.phone || '', c.email || '', c.notes || ''];
+
+  // ---------- Inventario ----------
+  const ITEM_COLUMNS = [
+    {header: 'Código', width: 9}, {header: 'Categoría', width: 22}, {header: 'Elemento', width: 26}, {header: 'Detalle / variante', width: 22},
+    {header: 'Cantidad', width: 10}, {header: 'Unidad', width: 10}, {header: 'Estado', width: 16}, {header: 'Ubicación', width: 16},
+    {header: 'Observaciones', width: 28}, {header: 'Actualizado', width: 17}];
+  const qtyText = q => (q === null || q === undefined || q === '') ? 'Sin contar' : String(q);
+  const itemRow = i => [i.id, i.category || '', i.name || '', i.detail || '', qtyText(i.quantity), i.unit || '', i.status || '', i.location || '', i.notes || '', fullDate(i.updatedAt)];
+
+  // Cantidad: número entero o decimal; vacío o «S/D» = sin contar.
+  function parseQuantity(v) {
+    const t = String(v ?? '').trim().replace(',', '.');
+    if (!t || /^s\/?d$|^sin/i.test(t)) return null;
+    const n = Number(t);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }
+
+  // Un mismo elemento puede figurar dos veces con distinto estado (por ejemplo, rollos nuevos y rollos en uso).
+  const itemKey = i => normalizeText([i.category, i.name, i.detail, i.status].join('|'));
+
+  // Convierte las filas de un Excel/CSV en ítems. Busca la fila de títulos (la que dice «Elemento»)
+  // y reconoce las columnas por nombre, sin importar mayúsculas ni tildes.
+  const HEADER_ALIASES = {
+    category: ['categoria', 'rubro'], name: ['elemento', 'item', 'articulo', 'producto', 'nombre'],
+    detail: ['detalle variante', 'detalle', 'variante', 'descripcion'], quantity: ['cantidad', 'stock'],
+    unit: ['unidad', 'presentacion'], status: ['estado'], location: ['ubicacion', 'lugar', 'deposito'], notes: ['observaciones', 'notas', 'nota']
+  };
+  function rowsToItems(rows) {
+    const clean = rows.map(r => (r || []).map(c => String(c ?? '').trim()));
+    const h = clean.findIndex(r => r.some(c => HEADER_ALIASES.name.includes(normalizeText(c))));
+    if (h < 0) return {items: [], error: 'No encontré la columna «Elemento». La primera fila con títulos tiene que tener una columna llamada Elemento.'};
+    const head = clean[h].map(normalizeText);
+    const col = {};
+    Object.entries(HEADER_ALIASES).forEach(([field, names]) => {
+      for (const n of names) { const i = head.indexOf(n); if (i >= 0) { col[field] = i; break; } }
+    });
+    const items = [];
+    clean.slice(h + 1).forEach(r => {
+      const get = f => col[f] === undefined ? '' : (r[col[f]] || '');
+      const name = get('name');
+      if (!name) return;
+      items.push({
+        category: get('category') || 'Sin categoría', name, detail: get('detail'), quantity: parseQuantity(get('quantity')),
+        unit: get('unit'), status: get('status'), location: get('location'), notes: get('notes')
+      });
+    });
+    return {items, error: items.length ? '' : 'El archivo no tiene filas con elementos debajo de los títulos.'};
+  }
+
+  // Une lo importado con lo existente: mismo elemento (categoría + nombre + detalle + estado) se actualiza, el resto se agrega.
+  function mergeItems(existing, incoming) {
+    const byKey = new Map(existing.map(i => [itemKey(i), i]));
+    const added = [], updated = [];
+    incoming.forEach(n => {
+      const old = byKey.get(itemKey(n));
+      if (old) {
+        const merged = {...old};
+        Object.entries(n).forEach(([k, v]) => { if (v !== '' && v !== null && v !== undefined) merged[k] = v; });
+        if (n.quantity === null && old.quantity !== undefined) merged.quantity = old.quantity;
+        updated.push(merged);
+      } else {
+        added.push(n);
+        byKey.set(itemKey(n), n);
+      }
+    });
+    return {added, updated};
+  }
+
+  function parseCsv(text) {
+    const rows = [];
+    let row = [], cell = '', quoted = false;
+    const sep = (text.split('\n')[0].match(/;/g) || []).length > (text.split('\n')[0].match(/,/g) || []).length ? ';' : ',';
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (quoted) {
+        if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+        else if (ch === '"') quoted = false;
+        else cell += ch;
+      } else if (ch === '"') quoted = true;
+      else if (ch === sep) { row.push(cell); cell = ''; }
+      else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+      else if (ch !== '\r') cell += ch;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
   // Contactos propios: los que no salen de la guía oficial del PJN.
   const isCustomContact = c => !c.source;
+
+  const itemSort = (a, b) => String(a.category).localeCompare(String(b.category), 'es') || String(a.name).localeCompare(String(b.name), 'es') || String(a.detail || '').localeCompare(String(b.detail || ''), 'es', {numeric: true});
 
   function excelSheets(state, now = new Date()) {
     const stamp = fullDate(now.toISOString());
@@ -272,7 +360,8 @@
     return [
       {name: 'Pedidos', title: `Intendencia · Pedidos de trabajo · copia del ${stamp}`, columns: ORDER_COLUMNS, rows: state.orders.slice().sort(byDate).map(orderRow)},
       {name: 'Herramientas', title: `Intendencia · Herramientas · copia del ${stamp}`, columns: TOOL_COLUMNS,
-        rows: state.tools.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')).map(toolRow)}
+        rows: state.tools.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')).map(toolRow)},
+      {name: 'Inventario', title: `Intendencia · Inventario · copia del ${stamp}`, columns: ITEM_COLUMNS, rows: (state.items || []).slice().sort(itemSort).map(itemRow)}
     ];
   }
 
@@ -283,7 +372,8 @@
     emptyState, normalizeState, nextId, orderPlace, peopleNames,
     searchOrders, sortOrders, searchContacts, when, fullDate, daysSince,
     EXCEL_KEY, lastFridayNoon, weeklyExcelDue, excelSheets,
-    ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact
+    ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact,
+    ITEM_COLUMNS, itemRow, qtyText, parseQuantity, itemKey, rowsToItems, mergeItems, parseCsv, itemSort
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   else root.Core = Core;
