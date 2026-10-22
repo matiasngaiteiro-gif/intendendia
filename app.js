@@ -934,7 +934,9 @@
     setSync({busy: sync.busy + 1});
     try {
       const res = await api('import', {items: payload});
-      (res.items || []).forEach(i => upsertLocal('item', i));
+      // El código viejo de la planilla ignora el inventario sin avisar: se detecta porque no devuelve los elementos.
+      if (!Array.isArray(res.items)) { if (remote) { remote.version = 1; writeJSON(REMOTE_KEY, remote); } throw new Error('codigo-viejo'); }
+      res.items.forEach(i => upsertLocal('item', i));
       save();
       setSync({busy: sync.busy - 1, error: '', lastOk: new Date()});
       renderInventory();
