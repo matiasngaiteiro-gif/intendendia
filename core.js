@@ -396,6 +396,18 @@
     const movements = [...(Array.isArray(item.movements) ? item.movements : []), move].slice(-50);
     return {item: {...item, quantity, movements, updatedAt: at}};
   }
+  // Stock inicial: lo que había cuando el elemento se cargó (desde el Excel o a mano).
+  // Si el elemento es de antes de guardar ese dato, se reconstruye deshaciendo sus movimientos.
+  function initialStock(item) {
+    if (item.initial && 'quantity' in item.initial) return item.initial;
+    const moves = Array.isArray(item.movements) ? item.movements : [];
+    if (!moves.length) return {quantity: isUncounted(item) ? null : Number(item.quantity), at: item.createdAt || item.updatedAt || ''};
+    const first = moves[0];
+    if (first.type === 'count') return {quantity: null, at: ''};
+    const before = first.balance + (first.type === 'in' ? -first.amount : first.amount);
+    return {quantity: before, at: item.createdAt || ''};
+  }
+
   function movementRows(items) {
     const rows = [];
     items.forEach(i => (i.movements || []).forEach(m => rows.push({i, m})));
@@ -481,7 +493,7 @@
     ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact,
     ITEM_COLUMNS, itemRow, qtyText, parseQuantity, itemKey, rowsToItems, mergeItems, parseCsv, itemSort,
     MOVE_LABELS, applyMovement, movementRows, STOCK_FILTERS, filterItems, isUncounted,
-    unitText, qtyWithUnit, isFeminineUnit, remainingText, sectionSheet, shortDate
+    unitText, qtyWithUnit, isFeminineUnit, remainingText, sectionSheet, shortDate, initialStock
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   else root.Core = Core;

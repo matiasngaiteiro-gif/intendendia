@@ -828,6 +828,7 @@
       <h2 id="dialogTitle">${esc(item.name)}</h2>
       ${item.detail ? `<p class="muted">${esc(item.detail)}</p>` : ''}
       <p class="big-status">Hay ahora: <strong>${counted ? esc(C.qtyWithUnit(item.quantity, unit)) : 'sin contar'}</strong></p>
+      ${(() => { const ini = C.initialStock(item); return `<p class="muted initial-line">Stock inicial: <strong>${ini.quantity === null ? 'sin contar' : esc(C.qtyWithUnit(ini.quantity, unit))}</strong>${ini.at ? ` · cargado el ${esc(C.shortDate(ini.at))}` : ''}${ini.source && ini.source !== 'Carga manual' ? ` (${esc(ini.source)})` : ''}</p>`; })()}
       <div class="segmented segmented-3 stock-modes" role="group" aria-label="Qué querés registrar">
         ${modes.map(([m, label, ic]) => `<button type="button" data-mode="${m}" class="${mode === m ? 'active' : ''}" aria-pressed="${mode === m}" ${m === 'out' && !counted ? 'disabled' : ''}>${icon(ic)} ${label}</button>`).join('')}
       </div>
@@ -915,7 +916,7 @@
           const button = $('button[type=submit]', body);
           button.disabled = true;
           button.textContent = 'Guardando…';
-          if (!await createItem('item', data)) { button.disabled = false; button.textContent = 'Guardar'; return; }
+          if (!await createItem('item', {...data, createdAt: data.updatedAt, initial: {quantity: data.quantity, at: data.updatedAt, source: 'Carga manual'}})) { button.disabled = false; button.textContent = 'Guardar'; return; }
         }
         dialog.close(); renderInventory(); toast('Elemento guardado.');
       };
@@ -943,6 +944,8 @@
     if (error) { toast(error); return; }
     const now = new Date().toISOString();
     const {added, updated} = C.mergeItems(state.items, items.map(i => ({...i, updatedAt: now})));
+    // Lo que entra por primera vez guarda su stock inicial, con la fecha y el archivo.
+    added.forEach(i => { i.createdAt = now; i.initial = {quantity: i.quantity, at: now, source: file.name}; });
     const ok = await confirmBox({
       title: `Cargar «${file.name}»`,
       text: [added.length && `${added.length} elemento${added.length === 1 ? '' : 's'} nuevo${added.length === 1 ? '' : 's'}`, updated.length && `${updated.length} que ya estaba${updated.length === 1 ? '' : 'n'} se actualiza${updated.length === 1 ? '' : 'n'} con los datos del archivo`].filter(Boolean).join(' y ') + '.',

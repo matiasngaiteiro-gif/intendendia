@@ -207,4 +207,14 @@ test('descargas por sección con el formato del inventario', () => {
   fs.writeFileSync(path.join(require('os').tmpdir(), 'intendencia-seccion.xlsx'), bytes);
 });
 
+test('stock inicial: guardado o reconstruido desde los movimientos', () => {
+  assert.deepEqual(C.initialStock({quantity: 5, initial: {quantity: 8, at: '2026-10-22T12:00:00Z'}}), {quantity: 8, at: '2026-10-22T12:00:00Z'});
+  let it = {quantity: 8, createdAt: '2026-10-22T12:00:00Z'};
+  it = C.applyMovement(it, {type: 'out', amount: 3}).item;
+  it = C.applyMovement(it, {type: 'in', amount: 10}).item;
+  assert.equal(C.initialStock(it).quantity, 8, 'sin dato guardado se calcula deshaciendo el primer movimiento');
+  assert.equal(C.initialStock({quantity: 4}).quantity, 4, 'sin movimientos, es lo que hay');
+  assert.equal(C.initialStock({quantity: null}).quantity, null);
+});
+
 console.log(`${n} pruebas de la prueba piloto: OK`);
