@@ -304,6 +304,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 }
 @media (max-width: 720px) { .tabs a { font-size: .6rem; padding: 6px 0; } }
 
+/* ---------- Filtros del inventario ---------- */
+.inv-filters { display: grid; gap: 10px; margin: 14px 0 4px; }
+.inv-filters .search { margin: 0; }
+.filter-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.filter-row:empty { display: none; }
+.filter { display: grid; gap: 4px; font-weight: 700; font-size: .9rem; }
+.filter select { min-height: 54px; font-weight: 500; }
+.chip b { margin-left: 4px; font-weight: 700; opacity: .75; }
+.filter-summary { margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); font-weight: 600; }
+
 /* ---------- Movimientos de stock ---------- */
 button.qty-value { background: none; border: 0; border-radius: 10px; padding: 4px 2px; cursor: pointer; font: inherit; color: inherit; }
 button.qty-value:hover { background: var(--bg); }
