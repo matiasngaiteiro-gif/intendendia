@@ -197,9 +197,9 @@ test('unidades en singular y plural', () => {
 test('descargas por sección con el formato del inventario', () => {
   const items = [{name: 'Silicona', category: 'Pinturas', quantity: 8, unit: 'Pomo', updatedAt: '2026-10-22T15:00:00Z'}, {name: 'Látex', category: 'Pinturas', quantity: null}];
   const sh = C.sectionSheet('items', items, {now: new Date('2026-10-22T15:00:00Z'), note: 'Pinturas'});
-  assert.deepEqual(sh.columns.map(c => c.header), ['N°', 'Categoría', 'Elemento', 'Detalle / variante', 'Cantidad', 'Unidad', 'Estado', 'Ubicación', 'Observaciones', 'Actualizado']);
+  assert.deepEqual(sh.columns.map(c => c.header), ['N°', 'Categoría', 'Elemento', 'Detalle / variante', 'Stock inicial', 'Cantidad actual', 'Unidad', 'Estado', 'Ubicación', 'Observaciones', 'Fecha de carga']);
   assert.equal(sh.title, 'Intendencia · Inventario · 22/10/2026 · Pinturas');
-  assert.deepEqual(sh.rows.map(r => [r[0], r[2], r[4]]), [[1, 'Látex', 'S/D'], [2, 'Silicona', 8]]);
+  assert.deepEqual(sh.rows.map(r => [r[0], r[2], r[5]]), [[1, 'Látex', 'S/D'], [2, 'Silicona', 8]]);
   const contacts = C.sectionSheet('contacts', CATALOG.slice(0, 2));
   assert.equal(contacts.rows[0][1], 'Juzgado Comercial N.º 1');
   const X = require('../xlsx.js');
@@ -215,6 +215,12 @@ test('stock inicial: guardado o reconstruido desde los movimientos', () => {
   assert.equal(C.initialStock(it).quantity, 8, 'sin dato guardado se calcula deshaciendo el primer movimiento');
   assert.equal(C.initialStock({quantity: 4}).quantity, 4, 'sin movimientos, es lo que hay');
   assert.equal(C.initialStock({quantity: null}).quantity, null);
+  const repuesto = C.applyMovement({quantity: 2, initial: {quantity: 8, at: '2026-10-01T12:00:00Z'}}, {type: 'in', amount: 10, at: '2026-10-25T12:00:00Z', restock: true}).item;
+  assert.deepEqual(C.initialStock(repuesto), {quantity: 12, at: '2026-10-25T12:00:00Z', source: 'Reposición'}, 'la reposición actualiza stock inicial y fecha');
+  const rapido = C.applyMovement({quantity: 2, initial: {quantity: 8, at: '2026-10-01T12:00:00Z'}}, {type: 'in', amount: 1}).item;
+  assert.equal(C.initialStock(rapido).quantity, 8, 'el + rápido no cambia el stock inicial');
+  const row = C.sectionSheet('items', [repuesto]).rows[0];
+  assert.deepEqual([row[4], row[5], row[10]], [12, 12, '25/10/2026']);
 });
 
 console.log(`${n} pruebas de la prueba piloto: OK`);
