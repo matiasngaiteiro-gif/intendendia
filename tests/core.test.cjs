@@ -112,7 +112,7 @@ test('Excel válido con pedidos y herramientas', () => {
   const sheets = C.excelSheets(s, new Date('2026-10-23T15:00:00Z'));
   assert.deepEqual(sheets[0].rows[0].slice(0, 5), ['OT-0001', '22/10/2026, 08:00 h', 'Pérdida en canilla <baño>', 'Plomero', 'Callao']);
   assert.equal(sheets[0].rows[0][7], 'Sí');
-  assert.deepEqual(sheets[1].rows[0].slice(3, 6), ['Prestada', 'Carlos Benítez', '20/10/2026']);
+  assert.deepEqual(sheets[1].rows[0].slice(4, 7), ['Prestada', 'Carlos Benítez', '20/10/2026']);
   const bytes = X.workbook(sheets);
   fs.writeFileSync(path.join(require('os').tmpdir(), 'intendencia-test.xlsx'), bytes);
   assert.equal(Buffer.from(bytes.slice(0, 4)).toString('hex'), '504b0304');

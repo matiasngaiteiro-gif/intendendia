@@ -39,11 +39,15 @@ Diseño sobrio: íconos de línea en un solo color, sin emojis.
 
 ## Dónde se guardan los datos
 
-En el navegador de cada computadora (`localStorage`, misma clave que la versión 19: `intendencia-estado-v2`). Al actualizar desde la versión 19 **no se pierde nada**: los datos existentes se adaptan solos la primera vez que se abre.
+Hay dos formas de trabajar:
 
-- Cada computadora tiene sus propios datos. Si se borra el historial del navegador, se pierden.
+- **Solo esta computadora** (así arranca): los datos quedan en el navegador (`localStorage`, clave `intendencia-estado-v2`, la misma de la versión 19). Al actualizar desde la versión 19 no se pierde nada: los datos se adaptan solos la primera vez que se abre la aplicación.
+- **Planilla compartida de Google**: todas las computadoras conectadas ven y cargan lo mismo. Cada cambio se guarda en una planilla y cada 30 segundos se trae lo que cargaron las demás. Para armarla, seguí los pasos de [`planilla/INSTALAR.md`](planilla/INSTALAR.md).
+
+En los dos casos:
+
 - **Guardar copia de la semana** (en el aviso de los viernes o en Ajustes) descarga el Excel y la copia para recuperar. En Ajustes también se puede descargar cada uno por separado.
-- **Recuperar desde una copia** reemplaza los datos de esa computadora. Acepta también las copias de la versión 19.
+- **Recuperar desde una copia** acepta también las copias de la versión 19. Con la planilla conectada, sube los datos de la copia a la planilla.
 
 ## Archivos
 
@@ -52,8 +56,10 @@ En el navegador de cada computadora (`localStorage`, misma clave que la versión
 - `core.js`: lógica sin pantalla (oficios, tareas, dependencias, mensajes, adaptación de datos viejos).
 - `app.js`: pantallas.
 - `xlsx.js`: genera el Excel sin librerías externas.
+- `planilla/Codigo.gs` e `INSTALAR.md`: el código de la planilla de Google y los pasos para instalarla.
+- `tests/planilla.test.cjs` y `tests/fake-google.cjs`: prueban el código de la planilla con una simulación de Google.
 - `contacts-data.js`: guía PJN transcrita el 16/09/2026.
-- `tests/core.test.cjs`: pruebas. Se corren con `node tests/core.test.cjs`.
+- `tests/core.test.cjs`: pruebas de la lógica. Se corren con `node tests/core.test.cjs` y `node tests/planilla.test.cjs`.
 
 Los archivos de la versión anterior (`ux.js`, `modules.js`, `supplies.js`, etc.) se quitaron y quedan en el historial del repositorio.
 

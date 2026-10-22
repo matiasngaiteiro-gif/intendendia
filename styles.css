@@ -66,6 +66,7 @@ main { max-width: 760px; margin: 0 auto; padding: 22px 16px 120px; outline: none
 
 @media (max-width: 720px) {
   .top-inner { padding: 8px 16px; }
+  .brand small { display: none; }
   .brand-mark { width: 36px; height: 36px; }
   .tabs {
     position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line);
@@ -268,6 +269,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 .panel .btn-block + .btn-block { margin-top: 8px; }
 .muted { color: var(--muted); }
 .small { font-size: .88rem; }
+/* ---------- Planilla compartida ---------- */
+.sync { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: .78rem; font-weight: 600; color: #dfe5f2; white-space: nowrap; }
+.sync-dot { width: 10px; height: 10px; border-radius: 50%; background: #4ade80; flex: none; }
+.sync-busy .sync-dot { background: #fbbf24; }
+.sync-error .sync-dot { background: #f87171; }
+.sheet-state { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; }
+.sheet-state .ico { color: var(--green); margin-top: 2px; }
+.sheet-form { display: grid; gap: 4px; }
+.sheet-form .btn { margin-top: 14px; }
+.panel .btn + .btn, .panel .btn + .btn-link-danger { margin-top: 8px; }
+.saving { margin: 0; font-weight: 700; color: var(--muted); text-align: center; }
+
 /* ---------- Ventanas ---------- */
 dialog {
   border: 0; border-radius: 22px; padding: 0; width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 24px);
