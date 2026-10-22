@@ -1,4 +1,6 @@
 /**
+ * @OnlyCurrentDoc  (pide permiso solo sobre esta planilla, no sobre todas las de la cuenta)
+ *
  * Intendencia · conexión con la planilla de Google.
  *
  * Este código se pega en la planilla (Extensiones > Apps Script) y se implementa como
