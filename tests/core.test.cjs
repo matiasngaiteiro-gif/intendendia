@@ -158,4 +158,22 @@ test('stock: entradas, salidas y recuentos con historial', () => {
   assert.deepEqual(sheets.map(x => x.name), ['Pedidos', 'Herramientas', 'Inventario', 'Movimientos']);
 });
 
+test('inventario: filtros por categoría, estado, ubicación, stock y texto', () => {
+  const items = [
+    {name: 'Pincel', detail: 'N° 20', category: 'Pinceles', status: 'Cerrado / nuevo', location: 'Depósito', quantity: 7},
+    {name: 'Pincel', detail: 'N° 25', category: 'Pinceles', status: 'Cerrado / nuevo', location: '', quantity: 0},
+    {name: 'Silicona', category: 'Pinturas', status: 'Abierto / en uso', quantity: null},
+    {name: 'Látex', category: 'Pinturas', status: 'Sin especificar', quantity: 2}
+  ];
+  const names = list => list.map(i => i.name + (i.detail ? ' ' + i.detail : ''));
+  assert.equal(C.filterItems(items).length, 4);
+  assert.deepEqual(names(C.filterItems(items, {category: 'Pinturas'})), ['Silicona', 'Látex']);
+  assert.deepEqual(names(C.filterItems(items, {stock: 'empty'})), ['Pincel N° 25']);
+  assert.deepEqual(names(C.filterItems(items, {stock: 'uncounted'})), ['Silicona']);
+  assert.deepEqual(names(C.filterItems(items, {stock: 'available'})), ['Pincel N° 20', 'Látex']);
+  assert.deepEqual(names(C.filterItems(items, {status: 'Cerrado / nuevo', q: '20'})), ['Pincel N° 20']);
+  assert.deepEqual(names(C.filterItems(items, {location: 'Depósito'})), ['Pincel N° 20']);
+  assert.deepEqual(names(C.filterItems(items, {q: 'latex'})), ['Látex']);
+});
+
 console.log(`${n} pruebas de la prueba piloto: OK`);

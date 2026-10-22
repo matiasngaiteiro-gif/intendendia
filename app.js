@@ -705,15 +705,19 @@
   }
 
   // ==================== INVENTARIO ====================
-  const invView = {q: ''};
+  const invView = {q: '', category: '', status: '', location: '', stock: ''};
   const STATUS_SUGGESTIONS = ['Cerrado / nuevo', 'Abierto / en uso', 'Usado - buen estado', 'Antiguo', 'A revisar / testear', 'Sin especificar'];
   const datalist = (id, values) => `<datalist id="${id}">${[...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')).map(v => `<option value="${esc(v)}"></option>`).join('')}</datalist>`;
   const sheetOutdated = () => connected() && Number(remote.version || 1) < 2;
 
   function renderInventory() {
-    const q = C.normalizeText(invView.q);
-    const items = state.items.slice().sort(C.itemSort)
-      .filter(i => !q || q.split(' ').every(w => C.normalizeText([i.category, i.name, i.detail, i.status, i.location, i.notes].join(' ')).includes(w)));
+    const all = state.items.slice().sort(C.itemSort);
+    const items = C.filterItems(all, invView);
+    const filtering = !!(invView.q || invView.category || invView.status || invView.location || invView.stock);
+    const options = key => [...new Set(state.items.map(i => i[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+    const select = (key, label, list, allLabel = 'Todas') => list.length > 1 ? `<label class="filter"><span>${label}</span>
+      <select data-filter="${key}"><option value="">${allLabel}</option>${list.map(v => `<option${invView[key] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select></label>` : '';
+    const stockCount = f => C.filterItems(all, {...invView, stock: f.value}).length;
     const groups = [];
     items.forEach(i => {
       const g = groups[groups.length - 1];
@@ -729,11 +733,22 @@
         <button type="button" class="btn btn-secondary" data-import-items>${icon('upload')} Cargar desde Excel</button>
       </div>
       <input type="file" id="importItems" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>
-      ${state.items.length > 5 ? `<label class="search"><span class="sr-only">Buscar en el inventario</span>${icon('search')}<input type="search" id="invSearch" placeholder="Buscar: cable, pincel 20, silicona…" value="${esc(invView.q)}" autocomplete="off"></label>` : ''}
+      ${state.items.length > 5 ? `<div class="inv-filters">
+        <label class="search"><span class="sr-only">Buscar en el inventario</span>${icon('search')}<input type="search" id="invSearch" placeholder="Buscar: cable, pincel 20, silicona…" value="${esc(invView.q)}" autocomplete="off"></label>
+        <div class="filter-row">
+          ${select('category', 'Categoría', options('category'))}
+          ${select('status', 'Estado', options('status'), 'Todos')}
+          ${select('location', 'Ubicación', options('location'))}
+        </div>
+        <div class="chips" role="group" aria-label="Stock">
+          ${C.STOCK_FILTERS.map(f => `<button type="button" class="chip${invView.stock === f.value ? ' active' : ''}" data-stock="${f.value}" aria-pressed="${invView.stock === f.value}">${esc(f.label)} <b>${stockCount(f)}</b></button>`).join('')}
+        </div>
+        ${filtering ? `<p class="filter-summary">Mostrando ${items.length} de ${all.length} <button type="button" class="btn btn-small btn-ghost" data-clear-filters>${icon('x')} Quitar filtros</button></p>` : ''}
+      </div>` : ''}
       <div class="inv-list">${groups.length ? groups.map(g => `<section class="inv-group">
         <h2 class="group-label">${esc(g.name)} <span>${g.items.length}</span></h2>
         <div class="list">${g.items.map(itemCard).join('')}</div></section>`).join('')
-        : `<div class="empty"><p>${q ? 'No se encontró ese elemento.' : 'Todavía no hay elementos en el inventario.'}</p></div>`}</div>`;
+        : `<div class="empty"><p>${filtering ? 'No hay elementos con esos filtros.' : 'Todavía no hay elementos en el inventario.'}</p>${filtering ? '<button type="button" class="btn btn-ghost" data-clear-filters>Ver todo el inventario</button>' : ''}</div>`}</div>`;
 
     $('[data-new-item]').onclick = () => itemForm();
     $('[data-import-items]').onclick = () => $('#importItems').click();
@@ -741,6 +756,9 @@
     $$('[data-item]').forEach(b => b.onclick = () => itemForm(state.items.find(i => i.id === b.dataset.item)));
     $$('[data-qty]').forEach(b => b.onclick = () => changeQty(b.dataset.id, Number(b.dataset.qty)));
     $$('[data-move]').forEach(b => b.onclick = () => stockDialog(b.dataset.move));
+    $$('[data-filter]').forEach(sel => sel.onchange = () => { invView[sel.dataset.filter] = sel.value; renderInventory(); });
+    $$('[data-stock]').forEach(b => b.onclick = () => { invView.stock = b.dataset.stock; renderInventory(); });
+    $$('[data-clear-filters]').forEach(b => b.onclick = () => { Object.assign(invView, {q: '', category: '', status: '', location: '', stock: ''}); renderInventory(); });
     const s = $('#invSearch');
     if (s) s.oninput = () => {
       invView.q = s.value;

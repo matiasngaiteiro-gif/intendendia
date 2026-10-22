@@ -335,6 +335,26 @@
     return {added, updated};
   }
 
+  // ---------- Filtros del inventario ----------
+  // stock: '' (todos), 'empty' (cantidad 0), 'uncounted' (sin contar), 'available' (hay al menos uno).
+  const isUncounted = i => i.quantity === null || i.quantity === undefined || i.quantity === '';
+  const STOCK_FILTERS = [
+    {value: '', label: 'Todos', test: () => true},
+    {value: 'available', label: 'Con stock', test: i => !isUncounted(i) && Number(i.quantity) > 0},
+    {value: 'empty', label: 'Sin stock', test: i => !isUncounted(i) && Number(i.quantity) === 0},
+    {value: 'uncounted', label: 'Sin contar', test: isUncounted}
+  ];
+  function filterItems(items, f = {}) {
+    const words = normalizeText(f.q).split(' ').filter(Boolean);
+    const stock = STOCK_FILTERS.find(x => x.value === (f.stock || '')) || STOCK_FILTERS[0];
+    return items.filter(i =>
+      (!f.category || i.category === f.category) &&
+      (!f.status || (i.status || '') === f.status) &&
+      (!f.location || (i.location || '') === f.location) &&
+      stock.test(i) &&
+      words.every(w => normalizeText([i.category, i.name, i.detail, i.status, i.location, i.notes].join(' ')).includes(w)));
+  }
+
   // ---------- Movimientos de stock ----------
   // type: 'in' (entra), 'out' (sale) o 'count' (recuento: fija la cantidad exacta).
   // Se guardan los últimos 50 movimientos dentro de cada elemento.
@@ -404,7 +424,7 @@
     EXCEL_KEY, lastFridayNoon, weeklyExcelDue, excelSheets,
     ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact,
     ITEM_COLUMNS, itemRow, qtyText, parseQuantity, itemKey, rowsToItems, mergeItems, parseCsv, itemSort,
-    MOVE_LABELS, applyMovement, movementRows
+    MOVE_LABELS, applyMovement, movementRows, STOCK_FILTERS, filterItems, isUncounted
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   else root.Core = Core;
