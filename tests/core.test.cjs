@@ -137,4 +137,25 @@ test('inventario: lee el Excel/CSV del inventario actual y une repetidos', () =>
   assert.equal(C.itemRow({id: 'I-0001', quantity: null})[4], 'Sin contar');
 });
 
+test('stock: entradas, salidas y recuentos con historial', () => {
+  let it = {id: 'I-0001', name: 'Silicona', unit: 'Pomo', quantity: 8};
+  let r = C.applyMovement(it, {type: 'out', amount: 3, reason: 'OT-0004', at: '2026-10-22T13:00:00Z'});
+  assert.equal(r.item.quantity, 5);
+  assert.deepEqual(r.item.movements[0], {at: '2026-10-22T13:00:00Z', type: 'out', amount: 3, balance: 5, reason: 'OT-0004'});
+  r = C.applyMovement(r.item, {type: 'in', amount: 10, reason: 'Compra', at: '2026-10-22T14:00:00Z'});
+  assert.equal(r.item.quantity, 15);
+  assert.match(C.applyMovement(r.item, {type: 'out', amount: 16}).error, /quedan 15/);
+  assert.match(C.applyMovement(r.item, {type: 'in', amount: 0}).error, /mayor que cero/);
+  r = C.applyMovement(r.item, {type: 'count', amount: 12, at: '2026-10-22T15:00:00Z'});
+  assert.equal(r.item.quantity, 12);
+  assert.equal(r.item.movements.length, 3);
+  assert.match(C.applyMovement({quantity: null}, {type: 'out', amount: 1}).error, /todavía no se contó/);
+  assert.equal(C.applyMovement({quantity: null}, {type: 'in', amount: 4}).item.quantity, 4);
+  const rows = C.movementRows([r.item]);
+  assert.equal(rows[0][3], 'Recuento');
+  assert.equal(rows[2][4], '−3');
+  const sheets = C.excelSheets({orders: [], tools: [], items: [r.item]});
+  assert.deepEqual(sheets.map(x => x.name), ['Pedidos', 'Herramientas', 'Inventario', 'Movimientos']);
+});
+
 console.log(`${n} pruebas de la prueba piloto: OK`);

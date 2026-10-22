@@ -304,6 +304,26 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary); outlin
 }
 @media (max-width: 720px) { .tabs a { font-size: .6rem; padding: 6px 0; } }
 
+/* ---------- Movimientos de stock ---------- */
+button.qty-value { background: none; border: 0; border-radius: 10px; padding: 4px 2px; cursor: pointer; font: inherit; color: inherit; }
+button.qty-value:hover { background: var(--bg); }
+button.qty-value b { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+.stock-modes { margin: 4px 0 6px; }
+.stock-modes .ico { width: 18px; height: 18px; }
+.stock-modes button[disabled] { opacity: .4; cursor: not-allowed; }
+.stepper { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
+.stepper input { text-align: center; font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+#moveChips { margin-top: 10px; }
+.move-preview { font-weight: 700; margin: 14px 0 0 !important; }
+.move-preview.is-error { color: var(--red); }
+.moves { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: .9rem; }
+.moves li { display: grid; grid-template-columns: 9em 1fr auto; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.moves span:last-child { color: var(--muted); }
+.move-in { color: var(--green-dark); font-weight: 700; }
+.move-out { color: var(--red); font-weight: 700; }
+.move-count { font-weight: 700; }
+@media (max-width: 520px) { .moves li { grid-template-columns: 1fr auto; } .moves li span:nth-child(2) { grid-column: 1 / -1; order: 3; color: var(--muted); } }
+
 /* ---------- Planilla compartida ---------- */
 .sync { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: .78rem; font-weight: 600; color: #dfe5f2; white-space: nowrap; }
 .sync-dot { width: 10px; height: 10px; border-radius: 50%; background: #4ade80; flex: none; }

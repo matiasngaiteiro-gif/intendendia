@@ -335,6 +335,29 @@
     return {added, updated};
   }
 
+  // ---------- Movimientos de stock ----------
+  // type: 'in' (entra), 'out' (sale) o 'count' (recuento: fija la cantidad exacta).
+  // Se guardan los últimos 50 movimientos dentro de cada elemento.
+  const MOVE_LABELS = {in: 'Entrada', out: 'Salida', count: 'Recuento'};
+  function applyMovement(item, {type, amount, reason = '', at = new Date().toISOString()}) {
+    const n = Number(amount);
+    if (!MOVE_LABELS[type] || !Number.isFinite(n) || n < 0 || (type !== 'count' && n === 0)) return {error: 'Escribí una cantidad mayor que cero.'};
+    const current = item.quantity === null || item.quantity === undefined || item.quantity === '' ? null : Number(item.quantity);
+    if (type === 'out' && current === null) return {error: 'Este elemento todavía no se contó. Primero usá «Contar» para cargar cuántos hay.'};
+    if (type === 'out' && n > current) return {error: `No hay tantos: quedan ${current}.`};
+    const quantity = type === 'count' ? n : type === 'in' ? (current || 0) + n : current - n;
+    const move = {at, type, amount: n, balance: quantity, reason: String(reason || '').trim()};
+    const movements = [...(Array.isArray(item.movements) ? item.movements : []), move].slice(-50);
+    return {item: {...item, quantity, movements, updatedAt: at}};
+  }
+  function movementRows(items) {
+    const rows = [];
+    items.forEach(i => (i.movements || []).forEach(m => rows.push({i, m})));
+    rows.sort((a, b) => String(b.m.at).localeCompare(String(a.m.at)));
+    return rows.map(({i, m}) => [fullDate(m.at), i.name || '', i.detail || '', MOVE_LABELS[m.type] || m.type,
+      m.type === 'count' ? String(m.amount) : (m.type === 'in' ? '+' : '−') + m.amount, String(m.balance), i.unit || '', m.reason || '']);
+  }
+
   function parseCsv(text) {
     const rows = [];
     let row = [], cell = '', quoted = false;
@@ -365,7 +388,10 @@
       {name: 'Pedidos', title: `Intendencia · Pedidos de trabajo · copia del ${stamp}`, columns: ORDER_COLUMNS, rows: state.orders.slice().sort(byDate).map(orderRow)},
       {name: 'Herramientas', title: `Intendencia · Herramientas · copia del ${stamp}`, columns: TOOL_COLUMNS,
         rows: state.tools.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')).map(toolRow)},
-      {name: 'Inventario', title: `Intendencia · Inventario · copia del ${stamp}`, columns: ITEM_COLUMNS, rows: (state.items || []).slice().sort(itemSort).map(itemRow)}
+      {name: 'Inventario', title: `Intendencia · Inventario · copia del ${stamp}`, columns: ITEM_COLUMNS, rows: (state.items || []).slice().sort(itemSort).map(itemRow)},
+      {name: 'Movimientos', title: `Intendencia · Movimientos de stock · copia del ${stamp}`, rows: movementRows(state.items || []), columns: [
+        {header: 'Fecha', width: 17}, {header: 'Elemento', width: 26}, {header: 'Detalle', width: 20}, {header: 'Movimiento', width: 12},
+        {header: 'Cantidad', width: 10}, {header: 'Quedó', width: 9}, {header: 'Unidad', width: 10}, {header: 'Motivo', width: 30}]}
     ];
   }
 
@@ -377,7 +403,8 @@
     searchOrders, sortOrders, searchContacts, when, fullDate, daysSince,
     EXCEL_KEY, lastFridayNoon, weeklyExcelDue, excelSheets,
     ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact,
-    ITEM_COLUMNS, itemRow, qtyText, parseQuantity, itemKey, rowsToItems, mergeItems, parseCsv, itemSort
+    ITEM_COLUMNS, itemRow, qtyText, parseQuantity, itemKey, rowsToItems, mergeItems, parseCsv, itemSort,
+    MOVE_LABELS, applyMovement, movementRows
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   else root.Core = Core;
