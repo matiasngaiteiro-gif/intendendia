@@ -335,6 +335,32 @@
     return {added, updated};
   }
 
+  // ---------- Unidades en singular y plural ----------
+  // «1 rollo», «7 rollos», «1 unidad», «3 unidades». Solo cambia la primera palabra («caja x 50» → «cajas x 50»).
+  function pluralWord(w) {
+    if (!w || /s$/i.test(w)) return w;
+    if (/z$/i.test(w)) return w.slice(0, -1) + (w === w.toUpperCase() ? 'CES' : 'ces');
+    if (/[aeiouáéó]$/i.test(w)) return w + (w === w.toUpperCase() && w.length > 1 ? 'S' : 's');
+    return w + (w === w.toUpperCase() && w.length > 1 ? 'ES' : 'es');
+  }
+  function unitText(unit, n) {
+    const u = String(unit || '').trim().toLowerCase();
+    if (!u) return '';
+    if (Number(n) === 1) return u;
+    const [first, ...rest] = u.split(' ');
+    return [pluralWord(first), ...rest].join(' ');
+  }
+  // «7 rollos», «1 unidad». Sin unidad, solo el número.
+  const qtyWithUnit = (n, unit) => [String(n), unitText(unit, n)].filter(Boolean).join(' ');
+  // Unidades femeninas (caja, lata, bolsa, unidad…) para decir «¿Cuántas?» en lugar de «¿Cuántos?».
+  function isFeminineUnit(unit) {
+    const w = String(unit || '').trim().split(' ')[0].toLowerCase();
+    if (['día', 'dia', 'mapa', 'metro'].includes(w)) return false;
+    return /(a|as|dad|dades|ión|iones)$/.test(w);
+  }
+  // «Queda 1 rollo» / «Quedan 7 rollos».
+  const remainingText = (n, unit) => `${Number(n) === 1 ? 'Queda' : 'Quedan'} ${qtyWithUnit(n, unit)}`;
+
   // ---------- Filtros del inventario ----------
   // stock: '' (todos), 'empty' (cantidad 0), 'uncounted' (sin contar), 'available' (hay al menos uno).
   const isUncounted = i => i.quantity === null || i.quantity === undefined || i.quantity === '';
@@ -364,7 +390,7 @@
     if (!MOVE_LABELS[type] || !Number.isFinite(n) || n < 0 || (type !== 'count' && n === 0)) return {error: 'Escribí una cantidad mayor que cero.'};
     const current = item.quantity === null || item.quantity === undefined || item.quantity === '' ? null : Number(item.quantity);
     if (type === 'out' && current === null) return {error: 'Este elemento todavía no se contó. Primero usá «Contar» para cargar cuántos hay.'};
-    if (type === 'out' && n > current) return {error: `No hay tantos: quedan ${current}.`};
+    if (type === 'out' && n > current) return {error: `No hay tantos: ${remainingText(current, item.unit).toLowerCase()}.`};
     const quantity = type === 'count' ? n : type === 'in' ? (current || 0) + n : current - n;
     const move = {at, type, amount: n, balance: quantity, reason: String(reason || '').trim()};
     const movements = [...(Array.isArray(item.movements) ? item.movements : []), move].slice(-50);
@@ -424,7 +450,8 @@
     EXCEL_KEY, lastFridayNoon, weeklyExcelDue, excelSheets,
     ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact,
     ITEM_COLUMNS, itemRow, qtyText, parseQuantity, itemKey, rowsToItems, mergeItems, parseCsv, itemSort,
-    MOVE_LABELS, applyMovement, movementRows, STOCK_FILTERS, filterItems, isUncounted
+    MOVE_LABELS, applyMovement, movementRows, STOCK_FILTERS, filterItems, isUncounted,
+    unitText, qtyWithUnit, isFeminineUnit, remainingText
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   else root.Core = Core;
