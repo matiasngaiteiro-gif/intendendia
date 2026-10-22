@@ -458,6 +458,7 @@
         <div><h1>Orden de trabajo</h1><p>Intendencia · Cámara Nacional de Apelaciones en lo Comercial</p></div>
         <div class="ps-num"><strong>${esc(o.id)}</strong><span>${esc(C.fullDate(o.createdAt))}</span></div>
       </header>
+      <div class="ps-sign"><span>Firma y sello de la dependencia</span></div>
       <p class="ps-task">${esc(o.title)}${C.isUrgent(o) ? '<span class="ps-urgent">Urgente</span>' : ''}</p>
       <table class="ps-table">
         ${row('Edificio', esc(b ? `${b.short} · ${b.address}` : o.building))}

@@ -370,7 +370,11 @@ dialog::backdrop { background: rgba(15, 20, 35, .55); }
   .ps-head p { margin: 1mm 0 0; font-size: 8.5pt; }
   .ps-num { display: grid; text-align: right; gap: .5mm; flex: none; font-size: 9pt; }
   .ps-num strong { font-size: 12pt; }
-  .ps-task { font-size: 13pt; font-weight: bold; margin: 5mm 0 3mm; display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; }
+  .ps-sign { display: flex; justify-content: flex-end; margin-top: 2mm; }
+  /* Espacio para firmar arriba, con la línea y la leyenda debajo. */
+  .ps-sign span { position: relative; width: 75mm; padding-top: 13mm; font-size: 8pt; text-align: center; }
+  .ps-sign span::before { content: ""; position: absolute; left: 0; right: 0; top: 12mm; border-top: .75pt solid #000; }
+  .ps-task { font-size: 13pt; font-weight: bold; margin: 2mm 0 3mm; display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; }
   .ps-urgent { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .08em; border: 1pt solid #000; padding: .6mm 2.5mm; }
   .ps-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .ps-table th, .ps-table td { border-bottom: .75pt solid #000; padding: 2.2mm 1.5mm; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
