@@ -65,6 +65,154 @@
   // Si se cambió algo en otra pestaña, se muestra lo último.
   window.addEventListener('storage', e => { if (e.key === C.STORAGE_KEY) { load(); render(); } });
 
+  // ---------- Planilla compartida de Google (opcional) ----------
+  // Sin planilla, todo queda en esta computadora. Con planilla, cada cambio se envía y
+  // cada 30 segundos se trae lo que cargaron las demás computadoras.
+  const REMOTE_KEY = 'intendencia-planilla';
+  const OUTBOX_KEY = 'intendencia-pendientes';
+  const readJSON = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } };
+  const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+  let remote = readJSON(REMOTE_KEY, null);
+  let outbox = readJSON(OUTBOX_KEY, []);
+  const connected = () => !!(remote && remote.url && remote.key);
+  const sync = {busy: 0, error: '', lastOk: null};
+  const LIST = {order: 'orders', tool: 'tools', contact: 'contacts'};
+  const ROW = {order: C.orderRow, tool: C.toolRow, contact: C.contactRow};
+  const PREFIX = {order: 'OT', tool: 'H', contact: 'C'};
+
+  const ERRORS = {
+    clave: 'La clave no coincide con la de la planilla.',
+    'sin-clave': 'Falta cambiar la clave en el código de la planilla (línea CLAVE).',
+    red: 'No hay conexión con la planilla. Revisá internet.'
+  };
+  const errorText = err => ERRORS[err?.message] || ERRORS.red;
+
+  async function api(action, payload = {}, conf = remote) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 30000);
+    try {
+      const res = await fetch(conf.url, {
+        method: 'POST', redirect: 'follow', signal: ctrl.signal,
+        headers: {'Content-Type': 'text/plain;charset=utf-8'}, // pedido simple: Google no exige permisos extra
+        body: JSON.stringify({key: conf.key, action, ...payload})
+      });
+      if (!res.ok) throw new Error('red');
+      const data = await res.json().catch(() => { throw new Error('red'); });
+      if (!data.ok) throw new Error(data.error || 'red');
+      return data;
+    } catch (e) {
+      throw new Error(ERRORS[e.message] ? e.message : 'red');
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function setSync(patch) { Object.assign(sync, patch); paintSync(); }
+  function paintSync() {
+    const el = $('#syncStatus');
+    if (!el) return;
+    if (!connected()) { el.hidden = true; return; }
+    el.hidden = false;
+    const pending = outbox.length;
+    const [cls, text, long] = sync.busy ? ['busy', 'Guardando…', 'Guardando en la planilla']
+      : sync.error ? ['error', 'Sin conexión', errorText({message: sync.error})]
+      : pending ? ['error', `${pending} sin enviar`, `${pending} cambio${pending === 1 ? '' : 's'} esperando conexión`]
+      : ['ok', 'Al día', 'La planilla está al día'];
+    el.className = 'sync sync-' + cls;
+    el.title = long;
+    el.innerHTML = `<span class="sync-dot" aria-hidden="true"></span>${esc(text)}`;
+  }
+
+  function upsertLocal(kind, item) {
+    const list = state[LIST[kind]];
+    const i = list.findIndex(x => x.id === item.id);
+    if (i >= 0) list[i] = item; else list.push(item);
+  }
+
+  // Alta de un registro nuevo. En la planilla el número lo asigna Google, así dos computadoras no repiten.
+  async function createItem(kind, item) {
+    if (!connected()) {
+      item.id = C.nextId(state[LIST[kind]], PREFIX[kind]);
+      upsertLocal(kind, item);
+      return save() ? item : null;
+    }
+    setSync({busy: sync.busy + 1});
+    try {
+      const {item: saved} = await api('create', {kind, item, row: ROW[kind]({...item, id: ''})});
+      upsertLocal(kind, saved);
+      save();
+      setSync({busy: sync.busy - 1, error: '', lastOk: new Date()});
+      return saved;
+    } catch (e) {
+      setSync({busy: sync.busy - 1, error: e.message});
+      toast(`No se guardó: ${errorText(e)} Probá de nuevo en un momento.`);
+      return null;
+    }
+  }
+
+  // Cambios y bajas: se aplican enseguida en pantalla. Si no hay conexión, quedan en espera y se reenvían solos.
+  async function saveItem(kind, item) {
+    upsertLocal(kind, item);
+    save();
+    if (connected()) await send({action: 'save', kind, item, row: ROW[kind](item)});
+  }
+  async function removeItem(kind, item) {
+    const list = state[LIST[kind]];
+    const i = list.findIndex(x => x.id === item.id);
+    if (i >= 0) list.splice(i, 1);
+    save();
+    if (connected()) await send({action: 'delete', kind, id: item.id});
+  }
+  async function send(op) {
+    setSync({busy: sync.busy + 1});
+    try {
+      await flushOutbox();
+      await api(op.action, op);
+      setSync({busy: sync.busy - 1, error: '', lastOk: new Date()});
+    } catch (e) {
+      outbox.push(op);
+      writeJSON(OUTBOX_KEY, outbox);
+      setSync({busy: sync.busy - 1, error: e.message});
+      toast(e.message === 'red' ? 'Sin conexión: el cambio se envía a la planilla cuando vuelva internet.' : errorText(e));
+    }
+  }
+  async function flushOutbox() {
+    while (outbox.length) {
+      await api(outbox[0].action, outbox[0]);
+      outbox.shift();
+      writeJSON(OUTBOX_KEY, outbox);
+    }
+  }
+
+  // Trae lo último de la planilla. No interrumpe a quien está cargando algo.
+  let refreshing = false;
+  async function refresh({force} = {}) {
+    if (!connected() || refreshing) return;
+    refreshing = true;
+    try {
+      await flushOutbox();
+      const {data} = await api('load');
+      applyRemote(data);
+      setSync({error: '', lastOk: new Date()});
+      const typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+      const r = route().name;
+      if (force || (!dialog.open && !typing && r !== 'nuevo' && r !== 'editar')) render({keepScroll: true});
+    } catch (e) {
+      setSync({error: e.message});
+    } finally {
+      refreshing = false;
+    }
+  }
+  function applyRemote(data) {
+    const custom = (data.contacts || []).filter(C.isCustomContact);
+    state = C.normalizeState({...state, orders: data.orders || [], tools: data.tools || [], contacts: [...structuredClone(CATALOG), ...custom]}, CATALOG);
+    if (data.sheetUrl && remote) { remote.sheetUrl = data.sheetUrl; writeJSON(REMOTE_KEY, remote); }
+    save();
+  }
+  setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
+  window.addEventListener('online', () => refresh());
+
   // ---------- Preferencias de este equipo ----------
   const PREF_KEY = 'intendencia-preferencias';
   const prefs = (() => { try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; } catch { return {}; } })();
@@ -120,8 +268,9 @@
     return {name: parts[0] || 'pedidos', parts};
   }
 
-  function render() {
+  function render({keepScroll} = {}) {
     if (dialog.open) dialog.close();
+    const y = window.scrollY;
     const r = route();
     const tab = ['herramientas', 'contactos', 'ajustes'].includes(r.name) ? r.name : 'pedidos';
     $$('.tabs a').forEach(a => a.classList.toggle('active', a.dataset.tab === tab));
@@ -133,7 +282,8 @@
     else if (r.name === 'contactos') renderContacts();
     else if (r.name === 'ajustes') renderSettings();
     else renderOrders(r.parts[1] === 'terminados');
-    window.scrollTo(0, 0);
+    window.scrollTo(0, keepScroll ? y : 0);
+    paintSync();
   }
 
   // ==================== PEDIDOS ====================
@@ -260,19 +410,13 @@
 
   function setStatus(o, value) {
     if (o.status === value) return;
-    const before = {status: o.status, completedAt: o.completedAt, updatedAt: o.updatedAt};
-    o.status = value;
-    o.updatedAt = new Date().toISOString();
-    if (value === C.DONE) o.completedAt = o.updatedAt; else delete o.completedAt;
-    if (!save()) return;
+    const before = structuredClone(o);
+    const next = {...o, status: value, updatedAt: new Date().toISOString()};
+    if (value === C.DONE) next.completedAt = next.updatedAt; else delete next.completedAt;
+    saveItem('order', next);
     if (value === C.DONE) {
       go('pedidos');
-      toast(`Listo: «${o.title}» quedó como terminado.`, () => {
-        Object.assign(o, before);
-        if (!before.completedAt) delete o.completedAt;
-        save();
-        render();
-      });
+      toast(`Listo: «${o.title}» quedó como terminado.`, () => { saveItem('order', before); render(); });
     } else {
       render();
       toast(`Estado: ${C.statusInfo(value).label}.`);
@@ -282,11 +426,9 @@
   async function deleteOrder(o) {
     const ok = await confirmBox({title: '¿Borrar este pedido?', text: `«${o.title}» se va a borrar. Si fue un error, vas a poder deshacerlo enseguida.`, yes: 'Sí, borrar', danger: true});
     if (!ok) return;
-    const index = state.orders.indexOf(o);
-    state.orders.splice(index, 1);
-    save();
+    removeItem('order', o);
     go('pedidos', true);
-    toast('Pedido borrado.', () => { state.orders.splice(index, 0, o); save(); render(); });
+    toast('Pedido borrado.', () => { saveItem('order', o); render(); });
   }
 
   // Hoja informativa del pedido para archivo: qué se pidió, dónde y cuándo. Sin estados ni controles.
@@ -503,7 +645,9 @@
     go(target, true);
   }
 
-  function saveDraft(andPrint) {
+  let savingDraft = false;
+  async function saveDraft(andPrint) {
+    if (savingDraft) return;
     const now = new Date().toISOString();
     const data = {
       title: draft.title, specialty: draft.specialty, building: draft.building, dependency: draft.dependency,
@@ -515,12 +659,20 @@
       if (!order) { toast('Ese pedido ya no existe.'); go('pedidos', true); return; }
       // Prioridades viejas (Alta, Baja) se conservan si no se marcó urgente.
       const keepOld = !['Media', 'Urgente'].includes(order.priority) && data.priority === 'Media';
-      Object.assign(order, data, keepOld ? {priority: order.priority} : {}, {updatedAt: now});
+      order = {...order, ...data, ...(keepOld ? {priority: order.priority} : {}), updatedAt: now};
+      saveItem('order', order);
     } else {
-      order = {id: C.nextId(state.orders, 'OT'), ...data, status: 'Pendiente', createdAt: now, updatedAt: now};
-      state.orders.push(order);
+      savingDraft = true;
+      $$('[data-save]').forEach(b => { b.disabled = true; });
+      $('[data-save]').insertAdjacentHTML('beforebegin', '<p class="saving" role="status">Guardando el pedido…</p>');
+      order = await createItem('order', {...data, status: 'Pendiente', createdAt: now, updatedAt: now});
+      savingDraft = false;
+      if (!order) {
+        $$('[data-save]').forEach(b => { b.disabled = false; });
+        $('.saving')?.remove();
+        return;
+      }
     }
-    if (!save()) return;
     const wasEdit = draft.mode === 'edit';
     draft = null;
     wizardClosed = true;
@@ -585,26 +737,24 @@
       <div class="dlg-actions"><button type="button" class="btn btn-secondary" data-edit>${icon('pencil')} Modificar</button><button type="button" class="btn btn-link-danger" data-del>Borrar</button></div></div>`, body => {
       const now = new Date().toISOString();
       $('[data-return]', body)?.addEventListener('click', () => {
-        t.returns = Array.isArray(t.returns) ? t.returns : [];
-        t.returns.push({holder: t.holder, holderName: t.holder, assignedDate: t.assignedDate || '', returnedAt: now});
-        Object.assign(t, {holder: '', assignedDate: '', toolStatus: 'Disponible', returnedAt: now, updatedAt: now});
-        save(); dialog.close(); renderTools(); toast('Devolución anotada.');
+        const returns = [...(Array.isArray(t.returns) ? t.returns : []), {holder: t.holder, holderName: t.holder, assignedDate: t.assignedDate || '', returnedAt: now}];
+        saveItem('tool', {...t, returns, holder: '', assignedDate: '', toolStatus: 'Disponible', returnedAt: now, updatedAt: now});
+        dialog.close(); renderTools(); toast('Devolución anotada.');
       });
       const lend = $('#lendForm', body);
       if (lend) lend.onsubmit = e => {
         e.preventDefault();
         const name = $('#lendName', body).value.trim();
         if (!name) { $('#lendName', body).focus(); toast('Escribí el nombre de quien se la lleva.'); return; }
-        Object.assign(t, {holder: name, assignedDate: now.slice(0, 10), toolStatus: 'Entregada', updatedAt: now});
-        save(); dialog.close(); renderTools(); toast(`Prestada a ${name}.`);
+        saveItem('tool', {...t, holder: name, assignedDate: now.slice(0, 10), toolStatus: 'Entregada', updatedAt: now});
+        dialog.close(); renderTools(); toast(`Prestada a ${name}.`);
       };
       $('[data-edit]', body).onclick = () => toolForm(t);
       $('[data-del]', body).onclick = async () => {
         if (!await confirmBox({title: '¿Borrar esta herramienta?', text: `«${t.name}» se va a quitar de la lista.`, yes: 'Sí, borrar', danger: true})) return;
-        const i = state.tools.indexOf(t);
-        state.tools.splice(i, 1);
-        save(); renderTools();
-        toast('Herramienta borrada.', () => { state.tools.splice(i, 0, t); save(); renderTools(); });
+        removeItem('tool', t);
+        renderTools();
+        toast('Herramienta borrada.', () => { saveItem('tool', t); renderTools(); });
       };
     });
   }
@@ -620,18 +770,22 @@
       <label class="field-label" for="tNotes">Nota <span class="optional">(opcional)</span></label><textarea id="tNotes" name="notes" rows="2" maxlength="300">${esc(t?.notes)}</textarea>
       <div class="dlg-actions"><button class="btn btn-primary" type="submit">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button></div></form>`, body => {
       $('#tName', body).focus();
-      $('#toolForm', body).onsubmit = e => {
+      $('#toolForm', body).onsubmit = async e => {
         e.preventDefault();
         const f = Object.fromEntries(new FormData(e.target));
         const now = new Date().toISOString();
         f.name = f.name.trim();
         if (!f.name) return;
         if (t) {
-          Object.assign(t, f, {toolStatus: t.holder ? 'Entregada' : (f.toolStatus || t.toolStatus), updatedAt: now});
+          saveItem('tool', {...t, ...f, toolStatus: t.holder ? 'Entregada' : (f.toolStatus || t.toolStatus), updatedAt: now});
         } else {
-          state.tools.push({id: C.nextId(state.tools, 'H'), ...f, toolStatus: 'Disponible', holder: '', assignedDate: '', createdAt: now, updatedAt: now});
+          const button = $('button[type=submit]', body);
+          button.disabled = true;
+          button.textContent = 'Guardando…';
+          const created = await createItem('tool', {...f, toolStatus: 'Disponible', holder: '', assignedDate: '', createdAt: now, updatedAt: now});
+          if (!created) { button.disabled = false; button.textContent = 'Guardar'; return; }
         }
-        save(); dialog.close(); renderTools(); toast('Herramienta guardada.');
+        dialog.close(); renderTools(); toast('Herramienta guardada.');
       };
     });
   }
@@ -681,20 +835,26 @@
       <div class="dlg-actions"><button class="btn btn-primary" type="submit">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button>
       ${c ? '<button type="button" class="btn btn-link-danger" data-del>Borrar contacto</button>' : ''}</div></form>`, body => {
       $('#cName', body).focus();
-      $('#contactForm', body).onsubmit = e => {
+      $('#contactForm', body).onsubmit = async e => {
         e.preventDefault();
         const f = Object.fromEntries(new FormData(e.target));
         if (!f.name.trim()) return;
-        if (c) Object.assign(c, f, {role: c.role || 'Contacto'});
-        else state.contacts.push({id: 'C-' + Date.now(), ...f, role: 'Contacto', organization: '', building: ''});
-        save(); dialog.close(); renderContacts(); toast('Contacto guardado.');
+        if (c) {
+          saveItem('contact', {...c, ...f, role: c.role || 'Contacto'});
+        } else {
+          const button = $('button[type=submit]', body);
+          button.disabled = true;
+          button.textContent = 'Guardando…';
+          const created = await createItem('contact', {...f, role: 'Contacto', organization: '', building: ''});
+          if (!created) { button.disabled = false; button.textContent = 'Guardar'; return; }
+        }
+        dialog.close(); renderContacts(); toast('Contacto guardado.');
       };
       $('[data-del]', body)?.addEventListener('click', async () => {
         if (!await confirmBox({title: '¿Borrar este contacto?', text: c.name, yes: 'Sí, borrar', danger: true})) return;
-        const i = state.contacts.indexOf(c);
-        state.contacts.splice(i, 1);
-        save(); renderContacts();
-        toast('Contacto borrado.', () => { state.contacts.splice(i, 0, c); save(); renderContacts(); });
+        removeItem('contact', c);
+        renderContacts();
+        toast('Contacto borrado.', () => { saveItem('contact', c); renderContacts(); });
       });
     });
   }
@@ -710,9 +870,10 @@
           ${[['normal', 'Normal'], ['grande', 'Grande'], ['muy-grande', 'Muy grande']].map(([v, l]) => `<button type="button" data-size="${v}" class="${size === v ? 'active' : ''}" aria-pressed="${size === v}">${l}</button>`).join('')}
         </div>
       </section>
+      ${sheetPanel()}
       <section class="panel">
         <h2>Copia de seguridad</h2>
-        <p class="muted">Los pedidos se guardan solo en esta computadora. Todos los viernes desde las 12:00 la aplicación pide guardar la copia de la semana.</p>
+        <p class="muted">${connected() ? 'Los pedidos están en la planilla de Google.' : 'Los pedidos se guardan solo en esta computadora.'} Todos los viernes desde las 12:00 la aplicación pide guardar la copia de la semana para imprimir y archivar.</p>
         <p><strong>Última copia en Excel:</strong> ${lastExcel() ? esc(C.when(lastExcel())) : 'nunca'}</p>
         <button type="button" class="btn btn-primary btn-block" data-backup>${icon('save')} Guardar copia de la semana</button>
         <div class="action-row">
@@ -728,6 +889,98 @@
     $('[data-json]').onclick = () => { downloadRestoreCopy(); toast('Copia para recuperar descargada.'); renderSettings(); };
     $('[data-restore]').onclick = () => $('#restoreFile').click();
     $('#restoreFile').onchange = restoreBackup;
+    bindSheetPanel();
+  }
+
+  function sheetPanel() {
+    if (connected()) {
+      return `<section class="panel">
+        <h2>Planilla compartida</h2>
+        <p class="sheet-state">${icon('check')} Esta computadora usa la planilla de Google. Lo que se carga acá lo ven todas las computadoras conectadas.</p>
+        <p class="muted">Última actualización: ${sync.lastOk ? esc(C.when(sync.lastOk.toISOString()).toLowerCase()) : 'todavía no'}${sync.error ? ` · ${esc(errorText({message: sync.error}))}` : ''}</p>
+        ${remote.sheetUrl ? `<a class="btn btn-secondary btn-block" href="${esc(remote.sheetUrl)}" target="_blank" rel="noopener">Abrir la planilla</a>` : ''}
+        <button type="button" class="btn btn-ghost btn-block" data-sheet-refresh>Actualizar ahora</button>
+        <button type="button" class="btn btn-link-danger" data-sheet-off>Desconectar esta computadora</button>
+      </section>`;
+    }
+    return `<section class="panel">
+      <h2>Planilla compartida</h2>
+      <p class="muted">Para que varias computadoras vean y carguen los mismos pedidos, conectá la planilla de Google. Se hace una sola vez en cada computadora.</p>
+      <form id="sheetForm" class="sheet-form">
+        <label class="field-label" for="sheetUrl">Dirección de la aplicación web</label>
+        <input id="sheetUrl" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
+        <label class="field-label" for="sheetKey">Clave</label>
+        <input id="sheetKey" autocomplete="off" placeholder="La misma que escribiste en el código">
+        <button type="submit" class="btn btn-primary btn-block">Conectar</button>
+      </form>
+    </section>`;
+  }
+
+  function bindSheetPanel() {
+    const form = $('#sheetForm');
+    if (form) form.onsubmit = connectSheet;
+    $('[data-sheet-refresh]')?.addEventListener('click', async e => {
+      e.target.disabled = true;
+      e.target.textContent = 'Actualizando…';
+      await refresh({force: true});
+      if (sync.error) toast(errorText({message: sync.error}));
+      else toast('Planilla actualizada.');
+    });
+    $('[data-sheet-off]')?.addEventListener('click', async () => {
+      const ok = await confirmBox({title: '¿Desconectar esta computadora?', text: 'Va a dejar de ver lo que cargan las otras computadoras. Los datos de la planilla no se borran.', yes: 'Sí, desconectar', danger: true});
+      if (!ok) return;
+      remote = null;
+      outbox = [];
+      try { localStorage.removeItem(REMOTE_KEY); localStorage.removeItem(OUTBOX_KEY); } catch {}
+      renderSettings();
+      toast('Computadora desconectada de la planilla.');
+    });
+  }
+
+  async function connectSheet(e) {
+    e.preventDefault();
+    const url = $('#sheetUrl').value.trim();
+    const key = $('#sheetKey').value.trim();
+    if (!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)) { toast('La dirección tiene que empezar con https://script.google.com/'); $('#sheetUrl').focus(); return; }
+    if (!key) { toast('Escribí la clave.'); $('#sheetKey').focus(); return; }
+    const button = $('#sheetForm button');
+    button.disabled = true;
+    button.textContent = 'Conectando…';
+    const conf = {url, key};
+    let data;
+    try {
+      ({data} = await api('load', {}, conf));
+    } catch (err) {
+      button.disabled = false;
+      button.textContent = 'Conectar';
+      toast(`No se pudo conectar: ${errorText(err)}`);
+      return;
+    }
+    const sheetEmpty = !data.orders.length && !data.tools.length;
+    const localCustom = state.contacts.filter(C.isCustomContact);
+    const hasLocal = state.orders.length || state.tools.length || localCustom.length;
+    if (sheetEmpty && hasLocal) {
+      const up = await confirmBox({title: 'La planilla está vacía', text: `¿Subir los ${state.orders.length} pedidos y ${state.tools.length} herramientas que hay en esta computadora?`, yes: 'Sí, subirlos'});
+      if (up) {
+        const items = [
+          ...state.orders.map(item => ({kind: 'order', item, row: C.orderRow(item)})),
+          ...state.tools.map(item => ({kind: 'tool', item, row: C.toolRow(item)})),
+          ...localCustom.map(item => ({kind: 'contact', item, row: C.contactRow(item)}))
+        ];
+        try { await api('import', {items}, conf); ({data} = await api('load', {}, conf)); }
+        catch (err) { button.disabled = false; button.textContent = 'Conectar'; toast(`No se pudieron subir: ${errorText(err)}`); return; }
+      }
+    } else if (!sheetEmpty && hasLocal) {
+      // Antes de pasar a la planilla, se guarda lo de esta computadora por las dudas.
+      downloadRestoreCopy();
+      toast('Se descargó una copia de lo que había en esta computadora, por las dudas.');
+    }
+    remote = conf;
+    writeJSON(REMOTE_KEY, remote);
+    applyRemote(data);
+    setSync({error: '', lastOk: new Date()});
+    renderSettings();
+    toast('Listo: esta computadora ya usa la planilla compartida.');
   }
 
   function bindBackup() { $$('[data-backup]').forEach(b => b.onclick = weeklyBackup); }
@@ -772,10 +1025,18 @@
       data = parsed && parsed.app === 'intendencia' ? parsed.data : parsed;
       if (!data || typeof data !== 'object' || !Array.isArray(data.orders)) throw new Error();
     } catch { toast('Ese archivo no es una copia de Intendencia.'); return; }
-    const ok = await confirmBox({title: '¿Recuperar esta copia?', text: `Se van a reemplazar los datos de esta computadora por los de «${file.name}» (${data.orders.length} pedidos).`, yes: 'Sí, recuperar', danger: true});
+    const ok = await confirmBox({title: '¿Recuperar esta copia?', text: connected() ? `Los ${data.orders.length} pedidos de «${file.name}» se van a cargar en la planilla. Los que tengan el mismo número se reemplazan.` : `Se van a reemplazar los datos de esta computadora por los de «${file.name}» (${data.orders.length} pedidos).`, yes: 'Sí, recuperar', danger: true});
     if (!ok) return;
     state = C.normalizeState(data, CATALOG);
     save();
+    if (connected()) {
+      const items = [
+        ...state.orders.map(item => ({kind: 'order', item, row: C.orderRow(item)})),
+        ...state.tools.map(item => ({kind: 'tool', item, row: C.toolRow(item)})),
+        ...state.contacts.filter(C.isCustomContact).map(item => ({kind: 'contact', item, row: C.contactRow(item)}))
+      ];
+      try { await api('import', {items}); } catch (err) { toast(`La copia se recuperó en esta computadora, pero no se pudo subir a la planilla: ${errorText(err)}`); go('pedidos', true); return; }
+    }
     go('pedidos', true);
     toast('Copia recuperada.');
   }
@@ -791,4 +1052,5 @@
   load();
   if (!readStored()) save();
   render();
+  refresh();
 })();

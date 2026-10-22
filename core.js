@@ -241,26 +241,38 @@
     return !(last >= lastFridayNoon(now).getTime());
   }
 
+  // Columnas legibles de cada tipo de dato. Se usan en el Excel de los viernes y en la planilla de Google.
+  const ORDER_COLUMNS = [
+    {header: 'Número', width: 9}, {header: 'Fecha del pedido', width: 17}, {header: 'Trabajo', width: 26}, {header: 'Oficio', width: 13},
+    {header: 'Edificio', width: 11}, {header: 'Dependencia', width: 15}, {header: 'Piso / oficina', width: 16}, {header: 'Urgente', width: 8},
+    {header: 'Estado', width: 13}, {header: 'Terminado el', width: 17}, {header: 'Indicaciones', width: 30}];
+  const TOOL_COLUMNS = [
+    {header: 'Código', width: 9}, {header: 'Herramienta', width: 24}, {header: 'Marca y modelo', width: 22}, {header: 'N.º de inventario', width: 16},
+    {header: 'Estado', width: 14}, {header: 'La tiene', width: 22}, {header: 'Desde', width: 12}, {header: 'Nota', width: 32}];
+  const CONTACT_COLUMNS = [
+    {header: 'Código', width: 16}, {header: 'Nombre', width: 28}, {header: 'Teléfono', width: 18}, {header: 'Correo', width: 28}, {header: 'Para qué sirve', width: 32}];
+
+  const orderRow = o => [
+    o.id, fullDate(o.createdAt), o.title, tradeLabel(o.specialty), buildingShort(o.building),
+    shortDependency(o.dependency), o.location || '', isUrgent(o) ? 'Sí' : '', statusInfo(o.status).label,
+    isDone(o) && o.completedAt ? fullDate(o.completedAt) : '', o.description || ''
+  ];
+  const toolRow = t => [
+    t.id, t.name, [t.brand, t.model].filter(Boolean).join(' '), t.serial || '',
+    t.holder ? 'Prestada' : (t.toolStatus || 'Disponible'), t.holder || '',
+    t.holder && t.assignedDate ? String(t.assignedDate).split('-').reverse().join('/') : '', t.notes || ''
+  ];
+  const contactRow = c => [c.id, c.name || '', c.phone || '', c.email || '', c.notes || ''];
+  // Contactos propios: los que no salen de la guía oficial del PJN.
+  const isCustomContact = c => !c.source;
+
   function excelSheets(state, now = new Date()) {
     const stamp = fullDate(now.toISOString());
     const byDate = (a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
-    const orders = state.orders.slice().sort(byDate).map(o => [
-      o.id, fullDate(o.createdAt), o.title, tradeLabel(o.specialty), buildingShort(o.building),
-      shortDependency(o.dependency), o.location || '', isUrgent(o) ? 'Sí' : '', statusInfo(o.status).label,
-      isDone(o) && o.completedAt ? fullDate(o.completedAt) : '', o.description || ''
-    ]);
-    const tools = state.tools.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')).map(t => [
-      t.name, [t.brand, t.model].filter(Boolean).join(' '), t.serial || '',
-      t.holder ? 'Prestada' : (t.toolStatus || 'Disponible'), t.holder || '', t.holder && t.assignedDate ? t.assignedDate.split('-').reverse().join('/') : '', t.notes || ''
-    ]);
     return [
-      {name: 'Pedidos', title: `Intendencia · Pedidos de trabajo · copia del ${stamp}`, rows: orders, columns: [
-        {header: 'Número', width: 9}, {header: 'Fecha del pedido', width: 17}, {header: 'Trabajo', width: 26}, {header: 'Oficio', width: 13},
-        {header: 'Edificio', width: 11}, {header: 'Dependencia', width: 15}, {header: 'Piso / oficina', width: 16}, {header: 'Urgente', width: 8},
-        {header: 'Estado', width: 13}, {header: 'Terminado el', width: 17}, {header: 'Indicaciones', width: 30}]},
-      {name: 'Herramientas', title: `Intendencia · Herramientas · copia del ${stamp}`, rows: tools, columns: [
-        {header: 'Herramienta', width: 24}, {header: 'Marca y modelo', width: 22}, {header: 'N.º de inventario', width: 16},
-        {header: 'Estado', width: 16}, {header: 'La tiene', width: 22}, {header: 'Desde', width: 12}, {header: 'Nota', width: 36}]}
+      {name: 'Pedidos', title: `Intendencia · Pedidos de trabajo · copia del ${stamp}`, columns: ORDER_COLUMNS, rows: state.orders.slice().sort(byDate).map(orderRow)},
+      {name: 'Herramientas', title: `Intendencia · Herramientas · copia del ${stamp}`, columns: TOOL_COLUMNS,
+        rows: state.tools.slice().sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')).map(toolRow)}
     ];
   }
 
@@ -270,7 +282,8 @@
     normalizeText, buildingForAddress, shortDependency, dependenciesForBuilding,
     emptyState, normalizeState, nextId, orderPlace, peopleNames,
     searchOrders, sortOrders, searchContacts, when, fullDate, daysSince,
-    EXCEL_KEY, lastFridayNoon, weeklyExcelDue, excelSheets
+    EXCEL_KEY, lastFridayNoon, weeklyExcelDue, excelSheets,
+    ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Core;
   else root.Core = Core;

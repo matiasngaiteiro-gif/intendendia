@@ -5,15 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#17233d">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'none'; form-action 'self'">
   <title>Intendencia · Pedidos de trabajo</title>
-  <link rel="stylesheet" href="styles.css?v=piloto-3">
+  <link rel="stylesheet" href="styles.css?v=piloto-4">
 </head>
 <body>
   <a class="skip" href="#main">Ir al contenido</a>
   <header class="top">
     <div class="top-inner">
       <a class="brand" href="#/pedidos" aria-label="Intendencia, ir a pedidos"><span class="brand-mark" aria-hidden="true">IC</span><span><strong>Intendencia</strong><small>Cámara Comercial</small></span></a>
+      <p id="syncStatus" class="sync" role="status" hidden></p>
       <nav class="tabs" aria-label="Secciones">
         <a href="#/pedidos" data-tab="pedidos"><span data-nav-icon="list"></span>Pedidos</a>
         <a href="#/herramientas" data-tab="herramientas"><span data-nav-icon="toolbox"></span>Herramientas</a>
@@ -30,8 +31,8 @@
   <section id="printSheet" class="print-sheet" aria-hidden="true"></section>
 
   <script src="contacts-data.js?v=10"></script>
-  <script src="core.js?v=piloto-3"></script>
-  <script src="xlsx.js?v=piloto-3"></script>
-  <script src="app.js?v=piloto-3"></script>
+  <script src="core.js?v=piloto-4"></script>
+  <script src="xlsx.js?v=piloto-4"></script>
+  <script src="app.js?v=piloto-4"></script>
 </body>
 </html>
