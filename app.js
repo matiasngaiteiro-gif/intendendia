@@ -80,7 +80,7 @@
   let remote = readJSON(REMOTE_KEY, null);
   let outbox = readJSON(OUTBOX_KEY, []);
   const connected = () => !!(remote && remote.url && remote.key);
-  const sync = {busy: 0, error: '', lastOk: null};
+  const sync = {busy: 0, error: '', lastOk: null, loading: true};
   const LIST = {order: 'orders', tool: 'tools', contact: 'contacts', item: 'items'};
   const ROW = {order: C.orderRow, tool: C.toolRow, contact: C.contactRow, item: C.itemRow};
   const PREFIX = {order: 'OT', tool: 'H', contact: 'C', item: 'I'};
@@ -93,7 +93,9 @@
   };
   const errorText = err => ERRORS[err?.message] || ERRORS.red;
 
+  let writes = 0; // cuenta los cambios enviados, para no pisarlos con una lectura que salió antes
   async function api(action, payload = {}, conf = remote) {
+    if (action !== 'load') writes++;
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 30000);
     try {
@@ -105,6 +107,11 @@
       if (!res.ok) throw new Error('red');
       const data = await res.json().catch(() => { throw new Error('red'); });
       if (!data.ok) throw new Error(/Tipo desconocido/.test(data.error || '') ? 'codigo-viejo' : (data.error || 'red'));
+      if (action !== 'load' && conf === remote && remote && data.rev !== undefined) {
+        // Si nadie más cambió nada mientras tanto, lo que hay en pantalla ya es lo último: se evita releer todo.
+        remote.rev = action !== 'import' && remote.rev === data.rev - 1 ? data.rev : undefined;
+        writeJSON(REMOTE_KEY, remote);
+      }
       return data;
     } catch (e) {
       throw new Error(ERRORS[e.message] ? e.message : 'red');
@@ -121,6 +128,7 @@
     el.hidden = false;
     const pending = outbox.length;
     const [cls, text, long] = sync.busy ? ['busy', 'Guardando…', 'Guardando en la planilla']
+      : sync.loading && !sync.lastOk ? ['busy', 'Actualizando…', 'Trayendo lo último de la planilla']
       : sync.error ? ['error', 'Sin conexión', errorText({message: sync.error})]
       : pending ? ['error', `${pending} sin enviar`, `${pending} cambio${pending === 1 ? '' : 's'} esperando conexión`]
       : ['ok', 'Al día', 'La planilla está al día'];
@@ -195,22 +203,41 @@
   }
 
   // Trae lo último de la planilla. No interrumpe a quien está cargando algo.
+  // Con el código de planilla nuevo (versión 3) solo pregunta «¿cambió algo?»: si no cambió, la respuesta es inmediata.
+  const wait = ms => new Promise(r => setTimeout(r, ms));
   let refreshing = false;
+  let failures = 0;
   async function refresh({force} = {}) {
-    if (!connected() || refreshing) return;
+    if (!connected()) { schedule(); return; }
+    if (refreshing) return;
     refreshing = true;
     try {
       await flushOutbox();
-      const {data} = await api('load');
-      applyRemote(data);
-      setSync({error: '', lastOk: new Date()});
+      const before = writes;
+      const since = !force && Number.isInteger(remote.rev) ? {since: remote.rev} : {};
+      let res;
+      try { res = await api('load', since); }
+      catch (e) {
+        if (e.message !== 'red') throw e;
+        await wait(1500); // Google a veces tarda en «despertar»: un segundo intento suele andar
+        res = await api('load', since);
+      }
+      failures = 0;
+      setSync({error: '', lastOk: new Date(), loading: false});
+      if (res.unchanged) return;
+      if (writes !== before || !res.data) return; // hubo cambios propios en el medio: se trae todo en la próxima vuelta
+      applyRemote(res.data);
+      remote.rev = res.rev;
+      writeJSON(REMOTE_KEY, remote);
       const typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
       const r = route().name;
       if (force || (!dialog.open && !typing && r !== 'nuevo' && r !== 'editar')) render({keepScroll: true});
     } catch (e) {
-      setSync({error: e.message});
+      failures++;
+      setSync({error: e.message, loading: false});
     } finally {
       refreshing = false;
+      schedule();
     }
   }
   function applyRemote(data) {
@@ -219,9 +246,20 @@
     if (remote) { remote.sheetUrl = data.sheetUrl || remote.sheetUrl; remote.version = Number(data.version || 1); writeJSON(REMOTE_KEY, remote); }
     save();
   }
-  setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, 30000);
+  // Cada 30 segundos; si falla, espera cada vez más (1, 2, 4 y hasta 5 minutos) para no trabar la planilla.
+  let pollTimer;
+  function schedule() {
+    clearTimeout(pollTimer);
+    const delay = failures ? Math.min(300000, 30000 * 2 ** failures) : 30000;
+    pollTimer = setTimeout(() => { if (document.visibilityState === 'visible') refresh(); else schedule(); }, delay);
+  }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
-  window.addEventListener('online', () => refresh());
+  window.addEventListener('online', () => { failures = 0; refresh(); });
+
+  // Guarda los archivos de la aplicación en la computadora: así abre aunque GitHub o internet anden lentos.
+  if ('serviceWorker' in navigator && /^(https:|http:\/\/localhost)/.test(location.href)) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 
   // ---------- Preferencias de este equipo ----------
   const PREF_KEY = 'intendencia-preferencias';
@@ -1252,9 +1290,10 @@
     button.disabled = true;
     button.textContent = 'Conectando…';
     const conf = {url, key};
-    let data;
+    let data, res;
     try {
-      ({data} = await api('load', {}, conf));
+      res = await api('load', {}, conf);
+      ({data} = res);
     } catch (err) {
       button.disabled = false;
       button.textContent = 'Conectar';
@@ -1264,7 +1303,7 @@
     // Si esta computadora tenía pedidos cargados por su cuenta, se descarga una copia y se reemplazan por los de la planilla.
     const hasLocal = state.orders.length || state.tools.length || state.contacts.some(C.isCustomContact);
     if (hasLocal) downloadRestoreCopy();
-    remote = conf;
+    remote = {...conf, rev: res.rev};
     writeJSON(REMOTE_KEY, remote);
     applyRemote(data);
     setSync({error: '', lastOk: new Date()});
