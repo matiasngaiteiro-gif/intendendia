@@ -1,10 +1,16 @@
 // Guarda una copia de los archivos de la aplicación (no de los datos) para que abra rápido
 // aunque GitHub o internet anden lentos. Siempre intenta primero la versión nueva.
-const CACHE = 'intendencia-piloto-17';
+const CACHE = 'intendencia-piloto-18';
 const ESPERA = 4000; // si en 4 segundos no llegó la versión nueva, abre con la guardada
 
+// Todo lo necesario para abrir, con la misma versión que pide index.html.
+const ARCHIVOS = ['./', 'index.html', 'styles.css?v=piloto-18', 'contacts-data.js?v=10', 'core.js?v=piloto-18', 'xlsx.js?v=piloto-18', 'app.js?v=piloto-18'];
+
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', 'index.html'])).catch(() => {}).then(() => self.skipWaiting()));
+  // Se guarda de a uno: si alguno falla, los demás quedan igual.
+  e.waitUntil(caches.open(CACHE)
+    .then(c => Promise.all(ARCHIVOS.map(f => c.add(f).catch(() => {}))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
