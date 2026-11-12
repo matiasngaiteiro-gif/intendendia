@@ -68,10 +68,12 @@ function loadScript(key) {
   };
   let code = fs.readFileSync(path.join(__dirname, '../planilla/Codigo.gs'), 'utf8');
   code = code.replace("const CLAVE = 'CAMBIAR-ESTA-CLAVE';", `const CLAVE = ${JSON.stringify(key)};`);
-  vm.runInNewContext(code + '\nthis.__atender = atender; this.__doPost = doPost;', sandbox);
+  vm.runInNewContext(code + '\nthis.__atender = atender; this.__doPost = doPost; this.__desdeApp = desdeApp; this.__doGet = doGet;', sandbox);
   return {
     book,
-    handle: req => JSON.parse(sandbox.__doPost({postData: {contents: JSON.stringify(req)}}).text)
+    handle: req => JSON.parse(sandbox.__doPost({postData: {contents: JSON.stringify(req)}}).text),
+    desdeApp: req => JSON.parse(sandbox.__desdeApp(JSON.stringify(req))),
+    doGet: () => sandbox.__doGet()
   };
 }
 

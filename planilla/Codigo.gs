@@ -36,9 +36,23 @@ function doPost(e) {
   return responder(atender(pedido));
 }
 
-// También responde si se abre la dirección en el navegador, para comprobar que está andando.
+// Al abrir la dirección en el navegador se abre la aplicación (archivo App.html de este proyecto).
+// Si App.html todavía no se agregó, solo confirma que la planilla anda.
 function doGet() {
-  return ContentService.createTextOutput('La planilla de Intendencia está conectada y funcionando.');
+  try {
+    return HtmlService.createHtmlOutputFromFile('App')
+      .setTitle('Intendencia · Pedidos de trabajo')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  } catch (err) {
+    return ContentService.createTextOutput('La planilla de Intendencia está conectada y funcionando.');
+  }
+}
+
+// La aplicación abierta desde Google habla con la planilla por acá (mismos pedidos y misma clave).
+function desdeApp(texto) {
+  let pedido;
+  try { pedido = JSON.parse(texto); } catch (err) { return JSON.stringify({ok: false, error: 'formato'}); }
+  return JSON.stringify(atender(pedido));
 }
 
 // Contador de cambios: cada vez que alguien guarda algo, sube en uno.

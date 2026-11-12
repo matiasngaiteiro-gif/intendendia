@@ -114,4 +114,12 @@ test('importar en bloque actualiza los existentes y numera los nuevos', () => {
   assert.equal(data.orders.length, 1, 'no toca otras pestañas');
 });
 
+test('la aplicación abierta desde Google usa la misma clave', () => {
+  const g = loadScript('k');
+  assert.equal(g.desdeApp({key: 'mal', action: 'load'}).error, 'clave');
+  const r = g.desdeApp({key: 'k', action: 'load'});
+  assert.ok(r.ok && r.data);
+  assert.match(g.doGet().text, /funcionando/, 'sin App.html sigue respondiendo');
+});
+
 console.log(`${n} pruebas de la planilla: OK`);

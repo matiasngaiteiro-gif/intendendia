@@ -86,3 +86,16 @@ Para pasar a la versión 3:
 
 La aplicación funciona igual con el código anterior, solo que más lenta.
 
+### Abrir la aplicación desde Google (sin GitHub)
+
+Sirve cuando la red de la oficina demora o bloquea la página de GitHub. La aplicación se abre desde la misma dirección `…/exec` de la planilla.
+
+1. En el editor de Apps Script, pegá el `Codigo.gs` nuevo con tu clave (como siempre).
+2. Tocá el **+** al lado de «Archivos» › **HTML**, y escribí como nombre `App` (Google le agrega `.html`).
+3. Borrá lo que trae y pegá todo el contenido de `planilla/App.html`. Guardá.
+4. **Implementar › Administrar implementaciones › lápiz › Versión: nueva versión › Implementar**.
+5. Abrí la dirección `…/exec` en el navegador: aparece la aplicación. Pide solo la clave, una vez por computadora.
+6. Guardá esa dirección como favorito o acceso directo en cada computadora.
+
+Cada vez que se publique una versión nueva de la aplicación, hay que volver a pegar `App.html` y hacer una nueva versión. `App.html` se arma con `node tools/armar-app-google.cjs`.
+

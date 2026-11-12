@@ -60,6 +60,7 @@ En la **planilla compartida de Google**. Todas las computadoras conectadas ven y
 - `core.js`: lógica sin pantalla (oficios, tareas, dependencias, mensajes, adaptación de datos viejos).
 - `app.js`: pantallas.
 - `sw.js`: guarda los archivos de la aplicación para que abra rápido.
+- `planilla/App.html`: la aplicación entera en un solo archivo, para abrirla desde la dirección de Google en lugar de GitHub (se arma con `node tools/armar-app-google.cjs`).
 - `xlsx.js`: genera el Excel sin librerías externas.
 - `planilla/Codigo.gs` e `INSTALAR.md`: el código de la planilla de Google y los pasos para instalarla.
 - `tests/planilla.test.cjs` y `tests/fake-google.cjs`: prueban el código de la planilla con una simulación de Google.
