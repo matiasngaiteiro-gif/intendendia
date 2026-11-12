@@ -79,6 +79,8 @@
   const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
   let remote = readJSON(REMOTE_KEY, null);
   let outbox = readJSON(OUTBOX_KEY, []);
+  // Abierta desde la dirección de Google (script.google.com/…/exec) en lugar de GitHub.
+  const EN_GOOGLE = !!(window.google && google.script && google.script.run);
   const connected = () => !!(remote && remote.url && remote.key);
   const sync = {busy: 0, error: '', lastOk: null, loading: true};
   const LIST = {order: 'orders', tool: 'tools', contact: 'contacts', item: 'items'};
@@ -96,6 +98,7 @@
   let writes = 0; // cuenta los cambios enviados, para no pisarlos con una lectura que salió antes
   async function api(action, payload = {}, conf = remote) {
     if (action !== 'load') writes++;
+    if (conf.url === 'google') return viaGoogle(action, payload, conf);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 30000);
     try {
@@ -118,6 +121,26 @@
     } finally {
       clearTimeout(timer);
     }
+  }
+
+  function viaGoogle(action, payload, conf) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('red')), 30000);
+      google.script.run
+        .withSuccessHandler(text => {
+          clearTimeout(timer);
+          let data;
+          try { data = JSON.parse(text); } catch { reject(new Error('red')); return; }
+          if (!data.ok) { reject(new Error(ERRORS[data.error] ? data.error : (/Tipo desconocido/.test(data.error || '') ? 'codigo-viejo' : 'red'))); return; }
+          if (action !== 'load' && conf === remote && remote && data.rev !== undefined) {
+            remote.rev = action !== 'import' && remote.rev === data.rev - 1 ? data.rev : undefined;
+            writeJSON(REMOTE_KEY, remote);
+          }
+          resolve(data);
+        })
+        .withFailureHandler(() => { clearTimeout(timer); reject(new Error('red')); })
+        .desdeApp(JSON.stringify({key: conf.key, action, ...payload}));
+    });
   }
 
   function setSync(patch) { Object.assign(sync, patch); paintSync(); }
@@ -257,7 +280,7 @@
   window.addEventListener('online', () => { failures = 0; refresh(); });
 
   // Guarda los archivos de la aplicación en la computadora: así abre aunque GitHub o internet anden lentos.
-  if ('serviceWorker' in navigator && /^(https:|http:\/\/localhost)/.test(location.href)) {
+  if (!EN_GOOGLE && 'serviceWorker' in navigator && /^(https:|http:\/\/localhost)/.test(location.href)) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 
@@ -1243,10 +1266,10 @@
   function renderConnect() {
     main.innerHTML = `<section class="connect">
       <h1 class="page-title">Conectá esta computadora</h1>
-      <p class="lead">Los pedidos están en la planilla de Intendencia. Para verlos y cargarlos, escribí la dirección y la clave. Se hace una sola vez en cada computadora.</p>
+      <p class="lead">Los pedidos están en la planilla de Intendencia. Para verlos y cargarlos, escribí ${EN_GOOGLE ? 'la clave' : 'la dirección y la clave'}. Se hace una sola vez en cada computadora.</p>
       <form id="sheetForm" class="panel sheet-form">
-        <label class="field-label" for="sheetUrl">Dirección de la aplicación web</label>
-        <input id="sheetUrl" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
+        ${EN_GOOGLE ? '' : `<label class="field-label" for="sheetUrl">Dirección de la aplicación web</label>
+        <input id="sheetUrl" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">`}
         <label class="field-label" for="sheetKey">Clave</label>
         <input id="sheetKey" autocomplete="off" placeholder="La misma que escribiste en el código">
         <button type="submit" class="btn btn-primary btn-block">Conectar</button>
@@ -1282,9 +1305,9 @@
 
   async function connectSheet(e) {
     e.preventDefault();
-    const url = $('#sheetUrl').value.trim();
+    const url = EN_GOOGLE ? 'google' : $('#sheetUrl').value.trim();
     const key = $('#sheetKey').value.trim();
-    if (!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)) { toast('La dirección tiene que empezar con https://script.google.com/'); $('#sheetUrl').focus(); return; }
+    if (!EN_GOOGLE && !/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)) { toast('La dirección tiene que empezar con https://script.google.com/'); $('#sheetUrl').focus(); return; }
     if (!key) { toast('Escribí la clave.'); $('#sheetKey').focus(); return; }
     const button = $('#sheetForm button');
     button.disabled = true;

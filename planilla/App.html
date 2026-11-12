@@ -1,0 +1,2701 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#17233d">
+  <meta name="referrer" content="no-referrer">
+  <title>Intendencia · Pedidos de trabajo</title>
+  <style>
+/* Intendencia — prueba piloto. Pensada para leerse fácil: letra grande, botones grandes, mucho contraste. */
+:root {
+  --bg: #f4f2ed;
+  --surface: #ffffff;
+  --ink: #15171c;
+  --muted: #4a4f5a;
+  --line: #d9d5cc;
+  --navy: #17233d;
+  --primary: #1d4ed8;
+  --primary-ink: #ffffff;
+  --primary-soft: #e6edfd;
+  --green: #137a3d;
+  --green-dark: #0f6331;
+  --red: #b42318;
+  --red-soft: #fde8e6;
+  --amber: #9a5b00;
+  --amber-soft: #fdf1dc;
+  --blue-soft: #e6edfd;
+  --done-soft: #e3f3e8;
+  --radius: 16px;
+  --tap: 60px;
+  --shadow: 0 1px 2px rgba(20, 22, 28, .06), 0 2px 8px rgba(20, 22, 28, .05);
+  font-size: 19px;
+}
+html[data-text-size="grande"] { font-size: 21.5px; }
+html[data-text-size="muy-grande"] { font-size: 24px; }
+
+* { box-sizing: border-box; }
+.ico { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
+.crumb { display: flex; align-items: center; gap: 8px; }
+.back .ico { width: 20px; height: 20px; }
+.search .ico { color: var(--muted); }
+.lend { display: grid; gap: 10px; margin-top: 8px; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 1rem; line-height: 1.45;
+}
+a { color: var(--primary); }
+h1, h2, h3 { line-height: 1.2; margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid #f59e0b; outline-offset: 3px; border-radius: 6px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip { position: absolute; left: -9999px; }
+.skip:focus { left: 12px; top: 12px; z-index: 50; background: #fff; padding: 10px 14px; border-radius: 8px; }
+
+/* ---------- Encabezado y navegación ---------- */
+.top { background: var(--navy); color: #fff; position: sticky; top: 0; z-index: 20; }
+.top-inner { max-width: 760px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; margin-right: auto; }
+.brand-mark { width: 42px; height: 42px; border-radius: 12px; background: #fff; color: var(--navy); display: grid; place-items: center; font-weight: 800; font-size: .85rem; }
+.brand strong { display: block; font-size: 1.05rem; }
+.brand small { display: block; font-size: .72rem; opacity: .8; }
+.tabs { display: flex; gap: 4px; }
+.tabs a {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 88px;
+  padding: 8px 10px; border-radius: 12px; color: #dfe5f2; text-decoration: none; font-size: .78rem; font-weight: 600;
+}
+.tabs a span { display: grid; place-items: center; }
+.tabs .ico { width: 24px; height: 24px; }
+.tabs a:hover { background: rgba(255, 255, 255, .1); }
+.tabs a.active { background: #fff; color: var(--navy); }
+
+main { max-width: 760px; margin: 0 auto; padding: 22px 16px 120px; outline: none; }
+
+@media (max-width: 720px) {
+  .top-inner { padding: 8px 16px; }
+  .brand small { display: none; }
+  .brand-mark { width: 36px; height: 36px; }
+  .tabs {
+    position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line);
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); justify-content: space-around; box-shadow: 0 -2px 10px rgba(0,0,0,.06);
+  }
+  .tabs a { color: var(--muted); flex: 1; min-width: 0; padding: 6px 2px; }
+  .tabs a.active { background: var(--primary-soft); color: var(--primary); }
+  body[data-screen="nuevo"] .tabs, body[data-screen="editar"] .tabs { display: none; }
+}
+@media all {
+  body[data-screen="conectar"] .tabs { display: none; }
+  .connect { max-width: 560px; margin: 4vh auto 0; }
+  .connect .sheet-form { margin-top: 18px; }
+}
+
+/* ---------- Botones ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: var(--tap); padding: 12px 22px; border-radius: 14px; border: 2px solid transparent;
+  font-weight: 700; font-size: 1rem; text-decoration: none; cursor: pointer; text-align: center;
+  transition: transform .06s ease, background .15s ease;
+}
+.btn:active { transform: scale(.98); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.btn-block { width: 100%; }
+.btn-primary { background: var(--primary); color: var(--primary-ink); }
+.btn-primary:hover { background: #1a43bd; }
+.btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--line); }
+.btn-secondary:hover { border-color: #b8b2a6; }
+.btn-ghost { background: transparent; color: var(--primary); }
+.btn-ghost:hover { background: var(--primary-soft); }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-link-danger { background: none; border: none; color: var(--red); text-decoration: underline; min-height: 52px; font-weight: 600; cursor: pointer; padding: 8px 12px; }
+.btn-small { min-height: 48px; padding: 8px 16px; font-size: .9rem; border-radius: 12px; }
+.btn-hero { width: 100%; min-height: 76px; font-size: 1.25rem; border-radius: 16px; }
+.btn-hero .ico { width: 28px; height: 28px; stroke-width: 2.2; }
+.btn-back { margin-top: 18px; }
+
+/* ---------- Lista de pedidos ---------- */
+.page-title { font-size: 1.6rem; margin-bottom: 6px; }
+.lead { color: var(--muted); margin: 0 0 16px; }
+.segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #e7e3da; padding: 6px; border-radius: 16px; margin: 22px 0 12px; }
+.segmented-3 { grid-template-columns: repeat(3, 1fr); margin: 12px 0 0; }
+.segmented a, .segmented button {
+  min-height: 54px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 12px; border: 0; background: transparent; color: var(--muted); font-weight: 700; text-decoration: none; cursor: pointer;
+}
+.segmented a b { background: #d6d1c6; color: var(--ink); border-radius: 999px; padding: 1px 10px; font-size: .85rem; }
+.segmented .active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.segmented a.active b { background: var(--primary); color: #fff; }
+.summary-line { margin: 4px 0 12px; color: var(--muted); }
+
+.filters { display: grid; gap: 10px; margin-bottom: 14px; }
+.search { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 2px solid var(--line); border-radius: 14px; padding: 0 14px; min-height: var(--tap); margin: 14px 0; }
+.filters .search { margin: 0; }
+.search:focus-within { border-color: var(--primary); }
+.search input { border: 0; outline: none; flex: 1; min-width: 0; background: transparent; padding: 12px 0; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { min-height: 48px; padding: 8px 18px; border-radius: 999px; border: 2px solid var(--line); background: var(--surface); font-weight: 600; cursor: pointer; }
+.chip.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+.list { display: grid; gap: 12px; margin: 14px 0 18px; }
+.card {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  background: var(--surface); border: 2px solid transparent; border-radius: var(--radius); padding: 16px;
+  box-shadow: var(--shadow); color: var(--ink); text-decoration: none; cursor: pointer;
+}
+a.card:hover, button.card:hover { border-color: #c9c3b6; }
+.card.is-urgent { border-left: 8px solid var(--red); }
+.card-icon { width: 52px; height: 52px; border-radius: 14px; background: var(--bg); color: var(--navy); display: grid; place-items: center; flex: none; }
+.card-icon .ico { width: 28px; height: 28px; }
+.card-icon.big { width: 64px; height: 64px; }
+.card-icon.big .ico { width: 34px; height: 34px; }
+.card-main { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.card-title { font-weight: 700; font-size: 1.08rem; }
+.card-sub { color: var(--ink); }
+.card-meta { color: var(--muted); font-size: .9rem; }
+.card-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+.pill { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: .85rem; font-weight: 700; background: #ecebe7; color: var(--ink); white-space: nowrap; }
+.pill-urgent { background: var(--red); color: #fff; }
+.pill-pending { background: #ecebe7; }
+.pill-progress { background: var(--blue-soft); color: #1e3a8a; }
+.pill-missing { background: var(--amber-soft); color: var(--amber); }
+.pill-done { background: var(--done-soft); color: var(--green-dark); }
+@media (max-width: 520px) {
+  .order-card { flex-wrap: wrap; }
+  .order-card .card-side { flex-direction: row; width: 100%; padding-left: 66px; justify-content: flex-start; }
+  .order-card .card-side:empty { display: none; }
+  .card-icon { width: 46px; height: 46px; font-size: 1.5rem; }
+}
+
+.empty { text-align: center; padding: 34px 20px; background: var(--surface); border-radius: var(--radius); border: 2px dashed var(--line); }
+.empty p { margin: 8px 0; }
+
+.notice { display: flex; gap: 12px; align-items: center; background: var(--amber-soft); border: 2px solid #f1d39c; border-radius: var(--radius); padding: 14px 16px; margin-top: 16px; }
+.notice-ico { width: 30px; height: 30px; color: var(--amber); }
+.notice p { margin: 2px 0 0; color: var(--muted); font-size: .92rem; }
+.notice div { flex: 1; }
+@media (max-width: 520px) { .notice { flex-wrap: wrap; } .notice .btn { width: 100%; } }
+
+/* ---------- Detalle de un pedido ---------- */
+.back { display: inline-flex; align-items: center; min-height: 52px; padding: 8px 4px; font-weight: 700; color: var(--primary); text-decoration: none; background: none; border: 0; cursor: pointer; font-size: 1rem; }
+.detail { background: var(--surface); border-radius: 20px; padding: 22px; box-shadow: var(--shadow); min-width: 0; }
+@media (max-width: 520px) { .detail { padding: 18px 16px; } .detail-head .card-icon.big { width: 56px; height: 56px; font-size: 1.9rem; } .detail h1 { font-size: 1.35rem; } }
+.detail-head { display: flex; gap: 16px; align-items: flex-start; }
+.detail h1 { font-size: 1.55rem; margin: 2px 0 8px; }
+.eyebrow { margin: 0; color: var(--muted); font-size: .85rem; font-weight: 600; }
+.facts { margin: 20px 0 6px; display: grid; gap: 0; border-top: 1px solid var(--line); }
+.facts div { display: grid; grid-template-columns: 9.5em 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.facts dt { color: var(--muted); font-weight: 600; }
+.facts dd { margin: 0; font-weight: 600; }
+@media (max-width: 520px) { .facts div { grid-template-columns: 1fr; gap: 2px; } }
+.section-title { font-size: 1.1rem; margin: 22px 0 10px; }
+.status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.status-btn {
+  min-height: 66px; border-radius: 14px; border: 2px solid var(--line); background: var(--surface);
+  font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; padding: 8px 10px; line-height: 1.2; text-align: left;
+}
+.status-btn .ico { width: 22px; height: 22px; }
+.status-btn.active { border-width: 3px; }
+.status-pending.active { background: #ecebe7; border-color: #6b6f78; }
+.status-progress.active { background: var(--blue-soft); border-color: var(--primary); color: #1e3a8a; }
+.status-missing.active { background: var(--amber-soft); border-color: var(--amber); color: var(--amber); }
+.status-done.active { background: var(--done-soft); border-color: var(--green); color: var(--green-dark); }
+.action-stack { display: grid; gap: 12px; margin-top: 22px; }
+.action-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hint { margin: -4px 0 0; color: var(--muted); font-size: .92rem; }
+
+/* ---------- Paso a paso ---------- */
+.wizard-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.wizard-head .back { color: var(--muted); }
+.step-count { margin: 0 0 0 auto; font-weight: 700; color: var(--muted); }
+.progress { flex-basis: 100%; height: 8px; background: #e2ded5; border-radius: 999px; overflow: hidden; }
+.progress span { display: block; height: 100%; background: var(--primary); border-radius: 999px; transition: width .25s ease; }
+.q { font-size: 1.65rem; margin: 6px 0 18px; }
+.sub-q { font-size: 1.15rem; margin: 22px 0 10px; }
+.crumb { margin: 0; color: var(--muted); font-weight: 700; }
+.group-label { margin: 16px 0 8px; color: var(--muted); font-weight: 700; font-size: .9rem; text-transform: uppercase; letter-spacing: .03em; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.tiles-3 { grid-template-columns: repeat(3, 1fr); }
+.tiles-2 { grid-template-columns: 1fr 1fr; }
+.tiles-compact { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+  min-height: 112px; padding: 16px; border-radius: 18px; border: 2px solid var(--line); background: var(--surface);
+  box-shadow: var(--shadow); cursor: pointer;
+}
+.tile:hover { border-color: #aaa395; }
+.tile.selected { border: 3px solid var(--primary); background: var(--primary-soft); }
+.tile-urgent.selected { border-color: var(--red); background: var(--red-soft); }
+.tile .tile-icon { width: 34px; height: 34px; color: var(--navy); margin-bottom: 6px; }
+.tile-urgent .tile-icon { color: var(--red); }
+.tile.selected .tile-icon { color: var(--primary); }
+.tile-urgent.selected .tile-icon { color: var(--red); }
+.tile-label { font-weight: 800; font-size: 1.1rem; }
+.tile-hint { color: var(--muted); font-size: .88rem; }
+.tile-building { min-height: 92px; justify-content: center; }
+.tiles-compact .tile { min-height: 84px; padding: 12px; }
+.tiles-compact .tile-label { font-size: .95rem; }
+@media (max-width: 560px) {
+  .tiles { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tiles-3 { grid-template-columns: 1fr; }
+  .tile { min-height: 104px; padding: 14px; }
+  .tile-building { min-height: 70px; flex-direction: row; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .q { font-size: 1.45rem; }
+}
+
+.options { display: grid; gap: 10px; }
+.options-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.option {
+  min-height: var(--tap); padding: 12px 18px; border-radius: 14px; border: 2px solid var(--line); background: var(--surface);
+  font-weight: 700; text-align: left; cursor: pointer; display: flex; flex-direction: column; justify-content: center; gap: 2px;
+}
+.option small { font-weight: 500; color: var(--muted); font-size: .85rem; }
+.option:hover { border-color: #aaa395; }
+.option.selected { border: 3px solid var(--primary); background: var(--primary-soft); }
+.option-other { border-style: dashed; color: var(--primary); }
+@media (max-width: 400px) { .options-grid { grid-template-columns: 1fr 1fr; } }
+
+.field { margin-top: 22px; display: grid; gap: 10px; }
+.custom-task { margin-top: 16px; display: grid; gap: 10px; }
+.field-label { font-weight: 700; display: block; margin-top: 12px; }
+.optional { font-weight: 500; color: var(--muted); }
+input:not([type=search]):not([type=file]), select, textarea {
+  width: 100%; min-height: var(--tap); padding: 12px 14px; border: 2px solid #bdb7aa; border-radius: 12px; background: #fff;
+}
+textarea { min-height: 100px; resize: vertical; }
+input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: 3px solid rgba(29, 78, 216, .2); outline-offset: 0; }
+
+.review { margin: 0; background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); padding: 4px 18px; }
+.review-row { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.review-row:last-child { border-bottom: 0; }
+.review-row > div { flex: 1; }
+.review dt { color: var(--muted); font-size: .9rem; font-weight: 600; }
+.review dd { margin: 2px 0 0; font-weight: 700; font-size: 1.05rem; }
+
+/* ---------- Herramientas, contactos y ajustes ---------- */
+.tool-card .card-side { max-width: 45%; }
+.tool-card .pill { white-space: normal; text-align: right; }
+.contact-card { flex-wrap: wrap; cursor: default; }
+.contact-actions { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
+.panel { background: var(--surface); border-radius: 18px; padding: 20px; box-shadow: var(--shadow); margin-top: 16px; }
+.panel h2 { font-size: 1.2rem; margin-bottom: 6px; }
+.panel .btn-block + .btn-block { margin-top: 8px; }
+.muted { color: var(--muted); }
+.small { font-size: .88rem; }
+/* ---------- Encabezado de sección con descarga ---------- */
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.page-head .page-title { margin: 0; }
+.page-head .btn .ico, .section-tools .btn .ico { width: 20px; height: 20px; }
+.section-tools { display: flex; justify-content: flex-end; margin: -2px 0 8px; }
+
+/* ---------- Inventario ---------- */
+.inv-actions { margin-bottom: 4px; }
+.inv-group { margin-top: 18px; }
+.inv-group .group-label { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+.inv-group .group-label span { background: #e7e3da; color: var(--ink); border-radius: 999px; padding: 0 9px; font-size: .8rem; letter-spacing: 0; }
+.inv-group .list { margin: 0; gap: 8px; }
+.item-card { padding: 10px 10px 10px 16px; gap: 10px; cursor: default; }
+.item-card.is-empty .qty-value b { color: var(--red); }
+.item-main { flex: 1; min-width: 0; display: grid; gap: 2px; text-align: left; background: none; border: 0; padding: 6px 0; cursor: pointer; font: inherit; color: inherit; }
+.item-main:hover .card-title { text-decoration: underline; }
+.qty { display: flex; align-items: center; gap: 4px; flex: none; }
+.qty-btn { width: 52px; height: 52px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); display: grid; place-items: center; cursor: pointer; color: var(--navy); }
+.qty-btn:hover:not([disabled]) { border-color: #aaa395; }
+.qty-btn[disabled] { opacity: .35; cursor: not-allowed; }
+.qty-btn .ico { width: 22px; height: 22px; stroke-width: 2.2; }
+.qty-value { min-width: 64px; display: grid; justify-items: center; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.qty-value b { font-size: 1.3rem; }
+.qty-value small { color: var(--muted); font-size: .78rem; }
+.form-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.steps { margin: 8px 0 0; padding-left: 1.3em; display: grid; gap: 6px; }
+@media (max-width: 520px) {
+  .item-card { padding: 8px 8px 8px 14px; }
+  .item-card .card-title { font-size: 1rem; }
+  .qty-btn { width: 44px; height: 44px; }
+  .qty-value { min-width: 50px; }
+  .qty-value b { font-size: 1.15rem; }
+  .form-two { grid-template-columns: 1fr; gap: 0; }
+}
+@media (max-width: 720px) { .tabs a { font-size: .6rem; padding: 6px 0; } }
+
+/* ---------- Filtros del inventario ---------- */
+.inv-filters { display: grid; gap: 10px; margin: 14px 0 4px; }
+.inv-filters .search { margin: 0; }
+.filter-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.filter-row:empty { display: none; }
+.filter { display: grid; gap: 4px; font-weight: 700; font-size: .9rem; }
+.filter select { min-height: 54px; font-weight: 500; }
+.chip b { margin-left: 4px; font-weight: 700; opacity: .75; }
+.filter-summary { margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--muted); font-weight: 600; }
+
+/* ---------- Movimientos de stock ---------- */
+button.qty-value { background: none; border: 0; border-radius: 10px; padding: 4px 2px; cursor: pointer; font: inherit; color: inherit; }
+button.qty-value:hover { background: var(--bg); }
+button.qty-value b { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+.initial-line { margin: -6px 0 12px !important; font-size: .92rem; }
+.initial-line small { font-size: .82rem; }
+.card-initial { color: var(--muted); font-size: .8rem; }
+.stock-modes { margin: 4px 0 6px; }
+.stock-modes .ico { width: 18px; height: 18px; }
+.stock-modes button[disabled] { opacity: .4; cursor: not-allowed; }
+.stepper { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
+.stepper input { text-align: center; font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+#moveChips { margin-top: 10px; }
+.move-preview { font-weight: 700; margin: 14px 0 0 !important; }
+.move-preview.is-error { color: var(--red); }
+.moves { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; font-size: .9rem; }
+.moves li { display: grid; grid-template-columns: 9em 1fr auto; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.moves span:last-child { color: var(--muted); }
+.move-in { color: var(--green-dark); font-weight: 700; }
+.move-out { color: var(--red); font-weight: 700; }
+.move-count { font-weight: 700; }
+@media (max-width: 520px) { .moves li { grid-template-columns: 1fr auto; } .moves li span:nth-child(2) { grid-column: 1 / -1; order: 3; color: var(--muted); } }
+
+/* ---------- Planilla compartida ---------- */
+.sync { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: .78rem; font-weight: 600; color: #dfe5f2; white-space: nowrap; }
+.sync-dot { width: 10px; height: 10px; border-radius: 50%; background: #4ade80; flex: none; }
+.sync-busy .sync-dot { background: #fbbf24; }
+.sync-error .sync-dot { background: #f87171; }
+.sheet-state { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; }
+.sheet-state .ico { color: var(--green); margin-top: 2px; }
+.sheet-form { display: grid; gap: 4px; }
+.sheet-form .btn { margin-top: 14px; }
+.panel .btn + .btn, .panel .btn + .btn-link-danger { margin-top: 8px; }
+.saving { margin: 0; font-weight: 700; color: var(--muted); text-align: center; }
+
+/* ---------- Ventanas ---------- */
+dialog {
+  border: 0; border-radius: 22px; padding: 0; width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 24px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .3); color: var(--ink);
+}
+dialog::backdrop { background: rgba(15, 20, 35, .55); }
+.dlg { padding: 24px; position: relative; }
+.dlg h2 { font-size: 1.4rem; margin: 0 44px 8px 0; }
+.dlg p { margin: 8px 0; }
+.dlg-x { position: absolute; top: 14px; right: 14px; width: 48px; height: 48px; border-radius: 12px; border: 0; background: var(--bg); cursor: pointer; display: grid; place-items: center; }
+.dlg-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; align-items: center; }
+.dlg-actions .btn { flex: 1 1 auto; }
+.big-status { font-size: 1.1rem; margin: 14px 0 !important; }
+@media (max-width: 560px) {
+  dialog { width: 100vw; max-width: 100vw; margin: auto 0 0; border-radius: 22px 22px 0 0; max-height: 92vh; }
+  .dlg { padding-bottom: calc(24px + env(safe-area-inset-bottom)); }
+  .dlg-actions { flex-direction: column; align-items: stretch; }
+}
+
+/* ---------- Aviso inferior ---------- */
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: 28px; z-index: 100;
+  background: var(--ink); color: #fff; border-radius: 16px; padding: 12px 12px 12px 20px;
+  display: flex; align-items: center; gap: 14px; width: max-content; max-width: calc(100vw - 24px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .3); font-weight: 600;
+}
+.toast[hidden] { display: none; }
+.toast-undo { min-height: 48px; padding: 8px 16px; border-radius: 12px; border: 2px solid #fff; background: transparent; color: #fff; font-weight: 800; cursor: pointer; }
+.toast:not(:has(button)) { padding: 16px 20px; }
+@media (max-width: 720px) { .toast { bottom: calc(96px + env(safe-area-inset-bottom)); } }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* ---------- Orden impresa (blanco y negro, Arial, A4, dos copias con línea de corte) ---------- */
+/* Cada copia ocupa media hoja. Los márgenes van dentro de cada mitad para que nada quede
+   pegado al borde ni a la línea de corte, aunque la impresora tenga bordes sin impresión. */
+.print-sheet { display: none; }
+@media print {
+  @page { size: A4 portrait; margin: 10mm 12mm; }
+  html, body { background: #fff !important; padding: 0 !important; margin: 0 !important; font-size: 10pt !important; }
+  body > *:not(.print-sheet) { display: none !important; }
+  .print-sheet {
+    display: flex; flex-direction: column; box-sizing: border-box; width: 100%; max-width: 186mm; height: 276mm; margin: 0 auto;
+    font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 10pt; line-height: 1.35;
+  }
+  .ps-copy { box-sizing: border-box; height: 130mm; padding: 5mm 5mm 0; overflow: hidden; flex: none; }
+  .ps-cut { flex: 1; display: flex; align-items: center; border: 0; position: relative; }
+  .ps-cut::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1pt dashed #000; }
+  .ps-cut span { position: relative; margin: 0 auto; background: #fff; padding: 0 3mm; font-size: 8pt; letter-spacing: .08em; text-transform: uppercase; }
+  .ps-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 10mm; border-bottom: 1.25pt solid #000; padding-bottom: 3mm; }
+  .ps-head h1 { font-size: 13pt; text-transform: uppercase; letter-spacing: .06em; margin: 0; }
+  .ps-head p { margin: 1mm 0 0; font-size: 8.5pt; }
+  .ps-num { display: grid; text-align: right; gap: .5mm; flex: none; font-size: 9pt; }
+  .ps-num strong { font-size: 12pt; }
+  .ps-sign { display: flex; justify-content: flex-end; margin-top: 4mm; }
+  /* Espacio para firmar arriba, con la línea y la leyenda debajo. */
+  .ps-sign span { position: relative; width: 75mm; padding-top: 13mm; font-size: 8pt; text-align: center; }
+  .ps-sign span::before { content: ""; position: absolute; left: 0; right: 0; top: 12mm; border-top: .75pt solid #000; }
+  .ps-task { font-size: 13pt; font-weight: bold; margin: 5mm 0 3mm; display: flex; align-items: center; gap: 3mm; flex-wrap: wrap; }
+  .ps-urgent { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .08em; border: 1pt solid #000; padding: .6mm 2.5mm; }
+  .ps-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .ps-table th, .ps-table td { border-bottom: .75pt solid #000; padding: 2.2mm 1.5mm; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+  .ps-table tr:first-child th, .ps-table tr:first-child td { border-top: .75pt solid #000; }
+  .ps-table th { width: 32mm; font-weight: bold; }
+  .ps-table td { white-space: pre-line; }
+}
+
+</style>
+</head>
+<body>
+  <a class="skip" href="#main">Ir al contenido</a>
+  <header class="top">
+    <div class="top-inner">
+      <a class="brand" href="#/pedidos" aria-label="Intendencia, ir a pedidos"><span class="brand-mark" aria-hidden="true">IC</span><span><strong>Intendencia</strong><small>Cámara Comercial</small></span></a>
+      <p id="syncStatus" class="sync" role="status" hidden></p>
+      <nav class="tabs" aria-label="Secciones">
+        <a href="#/pedidos" data-tab="pedidos"><span data-nav-icon="list"></span>Pedidos</a>
+        <a href="#/inventario" data-tab="inventario"><span data-nav-icon="shelf"></span>Inventario</a>
+        <a href="#/herramientas" data-tab="herramientas"><span data-nav-icon="toolbox"></span>Herramientas</a>
+        <a href="#/contactos" data-tab="contactos"><span data-nav-icon="phone"></span>Contactos</a>
+        <a href="#/ajustes" data-tab="ajustes"><span data-nav-icon="sliders"></span>Ajustes</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1"></main>
+
+  <dialog id="dialog" aria-labelledby="dialogTitle"><div id="dialogBody"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <section id="printSheet" class="print-sheet" aria-hidden="true"></section>
+
+  <script>
+// Transcripción de los datos institucionales visibles en la Guía Judicial del PJN.
+// Consulta: 16/09/2026. No implica actualización automática ni validación telefónica.
+const OFFICIAL_CONTACTS = [
+  ...[
+    [1,'Av. Roque S. Peña 1211, 5º piso','4379-2018/2064'],
+    [2,'M.T. Alvear 1840, 2º piso','4816-0420'],
+    [3,'Callao 635, 6º piso','4371-6861'],
+    [4,'Av. Roque S. Peña 1211, 1º piso','4379-2044/2079'],
+    [5,'Av. Roque S. Peña 1211, 8º piso','4379-2087/2005'],
+    [6,'Av. Roque S. Peña 1211, 2º piso','4379-2040/2117'],
+    [7,'Av. Roque S. Peña 1211, 2º piso','4379-2041/2095'],
+    [8,'Av. Roque S. Peña 1211, 7º piso','4379-2126'],
+    [9,'M.T. Alvear 1840, 4º piso','4819-6630/6631'],
+    [10,'Callao 635, entrepiso','4373-2229'],
+    [11,'Callao 635, 5º piso','4372-4315'],
+    [12,'M.T. Alvear 1840, 2º piso, oficina 207','4819-6871/6872'],
+    [13,'M.T. Alvear 1840, 4º piso','4819-6640/6641'],
+    [14,'Callao 635, 2º piso','4371-2911'],
+    [15,'Callao 635, 3º piso','4372-7459'],
+    [16,'Callao 635, entrepiso','4372-5088'],
+    [17,'M.T. Alvear 1840, 3º piso','4819-6608'],
+    [18,'M.T. Alvear 1840, 3º piso','4819-6660/6661'],
+    [19,'M.T. Alvear 1840, 2º piso','4819-6881 y 4819-6882 al 6887'],
+    [20,'M.T. Alvear 1840, 4º piso','4819-6610/6611'],
+    [21,'M.T. Alvear 1840, 3º piso','4819-6620'],
+    [22,'M.T. Alvear 1840, 3º piso','4819-6651'],
+    [23,'M.T. Alvear 1840, 2º piso','4819-6893'],
+    [24,'M.T. Alvear 1840, 2º piso','4813-0066'],
+    [25,'Callao 635, 4º piso','4371-9415'],
+    [26,'Callao 635, 1º piso','4371-4285'],
+    [27,'Montevideo 546, 2º piso','4124-6691'],
+    [28,'Montevideo 546, 4º piso','4124-6681'],
+    [29,'Montevideo 546, 5º piso','4124-6671'],
+    [30,'Montevideo 546, 7º piso','4124-6661'],
+    [31,'Montevideo 546, 8º piso','4124-6651']
+  ].map(([number,address,phone])=>({id:`PJN-COM-J${number}`,name:`Juzgado Comercial N.º ${number}`,organization:'Justicia Nacional en lo Comercial',role:'Juzgado comercial',building:address,phone,email:`jncomercial${number}@pjn.gov.ar`,notes:'Ciudad Autónoma de Buenos Aires. Fuente: Guía Judicial PJN, consulta 16/09/2026.',source:'https://www.pjn.gov.ar/guia',verifiedAt:'2026-09-16'})),
+  {id:'PJN-COM-CAMARA',name:'Cámara Nacional de Apelaciones en lo Comercial',organization:'Justicia Nacional en lo Comercial',role:'Cámara Comercial',building:'Av. Roque S. Peña 1211',phone:'4379-2047/2048',email:'cncomercial.secgeneral@pjn.gov.ar',notes:'Ciudad Autónoma de Buenos Aires. Fuente: Guía Judicial PJN, consulta 16/09/2026.',source:'https://www.pjn.gov.ar/guia',verifiedAt:'2026-09-16'},
+  ...[
+    ['SECGENERAL','Secretaría General','Av. Roque S. Peña 1211','43792030',''],
+    ['JURISPRUDENCIA','Jurisprudencia','Av. Roque S. Peña 1211, 1º piso','4379-2179','cncomercial.jurisprudencia@pjn.gov.ar'],
+    ['SUPERINTENDENCIA','Superintendencia','Av. Roque S. Peña 1211, 9º piso','4379-2053/2045','cncomercial.superintendencia@pjn.gov.ar'],
+    ['AUXILIARES','Oficina de Auxiliares para la Justicia','Av. Roque S. Peña 1211, 9º piso, oficina 906','4379-2178','cncomercial.auxiliares@pjn.gov.ar'],
+    ['HABILITACION','Habilitación','Av. Roque S. Peña 1211, 9º piso','4379-2031/2057','cncomercial.habilitacion@pjn.gov.ar'],
+    ['BIBLIOTECA','Biblioteca','Av. Roque S. Peña 1211, 4º piso','4379-2027','cncomercial.biblioteca@pjn.gov.ar'],
+    ['INTENDENCIA','Intendencia','Av. Roque S. Peña 1211, 9º piso','4379-2002','cncomercial.intendencia@pjn.gov.ar'],
+    ['MESA-GENERAL','Mesa General de Entradas','Av. Roque S. Peña 1211, planta baja','4379-2059','cncomercial.mesadeentradas@pjn.gov.ar'],
+    ['MESA-CALLAO','Mesa Receptora de Callao','Callao 635','4372-4583','cncomercial.mesareceptora.c635@pjn.gov.ar'],
+    ['MESA-ALVEAR','Mesa Receptora Marcelo T. de Alvear','M.T. Alvear 1840','4812-5689','cncomercial.mesareceptora.mt1840@pjn.gov.ar'],
+    ['MESA-DIAGONAL','Mesa Receptora Diagonal','Av. Roque S. Peña 1211','4379-2059','cncomercial.mesadeentradas@pjn.gov.ar'],
+    ['MESA-MONTEVIDEO','Mesa Receptora Montevideo','Montevideo 546','4124-6699','cncomercial.mesareceptora.m546@pjn.gov.ar']
+  ].map(([key,name,building,phone,email])=>({id:`PJN-COM-${key}`,name,organization:'Cámara Nacional de Apelaciones en lo Comercial',role:'Dependencia de Cámara Comercial',building,phone,email,notes:'Ciudad Autónoma de Buenos Aires. Fuente: Guía Judicial PJN, consulta 16/09/2026.',source:'https://www.pjn.gov.ar/guia',verifiedAt:'2026-09-16'})),
+  ...[
+    ['A','8º piso','4379-2006/2062','cncomercial.salaa@pjn.gov.ar'],
+    ['B','5º piso','4379-2024','cncomercial.salab@pjn.gov.ar'],
+    ['C','4º piso','4379-2051/2177','cncomercial.salac@pjn.gov.ar'],
+    ['D','4º piso','4379-3055','cncomercial.salad@pjn.gov.ar'],
+    ['E','6º piso','4379-2014','cncomercial.salae@pjn.gov.ar'],
+    ['F','3º piso','4379-0134','cncomercial.salaf@pjn.gov.ar']
+  ].map(([letter,floor,phone,email])=>({id:`PJN-COM-SALA-${letter}`,name:`Sala ${letter} - Comercial`,organization:'Cámara Nacional de Apelaciones en lo Comercial',role:'Sala de Cámara Comercial',building:`Av. Roque S. Peña 1211, ${floor}`,phone,email,notes:'Ciudad Autónoma de Buenos Aires. Fuente: Guía Judicial PJN, consulta 16/09/2026.',source:'https://www.pjn.gov.ar/guia',verifiedAt:'2026-09-16'}))
+];
+
+</script>
+  <script>
+// Lógica de la aplicación (sin pantalla): catálogos, datos, búsquedas y mensajes.
+// Se usa en el navegador (window.Core) y en las pruebas de Node (require).
+(function (root) {
+  'use strict';
+
+  const STORAGE_KEY = 'intendencia-estado-v2';
+  const BACKUP_KEY = 'intendencia-ultima-copia';
+
+  // Los nombres largos se conservan tal cual para no romper los datos guardados.
+  const BUILDINGS = [
+    {id: 'Diagonal Roque Sáenz Peña 1211', short: 'Diagonal', address: 'Diagonal Norte 1211'},
+    {id: 'Av. Callao 635', short: 'Callao', address: 'Av. Callao 635'},
+    {id: 'Montevideo 546', short: 'Montevideo', address: 'Montevideo 546'}
+  ];
+
+  // En lugar de nombres de empleados se trabaja con oficios.
+  // "key" es el valor que ya usaban las órdenes guardadas (especialidad).
+  const TRADES = [
+    {key: 'Electricidad', label: 'Electricista', icon: 'bolt', hint: 'Luces, enchufes, timbres'},
+    {key: 'Plomería', label: 'Plomero', icon: 'drop', hint: 'Canillas, baños, pérdidas'},
+    {key: 'Carpintería', label: 'Carpintero', icon: 'door', hint: 'Puertas, cerraduras, muebles'},
+    {key: 'Aires Acondicionados', label: 'Técnico de aire', icon: 'snow', hint: 'Aire acondicionado'},
+    {key: 'Pintura', label: 'Pintor', icon: 'roller', hint: 'Paredes, puertas, retoques'},
+    {key: 'Albañilería', label: 'Albañil', icon: 'bricks', hint: 'Revoque, baldosas, filtraciones'},
+    {key: 'Herrería', label: 'Herrero', icon: 'hammer', hint: 'Rejas, soldaduras, metal'},
+    {key: 'Tapicería', label: 'Tapicero', icon: 'chair', hint: 'Sillas y asientos'},
+    {key: 'Ayudante', label: 'Ayudante', icon: 'box', hint: 'Traslados, limpieza, carteles'},
+    {key: 'Portería', label: 'Portería', icon: 'key', hint: 'Llaves, accesos, proveedores'},
+    {key: 'Administrativo', label: 'Administrativo', icon: 'clipboard', hint: 'Papeles, pedidos, proveedores'}
+  ];
+
+  const TASKS = {
+    'Electricidad': ['Cambio de tubo de luz', 'Cambio de lámpara LED', 'Reparación o cambio de enchufe', 'Cambio de interruptor', 'Revisión de artefacto de iluminación', 'Revisión de luz de emergencia', 'Reparación de timbre', 'Registrar falla de ascensor', 'Control de señalización de evacuación'],
+    'Plomería': ['Pérdida en canilla', 'Destapar desagote', 'Cambio de flexible', 'Reparación de descarga de inodoro', 'Cambio de grifería', 'Reparación de sifón', 'Revisión de pérdida de agua'],
+    'Carpintería': ['Cambio de cerradura', 'Ajuste de puerta', 'Ajuste de bisagras', 'Cambio de picaporte', 'Reparación de cajón', 'Reparación de escritorio', 'Colocación de estante'],
+    'Aires Acondicionados': ['Revisión de aire acondicionado', 'Limpieza de filtros de aire', 'Revisión de desagote de aire'],
+    'Pintura': ['Retoque de pintura', 'Pintura de pared', 'Pintura de puerta'],
+    'Albañilería': ['Reparación de revoque', 'Reposición de baldosa', 'Sellado de filtración'],
+    'Tapicería': ['Reparación de silla', 'Retapizado de asiento'],
+    'Herrería': ['Reparación de reja', 'Reparación de puerta metálica', 'Soldadura', 'Reparación de baranda', 'Colocación de herraje', 'Reparación de estructura metálica'],
+    'Portería': ['Abrir o cerrar una oficina', 'Entrega de llaves', 'Recibir a un proveedor', 'Acompañar a un servicio técnico', 'Traslado de correspondencia', 'Control de acceso'],
+    'Ayudante': ['Movimiento de mobiliario', 'Retiro de materiales', 'Limpieza extraordinaria', 'Colocación de cartelería'],
+    'Administrativo': ['Preparación de pedido de insumos', 'Seguimiento de proveedor', 'Control de inventario', 'Carga de documentación']
+  };
+
+  // Estados guardados → cómo se muestran. Se mantienen los valores que ya existían.
+  const STATUSES = [
+    {value: 'Pendiente', label: 'Pendiente', icon: 'clock'},
+    {value: 'En proceso', label: 'En curso', icon: 'wrench'},
+    {value: 'Faltan insumos', label: 'Faltan materiales', icon: 'alert'},
+    {value: 'Resuelto', label: 'Terminado', icon: 'check'}
+  ];
+  const DONE = 'Resuelto';
+
+  const trade = key => TRADES.find(t => t.key === key);
+  const tradeLabel = key => trade(key)?.label || 'Sin oficio';
+  const building = id => BUILDINGS.find(b => b.id === id);
+  const buildingShort = id => building(id)?.short || String(id || '');
+  const statusInfo = value => STATUSES.find(s => s.value === value) || STATUSES[0];
+  const isDone = o => o.status === DONE;
+  const isUrgent = o => o.priority === 'Urgente';
+
+  function normalizeText(value) {
+    return String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9@]+/g, ' ').trim();
+  }
+
+  // ---------- Dependencias por edificio (desde la guía PJN de contacts-data.js) ----------
+  function buildingForAddress(address) {
+    const s = String(address || '');
+    if (/(?:Roque|Diagonal).*1211/i.test(s)) return BUILDINGS[0].id;
+    if (/Callao\s+635/i.test(s)) return BUILDINGS[1].id;
+    if (/Montevideo\s+546/i.test(s)) return BUILDINGS[2].id;
+    return '';
+  }
+
+  function floorFromAddress(address) {
+    const parts = String(address || '').split(',').slice(1).map(p => p.trim()).filter(Boolean);
+    return parts.join(', ');
+  }
+
+  function shortDependency(value) {
+    const text = String(value || '');
+    const match = text.match(/juzgado.*?(?:N\.?\s*[.º°]*\s*|número\s*)(\d+)/i) || text.match(/juzgado\s+(\d+)/i);
+    return match ? `Juzgado N.º ${match[1]}` : text;
+  }
+
+  function dependencyName(contact) {
+    if (/^PJN-COM-J\d+$/.test(contact.id)) return `Juzgado N.º ${contact.id.match(/\d+$/)[0]}`;
+    if (contact.id.startsWith('PJN-COM-SALA-')) return `Sala ${contact.id.slice(-1)}`;
+    if (contact.id === 'PJN-COM-MESA-DIAGONAL') return null; // duplica Mesa General de Entradas
+    if (contact.id === 'PJN-COM-AUXILIARES') return 'Auxiliares de Justicia';
+    if (contact.id === 'PJN-COM-CAMARA') return 'Cámara (Presidencia)';
+    return contact.name;
+  }
+
+  // Devuelve [{name, floor}] ordenado: juzgados por número, luego salas, luego el resto.
+  function dependenciesForBuilding(buildingId, catalog) {
+    if (!building(buildingId)) return [];
+    const seen = new Set();
+    const list = [];
+    (catalog || []).forEach(c => {
+      if (buildingForAddress(c.building) !== buildingId) return;
+      const name = dependencyName(c);
+      if (!name || seen.has(name)) return;
+      seen.add(name);
+      list.push({name, floor: floorFromAddress(c.building)});
+    });
+    const rank = d => /^Juzgado/.test(d.name) ? 0 : /^Sala/.test(d.name) ? 1 : 2;
+    list.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, 'es', {numeric: true}));
+    list.push({name: 'Portería', floor: 'Planta baja'}, {name: 'Otro lugar', floor: ''});
+    return list;
+  }
+
+  // ---------- Datos guardados ----------
+  function emptyState(catalog) {
+    return {orders: [], tools: [], items: [], contacts: structuredClone(catalog || []), people: []};
+  }
+
+  // Ordena y completa los datos, también los que vienen de versiones anteriores.
+  // No borra información de secciones ocultas (obras, guías, insumos…): solo la deja guardada.
+  function normalizeState(input, catalog) {
+    const s = input && typeof input === 'object' ? input : emptyState(catalog);
+    ['orders', 'tools', 'contacts', 'people', 'items'].forEach(k => { if (!Array.isArray(s[k])) s[k] = []; });
+
+    const roleMap = {'Mantenimiento general': 'Ayudante', 'Servicios y traslados': 'Ayudante', 'Patrimonio': 'Carpintería', 'Sanitarios': 'Plomería', 'Aire acondicionado': 'Aires Acondicionados'};
+    const roleOf = id => {
+      const p = s.people.find(x => x.id === id);
+      return p ? (roleMap[p.role] || p.role) : '';
+    };
+
+    const categoryTrade = {'Carpintería': 'Carpintería', 'Aire acondicionado': 'Aires Acondicionados', 'Electricidad': 'Electricidad', 'Sanitarios': 'Plomería', 'Pintura': 'Pintura', 'Albañilería': 'Albañilería', 'Tapicería': 'Tapicería', 'Administrativo': 'Administrativo', 'Ascensores': 'Electricidad', 'Seguridad': 'Electricidad'};
+    s.orders.forEach(o => {
+      if (!trade(o.specialty)) o.specialty = roleOf(o.assignee) || categoryTrade[o.category] || 'Ayudante';
+      if (!STATUSES.some(x => x.value === o.status)) o.status = 'Pendiente';
+      if (!o.priority) o.priority = 'Media';
+    });
+
+    // Herramientas: "entregada a" se guarda como el nombre de la persona.
+    // En la versión anterior era el código de un empleado (p1, p2…): se reemplaza por su nombre.
+    s.tools.forEach(t => {
+      const p = t.holder && s.people.find(x => x.id === t.holder);
+      if (p) t.holder = String(p.name || '').trim();
+      t.holder = String(t.holder || '').trim();
+      if (t.holder) t.toolStatus = 'Entregada';
+      else if (!t.toolStatus || t.toolStatus === 'Entregada') t.toolStatus = 'Disponible';
+    });
+
+    if (!s.contacts.length && catalog) s.contacts = structuredClone(catalog);
+    return s;
+  }
+
+  function nextId(list, prefix) {
+    const n = Math.max(0, ...list.map(x => Number(String(x.id || '').split('-')[1]) || 0)) + 1;
+    return `${prefix}-${String(n).padStart(4, '0')}`;
+  }
+
+  // ---------- Pedidos ----------
+  function orderPlace(o) {
+    return [buildingShort(o.building), shortDependency(o.dependency), o.location].filter(Boolean).join(' · ');
+  }
+
+  // Nombres para sugerir al asignar una herramienta: los del personal anterior y los ya usados.
+  function peopleNames(state) {
+    const names = [...(state.people || []).map(p => p.name), ...(state.tools || []).flatMap(t => [t.holder, ...(t.returns || []).map(r => r.holderName)])];
+    return [...new Set(names.map(n => String(n || '').trim()).filter(n => n && !/^p\d+$/.test(n)))].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  function searchOrders(orders, q) {
+    const query = normalizeText(q);
+    if (!query) return orders.slice();
+    const words = query.split(' ');
+    return orders.filter(o => {
+      const text = normalizeText([o.id, o.title, o.description, o.dependency, shortDependency(o.dependency), buildingShort(o.building), o.location, tradeLabel(o.specialty), o.specialty].join(' '));
+      return words.every(w => text.includes(w));
+    });
+  }
+
+  // Abiertos: urgentes primero y después los más viejos (los que esperan hace más tiempo).
+  // Terminados: los más recientes primero.
+  function sortOrders(list, done) {
+    return list.slice().sort((a, b) => {
+      if (done) return String(b.completedAt || b.updatedAt || '').localeCompare(String(a.completedAt || a.updatedAt || ''));
+      return (isUrgent(b) - isUrgent(a)) || String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
+    });
+  }
+
+  // ---------- Contactos ----------
+  function courtNumber(c) { return /juzgado.*?(\d+)/i.exec(c.name || '')?.[1] || ''; }
+  function searchContacts(contacts, q) {
+    const query = normalizeText(q);
+    const numeric = /^(?:juzgados?\s+)?(\d+)$/.exec(query);
+    const matches = c => {
+      if (numeric) return courtNumber(c).includes(numeric[1]);
+      const text = normalizeText([c.name, c.organization, c.role, c.building, c.phone, c.email].join(' '));
+      return query.split(' ').filter(Boolean).every(w => text.includes(w));
+    };
+    const score = c => numeric ? (courtNumber(c).startsWith(numeric[1]) ? 0 : 1) : (normalizeText(c.name).startsWith(query) ? 0 : 1);
+    return contacts.filter(matches).sort((a, b) => score(a) - score(b) ||
+      (numeric ? Number(courtNumber(a)) - Number(courtNumber(b)) : String(a.name || '').localeCompare(String(b.name || ''), 'es', {numeric: true, sensitivity: 'base'})));
+  }
+
+  // ---------- Fechas ----------
+  const TZ = 'America/Argentina/Buenos_Aires';
+  function dayKey(date) {
+    return new Intl.DateTimeFormat('en-CA', {timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit'}).format(date);
+  }
+  function when(value, now = new Date()) {
+    if (!value) return 'Fecha no registrada';
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(value + 'T12:00:00-03:00') : new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Fecha no registrada';
+    const hasTime = !/^\d{4}-\d{2}-\d{2}$/.test(value);
+    const time = hasTime ? ' a las ' + new Intl.DateTimeFormat('es-AR', {timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23'}).format(date) : '';
+    const diff = Math.round((new Date(dayKey(now)) - new Date(dayKey(date))) / 86400000);
+    if (diff === 0) return 'Hoy' + time;
+    if (diff === 1) return 'Ayer' + time;
+    if (diff > 1 && diff < 7) return `Hace ${diff} días`;
+    return new Intl.DateTimeFormat('es-AR', {timeZone: TZ, day: 'numeric', month: 'long', year: 'numeric'}).format(date);
+  }
+  function fullDate(value) {
+    if (!value) return 'No registrada';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'No registrada';
+    return new Intl.DateTimeFormat('es-AR', {timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'}).format(date) + ' h';
+  }
+  function daysSince(value, now = new Date()) {
+    if (!value) return Infinity;
+    const t = new Date(value).getTime();
+    return Number.isNaN(t) ? Infinity : (now.getTime() - t) / 86400000;
+  }
+
+
+  // ---------- Copia semanal en Excel (viernes 12:00, hora de Argentina) ----------
+  const EXCEL_KEY = 'intendencia-ultimo-excel';
+  // Argentina no tiene horario de verano: UTC-3 todo el año.
+  function lastFridayNoon(now = new Date()) {
+    const ar = new Date(now.getTime() - 3 * 3600000);
+    const back = (ar.getUTCDay() - 5 + 7) % 7;
+    let t = Date.UTC(ar.getUTCFullYear(), ar.getUTCMonth(), ar.getUTCDate() - back, 12) + 3 * 3600000;
+    if (t > now.getTime()) t -= 7 * 86400000;
+    return new Date(t);
+  }
+  // Hay que guardar la copia si ya pasó el viernes 12:00 y desde entonces no se descargó el Excel.
+  function weeklyExcelDue(lastExcel, now = new Date()) {
+    const last = lastExcel ? new Date(lastExcel).getTime() : 0;
+    return !(last >= lastFridayNoon(now).getTime());
+  }
+
+  // Columnas legibles de cada tipo de dato. Se usan en el Excel de los viernes y en la planilla de Google.
+  const ORDER_COLUMNS = [
+    {header: 'Número', width: 9}, {header: 'Fecha del pedido', width: 17}, {header: 'Trabajo', width: 26}, {header: 'Oficio', width: 13},
+    {header: 'Edificio', width: 11}, {header: 'Dependencia', width: 15}, {header: 'Piso / oficina', width: 16}, {header: 'Urgente', width: 8},
+    {header: 'Estado', width: 13}, {header: 'Terminado el', width: 17}, {header: 'Indicaciones', width: 30}];
+  const TOOL_COLUMNS = [
+    {header: 'Código', width: 9}, {header: 'Herramienta', width: 24}, {header: 'Marca y modelo', width: 22}, {header: 'N.º de inventario', width: 16},
+    {header: 'Estado', width: 14}, {header: 'Asignada a', width: 22}, {header: 'Desde', width: 12}, {header: 'Nota', width: 32}];
+  const CONTACT_COLUMNS = [
+    {header: 'Código', width: 16}, {header: 'Nombre', width: 28}, {header: 'Teléfono', width: 18}, {header: 'Correo', width: 28}, {header: 'Para qué sirve', width: 32}];
+
+  const orderRow = o => [
+    o.id, fullDate(o.createdAt), o.title, tradeLabel(o.specialty), buildingShort(o.building),
+    shortDependency(o.dependency), o.location || '', isUrgent(o) ? 'Sí' : '', statusInfo(o.status).label,
+    isDone(o) && o.completedAt ? fullDate(o.completedAt) : '', o.description || ''
+  ];
+  const toolRow = t => [
+    t.id, t.name, [t.brand, t.model].filter(Boolean).join(' '), t.serial || '',
+    t.holder ? 'Asignada' : (t.toolStatus || 'Disponible'), t.holder || '',
+    t.holder && t.assignedDate ? String(t.assignedDate).split('-').reverse().join('/') : '', t.notes || ''
+  ];
+  const contactRow = c => [c.id, c.name || '', c.phone || '', c.email || '', c.notes || ''];
+
+  // ---------- Inventario ----------
+  const ITEM_COLUMNS = [
+    {header: 'Código', width: 9}, {header: 'Categoría', width: 22}, {header: 'Elemento', width: 26}, {header: 'Detalle / variante', width: 22},
+    {header: 'Cantidad', width: 10}, {header: 'Unidad', width: 10}, {header: 'Estado', width: 16}, {header: 'Ubicación', width: 16},
+    {header: 'Observaciones', width: 28}, {header: 'Actualizado', width: 17}];
+  const qtyText = q => (q === null || q === undefined || q === '') ? 'Sin contar' : String(q);
+  const itemRow = i => [i.id, i.category || '', i.name || '', i.detail || '', qtyText(i.quantity), i.unit || '', i.status || '', i.location || '', i.notes || '', fullDate(i.updatedAt)];
+
+  // Cantidad: número entero o decimal; vacío o «S/D» = sin contar.
+  function parseQuantity(v) {
+    const t = String(v ?? '').trim().replace(',', '.');
+    if (!t || /^s\/?d$|^sin/i.test(t)) return null;
+    const n = Number(t);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  }
+
+  // Un mismo elemento puede figurar dos veces con distinto estado (por ejemplo, rollos nuevos y rollos en uso).
+  const itemKey = i => normalizeText([i.category, i.name, i.detail, i.status].join('|'));
+
+  // Convierte las filas de un Excel/CSV en ítems. Busca la fila de títulos (la que dice «Elemento»)
+  // y reconoce las columnas por nombre, sin importar mayúsculas ni tildes.
+  const HEADER_ALIASES = {
+    category: ['categoria', 'rubro'], name: ['elemento', 'item', 'articulo', 'producto', 'nombre'],
+    detail: ['detalle variante', 'detalle', 'variante', 'descripcion'], quantity: ['cantidad', 'stock'],
+    unit: ['unidad', 'presentacion'], status: ['estado'], location: ['ubicacion', 'lugar', 'deposito'], notes: ['observaciones', 'notas', 'nota']
+  };
+  function rowsToItems(rows) {
+    const clean = rows.map(r => (r || []).map(c => String(c ?? '').trim()));
+    const h = clean.findIndex(r => r.some(c => HEADER_ALIASES.name.includes(normalizeText(c))));
+    if (h < 0) return {items: [], error: 'No encontré la columna «Elemento». La primera fila con títulos tiene que tener una columna llamada Elemento.'};
+    const head = clean[h].map(normalizeText);
+    const col = {};
+    Object.entries(HEADER_ALIASES).forEach(([field, names]) => {
+      for (const n of names) { const i = head.indexOf(n); if (i >= 0) { col[field] = i; break; } }
+    });
+    const items = [];
+    clean.slice(h + 1).forEach(r => {
+      const get = f => col[f] === undefined ? '' : (r[col[f]] || '');
+      const name = get('name');
+      if (!name) return;
+      items.push({
+        category: get('category') || 'Sin categoría', name, detail: get('detail'), quantity: parseQuantity(get('quantity')),
+        unit: get('unit'), status: get('status'), location: get('location'), notes: get('notes')
+      });
+    });
+    return {items, error: items.length ? '' : 'El archivo no tiene filas con elementos debajo de los títulos.'};
+  }
+
+  // Une lo importado con lo existente: mismo elemento (categoría + nombre + detalle + estado) se actualiza, el resto se agrega.
+  function mergeItems(existing, incoming) {
+    const byKey = new Map(existing.map(i => [itemKey(i), i]));
+    const added = [], updated = [];
+    incoming.forEach(n => {
+      const old = byKey.get(itemKey(n));
+      if (old) {
+        const merged = {...old};
+        Object.entries(n).forEach(([k, v]) => { if (v !== '' && v !== null && v !== undefined) merged[k] = v; });
+        if (n.quantity === null && old.quantity !== undefined) merged.quantity = old.quantity;
+        updated.push(merged);
+      } else {
+        added.push(n);
+        byKey.set(itemKey(n), n);
+      }
+    });
+    return {added, updated};
+  }
+
+  // ---------- Unidades en singular y plural ----------
+  // «1 rollo», «7 rollos», «1 unidad», «3 unidades». Solo cambia la primera palabra («caja x 50» → «cajas x 50»).
+  function pluralWord(w) {
+    if (!w || /s$/i.test(w)) return w;
+    if (/z$/i.test(w)) return w.slice(0, -1) + (w === w.toUpperCase() ? 'CES' : 'ces');
+    if (/[aeiouáéó]$/i.test(w)) return w + (w === w.toUpperCase() && w.length > 1 ? 'S' : 's');
+    return w + (w === w.toUpperCase() && w.length > 1 ? 'ES' : 'es');
+  }
+  function unitText(unit, n) {
+    const u = String(unit || '').trim().toLowerCase();
+    if (!u) return '';
+    if (Number(n) === 1) return u;
+    const [first, ...rest] = u.split(' ');
+    return [pluralWord(first), ...rest].join(' ');
+  }
+  // «7 rollos», «1 unidad». Sin unidad, solo el número.
+  const qtyWithUnit = (n, unit) => [String(n), unitText(unit, n)].filter(Boolean).join(' ');
+  // Unidades femeninas (caja, lata, bolsa, unidad…) para decir «¿Cuántas?» en lugar de «¿Cuántos?».
+  function isFeminineUnit(unit) {
+    const w = String(unit || '').trim().split(' ')[0].toLowerCase();
+    if (['día', 'dia', 'mapa', 'metro'].includes(w)) return false;
+    return /(a|as|dad|dades|ión|iones)$/.test(w);
+  }
+  // «Queda 1 rollo» / «Quedan 7 rollos».
+  const remainingText = (n, unit) => `${Number(n) === 1 ? 'Queda' : 'Quedan'} ${qtyWithUnit(n, unit)}`;
+
+  // ---------- Filtros del inventario ----------
+  // stock: '' (todos), 'empty' (cantidad 0), 'uncounted' (sin contar), 'available' (hay al menos uno).
+  const isUncounted = i => i.quantity === null || i.quantity === undefined || i.quantity === '';
+  const STOCK_FILTERS = [
+    {value: '', label: 'Todos', test: () => true},
+    {value: 'available', label: 'Con stock', test: i => !isUncounted(i) && Number(i.quantity) > 0},
+    {value: 'empty', label: 'Sin stock', test: i => !isUncounted(i) && Number(i.quantity) === 0},
+    {value: 'uncounted', label: 'Sin contar', test: isUncounted}
+  ];
+  function filterItems(items, f = {}) {
+    const words = normalizeText(f.q).split(' ').filter(Boolean);
+    const stock = STOCK_FILTERS.find(x => x.value === (f.stock || '')) || STOCK_FILTERS[0];
+    return items.filter(i =>
+      (!f.category || i.category === f.category) &&
+      (!f.status || (i.status || '') === f.status) &&
+      (!f.location || (i.location || '') === f.location) &&
+      stock.test(i) &&
+      words.every(w => normalizeText([i.category, i.name, i.detail, i.status, i.location, i.notes].join(' ')).includes(w)));
+  }
+
+  // ---------- Movimientos de stock ----------
+  // type: 'in' (entra), 'out' (sale) o 'count' (recuento: fija la cantidad exacta).
+  // Se guardan los últimos 50 movimientos dentro de cada elemento.
+  const MOVE_LABELS = {in: 'Entrada', out: 'Salida', count: 'Recuento'};
+  // restock: una entrada registrada como reposición vuelve a fijar el stock inicial (lo que quedó) y su fecha de carga.
+  function applyMovement(item, {type, amount, reason = '', at = new Date().toISOString(), restock = false}) {
+    const n = Number(amount);
+    if (!MOVE_LABELS[type] || !Number.isFinite(n) || n < 0 || (type !== 'count' && n === 0)) return {error: 'Escribí una cantidad mayor que cero.'};
+    const current = item.quantity === null || item.quantity === undefined || item.quantity === '' ? null : Number(item.quantity);
+    if (type === 'out' && current === null) return {error: 'Este elemento todavía no se contó. Primero usá «Contar» para cargar cuántos hay.'};
+    if (type === 'out' && n > current) return {error: `No hay tantos: ${remainingText(current, item.unit).toLowerCase()}.`};
+    const quantity = type === 'count' ? n : type === 'in' ? (current || 0) + n : current - n;
+    const move = {at, type, amount: n, balance: quantity, reason: String(reason || '').trim()};
+    const movements = [...(Array.isArray(item.movements) ? item.movements : []), move].slice(-50);
+    const next = {...item, quantity, movements, updatedAt: at};
+    if (restock && type === 'in') next.initial = {quantity, at, source: 'Reposición'};
+    return {item: next};
+  }
+  // Stock inicial: lo que había cuando el elemento se cargó (desde el Excel o a mano).
+  // Si el elemento es de antes de guardar ese dato, se reconstruye deshaciendo sus movimientos.
+  function initialStock(item) {
+    if (item.initial && 'quantity' in item.initial) return item.initial;
+    const moves = Array.isArray(item.movements) ? item.movements : [];
+    if (!moves.length) return {quantity: isUncounted(item) ? null : Number(item.quantity), at: item.createdAt || item.updatedAt || ''};
+    const first = moves[0];
+    if (first.type === 'count') return {quantity: null, at: ''};
+    const before = first.balance + (first.type === 'in' ? -first.amount : first.amount);
+    return {quantity: before, at: item.createdAt || ''};
+  }
+
+  function movementRows(items) {
+    const rows = [];
+    items.forEach(i => (i.movements || []).forEach(m => rows.push({i, m})));
+    rows.sort((a, b) => String(b.m.at).localeCompare(String(a.m.at)));
+    return rows.map(({i, m}) => [fullDate(m.at), i.name || '', i.detail || '', MOVE_LABELS[m.type] || m.type,
+      m.type === 'count' ? String(m.amount) : (m.type === 'in' ? '+' : '−') + m.amount, String(m.balance), i.unit || '', m.reason || '']);
+  }
+
+  function parseCsv(text) {
+    const rows = [];
+    let row = [], cell = '', quoted = false;
+    const sep = (text.split('\n')[0].match(/;/g) || []).length > (text.split('\n')[0].match(/,/g) || []).length ? ';' : ',';
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (quoted) {
+        if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+        else if (ch === '"') quoted = false;
+        else cell += ch;
+      } else if (ch === '"') quoted = true;
+      else if (ch === sep) { row.push(cell); cell = ''; }
+      else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+      else if (ch !== '\r') cell += ch;
+    }
+    if (cell || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+  // Contactos propios: los que no salen de la guía oficial del PJN.
+  const isCustomContact = c => !c.source;
+
+  const itemSort = (a, b) => String(a.category).localeCompare(String(b.category), 'es') || String(a.name).localeCompare(String(b.name), 'es') || String(a.detail || '').localeCompare(String(b.detail || ''), 'es', {numeric: true});
+
+  // ---------- Excel para descargar e imprimir ----------
+  // Mismo formato que el Excel de inventario de Intendencia: columna N°, títulos en ese orden,
+  // Arial, blanco y negro, apaisado y ajustado al ancho de la hoja.
+  const shortDate = v => {
+    if (!v) return '';
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(v) ? new Date(v + 'T12:00:00-03:00') : new Date(v);
+    return Number.isNaN(d.getTime()) ? '' : new Intl.DateTimeFormat('es-AR', {timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric'}).format(d);
+  };
+  const byDate = (a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || ''));
+  const EXPORTS = {
+    orders: {name: 'Pedidos', label: 'Pedidos de trabajo', columns: ORDER_COLUMNS, sort: byDate, row: orderRow},
+    items: {name: 'Inventario', label: 'Inventario', sort: itemSort, columns: [
+      {header: 'N°', width: 6}, {header: 'Categoría', width: 24}, {header: 'Elemento', width: 28}, {header: 'Detalle / variante', width: 24},
+      {header: 'Stock inicial', width: 10}, {header: 'Cantidad actual', width: 10}, {header: 'Unidad', width: 10}, {header: 'Estado', width: 18},
+      {header: 'Ubicación', width: 16}, {header: 'Observaciones', width: 30}, {header: 'Fecha de carga', width: 12}],
+      row: (i, n) => {
+        const ini = initialStock(i);
+        return [n, i.category || '', i.name || '', i.detail || '', ini.quantity === null ? 'S/D' : Number(ini.quantity), isUncounted(i) ? 'S/D' : Number(i.quantity),
+          i.unit || '', i.status || '', i.location || '', i.notes || '', shortDate(ini.at || i.createdAt || i.updatedAt)];
+      }},
+    tools: {name: 'Herramientas', label: 'Herramientas', sort: (a, b) => String(a.name).localeCompare(String(b.name), 'es'), columns: [
+      {header: 'N°', width: 6}, {header: 'Herramienta', width: 26}, {header: 'Marca', width: 16}, {header: 'Modelo', width: 16}, {header: 'N.º de inventario', width: 16},
+      {header: 'Estado', width: 16}, {header: 'Asignada a', width: 22}, {header: 'Desde', width: 12}, {header: 'Observaciones', width: 30}],
+      row: (t, n) => [n, t.name || '', t.brand || '', t.model || '', t.serial || '', t.holder ? 'Asignada' : (t.toolStatus || 'Disponible'), t.holder || '', t.holder ? shortDate(t.assignedDate) : '', t.notes || '']},
+    contacts: {name: 'Contactos', label: 'Contactos', sort: (a, b) => String(a.name).localeCompare(String(b.name), 'es', {numeric: true}), columns: [
+      {header: 'N°', width: 6}, {header: 'Nombre', width: 34}, {header: 'Dirección', width: 34}, {header: 'Teléfono', width: 20}, {header: 'Correo', width: 32}, {header: 'Notas', width: 30}],
+      row: (c, n) => [n, c.name || '', c.building || '', c.phone || '', c.email || '', c.source ? '' : (c.notes || '')]}
+  };
+  // Una hoja con la lista que se ve en una sección. «note» se agrega al título (por ejemplo, el filtro aplicado).
+  function sectionSheet(kind, list, {now = new Date(), note = '', title} = {}) {
+    const e = EXPORTS[kind];
+    const rows = list.slice().sort(e.sort).map((x, i) => e.row(x, i + 1));
+    return {name: e.name, columns: e.columns, rows, title: title || `Intendencia · ${e.label} · ${shortDate(now.toISOString())}${note ? ' · ' + note : ''}`};
+  }
+
+  function excelSheets(state, now = new Date()) {
+    const stamp = fullDate(now.toISOString());
+    const copy = label => `Intendencia · ${label} · copia del ${stamp}`;
+    return [
+      sectionSheet('orders', state.orders, {title: copy('Pedidos de trabajo')}),
+      sectionSheet('tools', state.tools, {title: copy('Herramientas')}),
+      sectionSheet('items', state.items || [], {title: copy('Inventario')}),
+      {name: 'Movimientos', title: copy('Movimientos de stock'), rows: movementRows(state.items || []), columns: [
+        {header: 'Fecha', width: 17}, {header: 'Elemento', width: 26}, {header: 'Detalle', width: 20}, {header: 'Movimiento', width: 12},
+        {header: 'Cantidad', width: 10}, {header: 'Quedó', width: 9}, {header: 'Unidad', width: 10}, {header: 'Motivo', width: 30}]}
+    ];
+  }
+
+  const Core = {
+    STORAGE_KEY, BACKUP_KEY, BUILDINGS, TRADES, TASKS, STATUSES, DONE,
+    trade, tradeLabel, building, buildingShort, statusInfo, isDone, isUrgent,
+    normalizeText, buildingForAddress, shortDependency, dependenciesForBuilding,
+    emptyState, normalizeState, nextId, orderPlace, peopleNames,
+    searchOrders, sortOrders, searchContacts, when, fullDate, daysSince,
+    EXCEL_KEY, lastFridayNoon, weeklyExcelDue, excelSheets,
+    ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact,
+    ITEM_COLUMNS, itemRow, qtyText, parseQuantity, itemKey, rowsToItems, mergeItems, parseCsv, itemSort,
+    MOVE_LABELS, applyMovement, movementRows, STOCK_FILTERS, filterItems, isUncounted,
+    unitText, qtyWithUnit, isFeminineUnit, remainingText, sectionSheet, shortDate, initialStock
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = Core;
+  else root.Core = Core;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+// Genera un archivo Excel (.xlsx) sin librerías externas.
+// Un .xlsx es un .zip con algunos archivos XML adentro; acá se arma ese zip "a mano" (sin comprimir).
+(function (root) {
+  'use strict';
+
+  const CRC_TABLE = (() => {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+      t[n] = c >>> 0;
+    }
+    return t;
+  })();
+  function crc32(bytes) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function zip(files) {
+    const enc = new TextEncoder();
+    const parts = [];
+    const central = [];
+    let offset = 0;
+    files.forEach(({name, content}) => {
+      const nameBytes = enc.encode(name);
+      const data = typeof content === 'string' ? enc.encode(content) : content;
+      const crc = crc32(data);
+      const local = new DataView(new ArrayBuffer(30));
+      local.setUint32(0, 0x04034b50, true);
+      local.setUint16(4, 20, true);
+      local.setUint16(6, 0x0800, true); // nombres en UTF-8
+      local.setUint16(8, 0, true); // sin compresión
+      local.setUint32(14, crc, true);
+      local.setUint32(18, data.length, true);
+      local.setUint32(22, data.length, true);
+      local.setUint16(26, nameBytes.length, true);
+      parts.push(new Uint8Array(local.buffer), nameBytes, data);
+
+      const cen = new DataView(new ArrayBuffer(46));
+      cen.setUint32(0, 0x02014b50, true);
+      cen.setUint16(4, 20, true);
+      cen.setUint16(6, 20, true);
+      cen.setUint16(8, 0x0800, true);
+      cen.setUint32(16, crc, true);
+      cen.setUint32(20, data.length, true);
+      cen.setUint32(24, data.length, true);
+      cen.setUint16(28, nameBytes.length, true);
+      cen.setUint32(42, offset, true);
+      central.push(new Uint8Array(cen.buffer), nameBytes);
+      offset += 30 + nameBytes.length + data.length;
+    });
+    const centralSize = central.reduce((n, p) => n + p.length, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true);
+    end.setUint16(8, files.length, true);
+    end.setUint16(10, files.length, true);
+    end.setUint32(12, centralSize, true);
+    end.setUint32(16, offset, true);
+    const all = [...parts, ...central, new Uint8Array(end.buffer)];
+    const out = new Uint8Array(all.reduce((n, p) => n + p.length, 0));
+    let pos = 0;
+    all.forEach(p => { out.set(p, pos); pos += p.length; });
+    return out;
+  }
+
+  const xml = v => String(v ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  function colName(i) {
+    let s = '';
+    for (i += 1; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s;
+    return s;
+  }
+
+  // sheet = {name, title, columns: [{header, width}], rows: [[texto…]]}
+  function sheetXml(sheet) {
+    const last = colName(sheet.columns.length - 1);
+    // Los números se guardan como números (para poder sumar en Excel); lo demás como texto.
+    const cell = (ref, value, style) => typeof value === 'number' && Number.isFinite(value)
+      ? `<c r="${ref}" s="${style === 3 ? 4 : style}"><v>${value}</v></c>`
+      : `<c r="${ref}" t="inlineStr" s="${style}"><is><t xml:space="preserve">${xml(value)}</t></is></c>`;
+    const rows = [
+      `<row r="1" ht="22" customHeight="1">${cell('A1', sheet.title, 1)}</row>`,
+      `<row r="3">${sheet.columns.map((c, i) => cell(colName(i) + 3, c.header, 2)).join('')}</row>`,
+      ...sheet.rows.map((r, n) => `<row r="${n + 4}">${r.map((v, i) => cell(colName(i) + (n + 4), v, 3)).join('')}</row>`)
+    ];
+    const lastRow = Math.max(3, sheet.rows.length + 3);
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>
+<sheetViews><sheetView workbookViewId="0"><pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<cols>${sheet.columns.map((c, i) => `<col min="${i + 1}" max="${i + 1}" width="${c.width}" customWidth="1"/>`).join('')}</cols>
+<sheetData>${rows.join('')}</sheetData>
+${sheet.rows.length ? `<autoFilter ref="A3:${last}${lastRow}"/>` : ''}
+<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>
+<pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/>
+<headerFooter><oddFooter>&amp;L${xml(sheet.title)}&amp;RPágina &amp;P de &amp;N</oddFooter></headerFooter>
+</worksheet>`;
+  }
+
+  // Estilos: 0 normal, 1 título, 2 encabezado de columna, 3 celda con ajuste de texto, 4 número centrado. Todo en Arial, blanco y negro.
+  const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="3"><font><sz val="10"/><name val="Arial"/></font><font><b/><sz val="10"/><name val="Arial"/></font><font><b/><sz val="13"/><name val="Arial"/></font></fonts>
+<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
+<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="5">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+<xf numFmtId="49" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+
+  function workbook(sheets) {
+    const names = sheets.map(s => xml(s.name.slice(0, 31)));
+    return zip([
+      {name: '[Content_Types].xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+${sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}
+</Types>`},
+      {name: '_rels/.rels', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+      {name: 'xl/workbook.xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets>${names.map((n, i) => `<sheet name="${n}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets>
+<definedNames>${sheets.map((s, i) => `<definedName name="_xlnm.Print_Titles" localSheetId="${i}">'${names[i]}'!$3:$3</definedName>`).join('')}</definedNames>
+</workbook>`},
+      {name: 'xl/_rels/workbook.xml.rels', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}
+<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`},
+      {name: 'xl/styles.xml', content: STYLES},
+      ...sheets.map((s, i) => ({name: `xl/worksheets/sheet${i + 1}.xml`, content: sheetXml(s)}))
+    ]);
+  }
+
+  // ---------- Lectura de un .xlsx (para importar el inventario) ----------
+  // Usa el descompresor que traen los navegadores; no hace falta ninguna librería.
+  async function unzip(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const view = new DataView(buffer);
+    let end = bytes.length - 22;
+    while (end >= 0 && view.getUint32(end, true) !== 0x06054b50) end--;
+    if (end < 0) throw new Error('no-zip');
+    const count = view.getUint16(end + 10, true);
+    let p = view.getUint32(end + 16, true);
+    const dec = new TextDecoder();
+    const files = {};
+    for (let i = 0; i < count; i++) {
+      const method = view.getUint16(p + 10, true);
+      const size = view.getUint32(p + 20, true);
+      const nameLen = view.getUint16(p + 28, true);
+      const extraLen = view.getUint16(p + 30, true);
+      const commentLen = view.getUint16(p + 32, true);
+      const local = view.getUint32(p + 42, true);
+      const name = dec.decode(bytes.subarray(p + 46, p + 46 + nameLen));
+      const start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
+      const raw = bytes.subarray(start, start + size);
+      files[name] = {method, raw};
+      p += 46 + nameLen + extraLen + commentLen;
+    }
+    const text = async name => {
+      const f = files[name];
+      if (!f) return null;
+      if (f.method === 0) return dec.decode(f.raw);
+      const stream = new Blob([f.raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return new Response(stream).text();
+    };
+    return {names: Object.keys(files), text};
+  }
+
+  function colIndex(ref) {
+    const letters = ref.replace(/\d+/g, '');
+    let n = 0;
+    for (const ch of letters) n = n * 26 + (ch.charCodeAt(0) - 64);
+    return n - 1;
+  }
+
+  // Devuelve las filas de la primera hoja como listas de texto.
+  async function read(buffer) {
+    const zipFile = await unzip(buffer);
+    const parse = t => new DOMParser().parseFromString(t, 'application/xml');
+    const shared = [];
+    const sst = await zipFile.text('xl/sharedStrings.xml');
+    if (sst) parse(sst).querySelectorAll('si').forEach(si => shared.push([...si.querySelectorAll('t')].map(t => t.textContent).join('')));
+    let sheetPath = 'xl/worksheets/sheet1.xml';
+    const wb = await zipFile.text('xl/workbook.xml');
+    const rels = await zipFile.text('xl/_rels/workbook.xml.rels');
+    if (wb && rels) {
+      const first = parse(wb).querySelector('sheet');
+      const rid = first && (first.getAttribute('r:id') || first.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id'));
+      const rel = rid && [...parse(rels).querySelectorAll('Relationship')].find(r => r.getAttribute('Id') === rid);
+      if (rel) {
+        const target = rel.getAttribute('Target').replace(/^\//, '');
+        sheetPath = target.startsWith('xl/') ? target : 'xl/' + target;
+      }
+    }
+    const sheet = await zipFile.text(sheetPath);
+    if (!sheet) throw new Error('no-sheet');
+    const rows = [];
+    parse(sheet).querySelectorAll('sheetData > row').forEach(row => {
+      const r = Number(row.getAttribute('r')) - 1;
+      const cells = rows[r] = [];
+      row.querySelectorAll('c').forEach((c, i) => {
+        const ref = c.getAttribute('r');
+        const col = ref ? colIndex(ref) : i;
+        const type = c.getAttribute('t');
+        let value = '';
+        if (type === 's') value = shared[Number(c.querySelector('v')?.textContent)] ?? '';
+        else if (type === 'inlineStr') value = [...c.querySelectorAll('is t')].map(t => t.textContent).join('');
+        else value = c.querySelector('v')?.textContent ?? '';
+        cells[col] = value;
+      });
+    });
+    return Array.from(rows, r => Array.from(r || [], v => v ?? ''));
+  }
+
+  const Xlsx = {workbook, crc32, read};
+  if (typeof module !== 'undefined' && module.exports) module.exports = Xlsx;
+  else root.Xlsx = Xlsx;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+// Pantallas de la prueba piloto. Toda la lógica de datos está en core.js.
+(() => {
+  'use strict';
+  const C = window.Core;
+  const CATALOG = typeof OFFICIAL_CONTACTS === 'undefined' ? [] : OFFICIAL_CONTACTS;
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+  const main = $('#main');
+
+  // Íconos de línea, simples y en un solo color (toman el color del texto).
+  const ICON_PATHS = {
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
+    list: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3.5h6v3H9z"/><path d="M9 11h6M9 15h6"/>',
+    toolbox: '<rect x="3" y="8" width="18" height="12" rx="2"/><path d="M9 8V5h6v3M3 13h18M10 13v2h4v-2"/>',
+    phone: '<path d="M5 4h3.5l1.8 4.5-2.3 1.4a11 11 0 0 0 6.1 6.1l1.4-2.3L20 15.5V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>',
+    sliders: '<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+    printer: '<path d="M7 9V4h10v5"/><rect x="3.5" y="9" width="17" height="8" rx="1.5"/><path d="M7 14h10v6H7z"/>',
+    pencil: '<path d="M4 20l4.5-1 10.3-10.3a2 2 0 0 0-3.5-3.5L5 15.5z"/><path d="M14 6.5l3.5 3.5"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.3 5.3L4 17l3 3 5.4-5.4a4 4 0 0 0 5.3-5.3l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+    alert: '<path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.2v.3"/>',
+    back: '<path d="M15 5l-7 7 7 7"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>',
+    save: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 20h14"/>',
+    hand: '<path d="M5 12h4l3-3h4a2 2 0 0 1 0 4h-3M5 18h9l5-4a1.5 1.5 0 0 0-2-2.2L14 13"/><path d="M2 11v8"/>',
+    bolt: '<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/>',
+    drop: '<path d="M12 3.5s6 6.8 6 11a6 6 0 0 1-12 0c0-4.2 6-11 6-11z"/>',
+    door: '<rect x="6" y="3" width="12" height="18" rx="1"/><path d="M3.5 21h17"/><circle cx="14.5" cy="12" r=".9" fill="currentColor"/>',
+    snow: '<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5"/>',
+    roller: '<rect x="4" y="4" width="13" height="5" rx="1"/><path d="M17 6.5h3v5h-8v3"/><rect x="10.5" y="14.5" width="3" height="6" rx="1"/>',
+    bricks: '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9.7h18M3 14.3h18M9 5v4.7M15 9.7v4.6M9 14.3V19"/>',
+    chair: '<path d="M7 3v18M17 13v8M7 13h10M7 3h7a3 3 0 0 1 3 3v3H7"/>',
+    box: '<path d="M3.5 7.5L12 3.5l8.5 4v9L12 20.5l-8.5-4z"/><path d="M3.5 7.5L12 11.5l8.5-4M12 11.5v9"/>',
+    clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3.5h6v3H9z"/><path d="M9 12h6M9 16h4"/>',
+    building: '<path d="M4 21V5l8-2v18M12 8h8v13M8 8v.01M8 12v.01M8 16v.01M16 12v.01M16 16v.01M2.5 21h19"/>',
+    shelf: '<path d="M4 3v18M20 3v18M4 10h16M4 17h16"/><rect x="6.5" y="5.5" width="4" height="4.5"/><rect x="12" y="12.5" width="5.5" height="4.5"/>',
+    minus: '<path d="M5 12h14"/>',
+    hammer: '<path d="M14.5 4.5l5 5-2.5 2.5-5-5z"/><path d="M12 7l-2-2 2.5-2.5 2 2M13.5 10.5L4 20"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l2.5 2.5M18.5 4.5L21 7"/>',
+    upload: '<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 20h14"/>'
+  };
+  const icon = (name, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON_PATHS[name] || ICON_PATHS.wrench}</svg>`;
+  $$('[data-nav-icon]').forEach(el => { el.innerHTML = icon(el.dataset.navIcon); });
+
+  // ---------- Guardado en este navegador ----------
+  let state, revision = 0;
+  function readStored() {
+    try { return JSON.parse(localStorage.getItem(C.STORAGE_KEY)) || null; } catch { return null; }
+  }
+  function load() {
+    const row = readStored();
+    revision = Number(row?.revision || 0);
+    state = C.normalizeState(row?.data || null, CATALOG);
+  }
+  function save() {
+    const row = {data: state, revision: revision + 1, updated_at: new Date().toISOString()};
+    try {
+      localStorage.setItem(C.STORAGE_KEY, JSON.stringify(row));
+      revision = row.revision;
+      return true;
+    } catch {
+      toast('No se pudo guardar: el navegador no tiene espacio. Descargá una copia en Ajustes.');
+      return false;
+    }
+  }
+  // Si se cambió algo en otra pestaña, se muestra lo último.
+  window.addEventListener('storage', e => { if (e.key === C.STORAGE_KEY) { load(); render(); } });
+
+  // ---------- Planilla compartida de Google (opcional) ----------
+  // Sin planilla, todo queda en esta computadora. Con planilla, cada cambio se envía y
+  // cada 30 segundos se trae lo que cargaron las demás computadoras.
+  const REMOTE_KEY = 'intendencia-planilla';
+  const OUTBOX_KEY = 'intendencia-pendientes';
+  const readJSON = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } };
+  const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+  let remote = readJSON(REMOTE_KEY, null);
+  let outbox = readJSON(OUTBOX_KEY, []);
+  // Abierta desde la dirección de Google (script.google.com/…/exec) en lugar de GitHub.
+  const EN_GOOGLE = !!(window.google && google.script && google.script.run);
+  const connected = () => !!(remote && remote.url && remote.key);
+  const sync = {busy: 0, error: '', lastOk: null, loading: true};
+  const LIST = {order: 'orders', tool: 'tools', contact: 'contacts', item: 'items'};
+  const ROW = {order: C.orderRow, tool: C.toolRow, contact: C.contactRow, item: C.itemRow};
+  const PREFIX = {order: 'OT', tool: 'H', contact: 'C', item: 'I'};
+
+  const ERRORS = {
+    clave: 'La clave no coincide con la de la planilla.',
+    'sin-clave': 'Falta cambiar la clave en el código de la planilla (línea CLAVE).',
+    red: 'No hay conexión con la planilla. Revisá internet.',
+    'codigo-viejo': 'Falta actualizar el código de la planilla para usar el inventario (ver Ajustes).'
+  };
+  const errorText = err => ERRORS[err?.message] || ERRORS.red;
+
+  let writes = 0; // cuenta los cambios enviados, para no pisarlos con una lectura que salió antes
+  async function api(action, payload = {}, conf = remote) {
+    if (action !== 'load') writes++;
+    if (conf.url === 'google') return viaGoogle(action, payload, conf);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 30000);
+    try {
+      const res = await fetch(conf.url, {
+        method: 'POST', redirect: 'follow', signal: ctrl.signal,
+        headers: {'Content-Type': 'text/plain;charset=utf-8'}, // pedido simple: Google no exige permisos extra
+        body: JSON.stringify({key: conf.key, action, ...payload})
+      });
+      if (!res.ok) throw new Error('red');
+      const data = await res.json().catch(() => { throw new Error('red'); });
+      if (!data.ok) throw new Error(/Tipo desconocido/.test(data.error || '') ? 'codigo-viejo' : (data.error || 'red'));
+      if (action !== 'load' && conf === remote && remote && data.rev !== undefined) {
+        // Si nadie más cambió nada mientras tanto, lo que hay en pantalla ya es lo último: se evita releer todo.
+        remote.rev = action !== 'import' && remote.rev === data.rev - 1 ? data.rev : undefined;
+        writeJSON(REMOTE_KEY, remote);
+      }
+      return data;
+    } catch (e) {
+      throw new Error(ERRORS[e.message] ? e.message : 'red');
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function viaGoogle(action, payload, conf) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('red')), 30000);
+      google.script.run
+        .withSuccessHandler(text => {
+          clearTimeout(timer);
+          let data;
+          try { data = JSON.parse(text); } catch { reject(new Error('red')); return; }
+          if (!data.ok) { reject(new Error(ERRORS[data.error] ? data.error : (/Tipo desconocido/.test(data.error || '') ? 'codigo-viejo' : 'red'))); return; }
+          if (action !== 'load' && conf === remote && remote && data.rev !== undefined) {
+            remote.rev = action !== 'import' && remote.rev === data.rev - 1 ? data.rev : undefined;
+            writeJSON(REMOTE_KEY, remote);
+          }
+          resolve(data);
+        })
+        .withFailureHandler(() => { clearTimeout(timer); reject(new Error('red')); })
+        .desdeApp(JSON.stringify({key: conf.key, action, ...payload}));
+    });
+  }
+
+  function setSync(patch) { Object.assign(sync, patch); paintSync(); }
+  function paintSync() {
+    const el = $('#syncStatus');
+    if (!el) return;
+    if (!connected()) { el.hidden = true; return; }
+    el.hidden = false;
+    const pending = outbox.length;
+    const [cls, text, long] = sync.busy ? ['busy', 'Guardando…', 'Guardando en la planilla']
+      : sync.loading && !sync.lastOk ? ['busy', 'Actualizando…', 'Trayendo lo último de la planilla']
+      : sync.error ? ['error', 'Sin conexión', errorText({message: sync.error})]
+      : pending ? ['error', `${pending} sin enviar`, `${pending} cambio${pending === 1 ? '' : 's'} esperando conexión`]
+      : ['ok', 'Al día', 'La planilla está al día'];
+    el.className = 'sync sync-' + cls;
+    el.title = long;
+    el.innerHTML = `<span class="sync-dot" aria-hidden="true"></span>${esc(text)}`;
+  }
+
+  function upsertLocal(kind, item) {
+    const list = state[LIST[kind]];
+    const i = list.findIndex(x => x.id === item.id);
+    if (i >= 0) list[i] = item; else list.push(item);
+  }
+
+  // Alta de un registro nuevo. En la planilla el número lo asigna Google, así dos computadoras no repiten.
+  async function createItem(kind, item) {
+    if (!connected()) {
+      item.id = C.nextId(state[LIST[kind]], PREFIX[kind]);
+      upsertLocal(kind, item);
+      return save() ? item : null;
+    }
+    setSync({busy: sync.busy + 1});
+    try {
+      const {item: saved} = await api('create', {kind, item, row: ROW[kind]({...item, id: ''})});
+      upsertLocal(kind, saved);
+      save();
+      setSync({busy: sync.busy - 1, error: '', lastOk: new Date()});
+      return saved;
+    } catch (e) {
+      setSync({busy: sync.busy - 1, error: e.message});
+      toast(`No se guardó: ${errorText(e)} Probá de nuevo en un momento.`);
+      return null;
+    }
+  }
+
+  // Cambios y bajas: se aplican enseguida en pantalla. Si no hay conexión, quedan en espera y se reenvían solos.
+  async function saveItem(kind, item) {
+    upsertLocal(kind, item);
+    save();
+    if (connected()) await send({action: 'save', kind, item, row: ROW[kind](item)});
+  }
+  async function removeItem(kind, item) {
+    const list = state[LIST[kind]];
+    const i = list.findIndex(x => x.id === item.id);
+    if (i >= 0) list.splice(i, 1);
+    save();
+    if (connected()) await send({action: 'delete', kind, id: item.id});
+  }
+  async function send(op) {
+    setSync({busy: sync.busy + 1});
+    try {
+      await flushOutbox();
+      await api(op.action, op);
+      setSync({busy: sync.busy - 1, error: '', lastOk: new Date()});
+    } catch (e) {
+      // Solo se reintenta lo que falló por falta de conexión; otros errores no se arreglan reintentando.
+      if (e.message === 'red') { outbox.push(op); writeJSON(OUTBOX_KEY, outbox); }
+      setSync({busy: sync.busy - 1, error: e.message === 'red' ? e.message : ''});
+      toast(e.message === 'red' ? 'Sin conexión: el cambio se envía a la planilla cuando vuelva internet.' : `No se guardó: ${errorText(e)}`);
+    }
+  }
+  async function flushOutbox() {
+    while (outbox.length) {
+      try {
+        await api(outbox[0].action, outbox[0]);
+      } catch (e) {
+        if (e.message === 'red') throw e;
+      }
+      outbox.shift();
+      writeJSON(OUTBOX_KEY, outbox);
+    }
+  }
+
+  // Trae lo último de la planilla. No interrumpe a quien está cargando algo.
+  // Con el código de planilla nuevo (versión 3) solo pregunta «¿cambió algo?»: si no cambió, la respuesta es inmediata.
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  let refreshing = false;
+  let failures = 0;
+  async function refresh({force} = {}) {
+    if (!connected()) { schedule(); return; }
+    if (refreshing) return;
+    refreshing = true;
+    try {
+      await flushOutbox();
+      const before = writes;
+      const since = !force && Number.isInteger(remote.rev) ? {since: remote.rev} : {};
+      let res;
+      try { res = await api('load', since); }
+      catch (e) {
+        if (e.message !== 'red') throw e;
+        await wait(1500); // Google a veces tarda en «despertar»: un segundo intento suele andar
+        res = await api('load', since);
+      }
+      failures = 0;
+      setSync({error: '', lastOk: new Date(), loading: false});
+      if (res.unchanged) return;
+      if (writes !== before || !res.data) return; // hubo cambios propios en el medio: se trae todo en la próxima vuelta
+      applyRemote(res.data);
+      remote.rev = res.rev;
+      writeJSON(REMOTE_KEY, remote);
+      const typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+      const r = route().name;
+      if (force || (!dialog.open && !typing && r !== 'nuevo' && r !== 'editar')) render({keepScroll: true});
+    } catch (e) {
+      failures++;
+      setSync({error: e.message, loading: false});
+    } finally {
+      refreshing = false;
+      schedule();
+    }
+  }
+  function applyRemote(data) {
+    const custom = (data.contacts || []).filter(C.isCustomContact);
+    state = C.normalizeState({...state, orders: data.orders || [], tools: data.tools || [], items: data.items || [], contacts: [...structuredClone(CATALOG), ...custom]}, CATALOG);
+    if (remote) { remote.sheetUrl = data.sheetUrl || remote.sheetUrl; remote.version = Number(data.version || 1); writeJSON(REMOTE_KEY, remote); }
+    save();
+  }
+  // Cada 30 segundos; si falla, espera cada vez más (1, 2, 4 y hasta 5 minutos) para no trabar la planilla.
+  let pollTimer;
+  function schedule() {
+    clearTimeout(pollTimer);
+    const delay = failures ? Math.min(300000, 30000 * 2 ** failures) : 30000;
+    pollTimer = setTimeout(() => { if (document.visibilityState === 'visible') refresh(); else schedule(); }, delay);
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
+  window.addEventListener('online', () => { failures = 0; refresh(); });
+
+  // Guarda los archivos de la aplicación en la computadora: así abre aunque GitHub o internet anden lentos.
+  if (!EN_GOOGLE && 'serviceWorker' in navigator && /^(https:|http:\/\/localhost)/.test(location.href)) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // ---------- Preferencias de este equipo ----------
+  const PREF_KEY = 'intendencia-preferencias';
+  const prefs = (() => { try { return JSON.parse(localStorage.getItem(PREF_KEY)) || {}; } catch { return {}; } })();
+  const savePrefs = () => { try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch {} };
+  const applyTextSize = () => { document.documentElement.dataset.textSize = prefs.size || 'normal'; };
+  applyTextSize();
+
+  // ---------- Avisos ----------
+  let toastTimer;
+  function toast(message, undo) {
+    const t = $('#toast');
+    t.innerHTML = `<span>${esc(message)}</span>${undo ? '<button type="button" class="toast-undo">Deshacer</button>' : ''}`;
+    t.hidden = false;
+    if (undo) $('.toast-undo', t).onclick = () => { undo(); hideToast(); };
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, undo ? 7000 : 3500);
+  }
+  function hideToast() { $('#toast').hidden = true; }
+
+  // ---------- Ventanas (diálogos) ----------
+  const dialog = $('#dialog');
+  function openDialog(html, onReady) {
+    $('#dialogBody').innerHTML = html;
+    $$('[data-close]', dialog).forEach(b => b.onclick = () => dialog.close());
+    if (onReady) onReady($('#dialogBody'));
+    if (!dialog.open) dialog.showModal();
+  }
+  dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
+
+  function confirmBox({title, text, yes, danger}) {
+    return new Promise(resolve => {
+      let answer = false;
+      openDialog(`<div class="dlg"><h2 id="dialogTitle">${esc(title)}</h2>${text ? `<p>${esc(text)}</p>` : ''}
+        <div class="dlg-actions"><button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-yes>${esc(yes)}</button>
+        <button type="button" class="btn btn-ghost" data-close>No, volver</button></div></div>`, body => {
+        $('[data-yes]', body).onclick = () => { answer = true; dialog.close(); };
+      });
+      dialog.addEventListener('close', () => resolve(answer), {once: true});
+    });
+  }
+
+  // ---------- Navegación (usa la barra de direcciones: el botón Atrás funciona) ----------
+  function go(path, replace) {
+    const hash = '#/' + path;
+    if (replace) { history.replaceState(null, '', hash); render(); }
+    else if (location.hash === hash) render();
+    else location.hash = hash;
+  }
+  window.addEventListener('hashchange', render);
+
+  function route() {
+    const parts = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+    return {name: parts[0] || 'pedidos', parts};
+  }
+
+  function render({keepScroll} = {}) {
+    if (dialog.open) dialog.close();
+    const y = window.scrollY;
+    // Sin planilla conectada no se muestra nada: solo la pantalla para conectar esta computadora.
+    if (!connected()) {
+      document.body.dataset.screen = 'conectar';
+      renderConnect();
+      window.scrollTo(0, 0);
+      paintSync();
+      return;
+    }
+    const r = route();
+    const tab = ['inventario', 'herramientas', 'contactos', 'ajustes'].includes(r.name) ? r.name : 'pedidos';
+    $$('.tabs a').forEach(a => a.classList.toggle('active', a.dataset.tab === tab));
+    document.body.dataset.screen = r.name;
+    if (r.name === 'nuevo') renderWizard('new', null, r.parts[1]);
+    else if (r.name === 'editar') renderWizard('edit', r.parts[1], r.parts[2]);
+    else if (r.name === 'pedido') renderOrder(r.parts[1]);
+    else if (r.name === 'inventario') renderInventory();
+    else if (r.name === 'herramientas') renderTools();
+    else if (r.name === 'contactos') renderContacts();
+    else if (r.name === 'ajustes') renderSettings();
+    else renderOrders(r.parts[1] === 'terminados');
+    window.scrollTo(0, keepScroll ? y : 0);
+    paintSync();
+  }
+
+  // ==================== PEDIDOS ====================
+  const listView = {q: '', building: ''};
+  const statusClass = v => ({'Pendiente': 'pending', 'En proceso': 'progress', 'Faltan insumos': 'missing', 'Resuelto': 'done'}[v] || 'pending');
+
+  function orderCard(o) {
+    const s = C.statusInfo(o.status);
+    const t = C.trade(o.specialty);
+    const urgentOpen = C.isUrgent(o) && !C.isDone(o);
+    return `<a class="card order-card${urgentOpen ? ' is-urgent' : ''}" href="#/pedido/${encodeURIComponent(o.id)}">
+      <span class="card-icon">${icon(t?.icon)}</span>
+      <span class="card-main">
+        <span class="card-title">${esc(o.title)}</span>
+        <span class="card-sub">${esc(C.orderPlace(o))}</span>
+        <span class="card-meta">${esc(C.tradeLabel(o.specialty))} · ${esc(C.isDone(o) ? 'Terminado ' + C.when(o.completedAt || o.updatedAt).toLowerCase() : 'Pedido ' + C.when(o.createdAt).toLowerCase())}</span>
+      </span>
+      <span class="card-side">${urgentOpen ? '<span class="pill pill-urgent">Urgente</span>' : ''}${C.isDone(o) ? '' : `<span class="pill pill-${statusClass(o.status)}">${esc(s.label)}</span>`}</span>
+    </a>`;
+  }
+
+
+  function lastExcel() { try { return localStorage.getItem(C.EXCEL_KEY); } catch { return null; } }
+
+  // Recordatorio semanal: desde el viernes a las 12:00 hasta que se guarde la copia de esa semana.
+  function backupReminder() {
+    if (!state.orders.length && !state.tools.length) return '';
+    if (!C.weeklyExcelDue(lastExcel())) return '';
+    const isFriday = new Date(Date.now() - 3 * 3600000).getUTCDay() === 5;
+    return `<div class="notice" role="status">${icon('save', 'notice-ico')}<div><strong>${isFriday ? 'Es viernes: hay que guardar la copia de la semana.' : 'Falta guardar la copia de esta semana.'}</strong>
+      <p>Se descarga un Excel con todos los pedidos y herramientas para imprimir y archivar, y una copia para recuperar los datos si algo falla.</p></div>
+      <button type="button" class="btn btn-small btn-primary" data-backup>Guardar copia</button></div>`;
+  }
+
+  function renderOrders(showDone) {
+    const open = state.orders.filter(o => !C.isDone(o));
+    const done = state.orders.filter(C.isDone);
+    const urgent = open.filter(C.isUrgent).length;
+    const base = showDone ? done : open;
+    const filtered = C.sortOrders(C.searchOrders(base, listView.q).filter(o => !listView.building || o.building === listView.building), showDone);
+    const filtering = listView.q || listView.building;
+
+    main.innerHTML = `
+      <button type="button" class="btn btn-primary btn-hero" data-new-order>${icon('plus')} Nuevo pedido</button>
+      ${backupReminder()}
+      <div class="segmented" role="tablist" aria-label="Qué pedidos ver">
+        <a role="tab" href="#/pedidos" aria-selected="${!showDone}" class="${showDone ? '' : 'active'}">Por hacer <b>${open.length}</b></a>
+        <a role="tab" href="#/pedidos/terminados" aria-selected="${showDone}" class="${showDone ? 'active' : ''}">Terminados <b>${done.length}</b></a>
+      </div>
+      ${state.orders.length ? `<div class="section-tools"><button type="button" class="btn btn-small btn-secondary" data-download="orders">${icon('save')} Descargar Excel</button></div>` : ''}
+      ${!showDone && urgent ? `<p class="summary-line"><span class="pill pill-urgent">${urgent} urgente${urgent === 1 ? '' : 's'}</span> aparece${urgent === 1 ? '' : 'n'} primero.</p>` : ''}
+      ${base.length > 4 || filtering ? `<div class="filters">
+        <label class="search"><span class="sr-only">Buscar pedidos</span>${icon('search')}<input type="search" id="orderSearch" placeholder="Buscar: luz, juzgado 5, plomero…" value="${esc(listView.q)}" autocomplete="off"></label>
+        <div class="chips" role="group" aria-label="Edificio">
+          <button type="button" class="chip${listView.building ? '' : ' active'}" data-building="">Todos</button>
+          ${C.BUILDINGS.map(b => `<button type="button" class="chip${listView.building === b.id ? ' active' : ''}" data-building="${esc(b.id)}">${esc(b.short)}</button>`).join('')}
+        </div></div>` : ''}
+      <div class="list" id="orderList">${listHtml()}</div>`;
+
+    function listHtml() {
+      if (filtered.length) return filtered.map(orderCard).join('');
+      if (filtering) return `<div class="empty"><p>No hay pedidos que coincidan.</p><button type="button" class="btn btn-ghost" data-clear>Ver todos</button></div>`;
+      return showDone
+        ? `<div class="empty"><p>Todavía no hay pedidos terminados.</p></div>`
+        : `<div class="empty"><p><strong>No hay nada pendiente.</strong></p><p>Cuando haya un trabajo para hacer, tocá «Nuevo pedido».</p></div>`;
+    }
+
+    const search = $('#orderSearch');
+    if (search) {
+      search.oninput = () => {
+        listView.q = search.value;
+        const pos = search.selectionStart;
+        renderOrders(showDone);
+        const again = $('#orderSearch');
+        again.focus();
+        again.setSelectionRange(pos, pos);
+      };
+    }
+    $$('[data-building]').forEach(b => b.onclick = () => { listView.building = b.dataset.building; renderOrders(showDone); });
+    $$('[data-clear]').forEach(b => b.onclick = () => { listView.q = ''; listView.building = ''; renderOrders(showDone); });
+    $('[data-new-order]').onclick = startNewOrder;
+    bindBackup();
+  }
+
+  function renderOrder(id) {
+    const o = state.orders.find(x => x.id === id);
+    if (!o) {
+      main.innerHTML = `<div class="empty"><p>Ese pedido no existe o fue borrado.</p><a class="btn btn-primary" href="#/pedidos">Volver a pedidos</a></div>`;
+      return;
+    }
+    const t = C.trade(o.specialty);
+    main.innerHTML = `
+      <a class="back" href="#/pedidos${C.isDone(o) ? '/terminados' : ''}">${icon('back')} Volver a pedidos</a>
+      <article class="detail">
+        <div class="detail-head">
+          <span class="card-icon big">${icon(t?.icon)}</span>
+          <div><p class="eyebrow">Pedido ${esc(o.id)}</p><h1>${esc(o.title)}</h1>
+          ${C.isUrgent(o) ? '<span class="pill pill-urgent">Urgente</span>' : ''}</div>
+        </div>
+        <dl class="facts">
+          <div><dt>Dónde</dt><dd>${esc(C.orderPlace(o) || 'Sin indicar')}</dd></div>
+          <div><dt>Quién lo hace</dt><dd>${esc(C.tradeLabel(o.specialty))}</dd></div>
+          ${o.description ? `<div><dt>Nota</dt><dd>${esc(o.description)}</dd></div>` : ''}
+          <div><dt>Pedido</dt><dd>${esc(C.when(o.createdAt))}</dd></div>
+          ${C.isDone(o) && o.completedAt ? `<div><dt>Terminado</dt><dd>${esc(C.when(o.completedAt))}</dd></div>` : ''}
+        </dl>
+        <h2 class="section-title">¿Cómo está este trabajo?</h2>
+        <div class="status-grid" role="group" aria-label="Estado del pedido">
+          ${C.STATUSES.map(s => `<button type="button" class="status-btn status-${statusClass(s.value)}${o.status === s.value ? ' active' : ''}" data-status="${esc(s.value)}" aria-pressed="${o.status === s.value}">${icon(s.icon)}${esc(s.label)}</button>`).join('')}
+        </div>
+        <div class="action-stack">
+          <div class="action-row">
+            <button type="button" class="btn btn-primary" data-print>${icon('printer')} Imprimir</button>
+            <button type="button" class="btn btn-secondary" data-edit>${icon('pencil')} Modificar</button>
+          </div>
+          <button type="button" class="btn btn-link-danger" data-delete>Borrar este pedido</button>
+        </div>
+      </article>`;
+
+    $$('[data-status]').forEach(b => b.onclick = () => setStatus(o, b.dataset.status));
+    $('[data-print]').onclick = () => printOrder(o);
+    $('[data-delete]').onclick = () => deleteOrder(o);
+    $('[data-edit]').onclick = () => { wizardClosed = false; draft = null; go(`editar/${encodeURIComponent(o.id)}/resumen`); };
+  }
+
+  function setStatus(o, value) {
+    if (o.status === value) return;
+    const before = structuredClone(o);
+    const next = {...o, status: value, updatedAt: new Date().toISOString()};
+    if (value === C.DONE) next.completedAt = next.updatedAt; else delete next.completedAt;
+    saveItem('order', next);
+    if (value === C.DONE) {
+      go('pedidos');
+      toast(`Listo: «${o.title}» quedó como terminado.`, () => { saveItem('order', before); render(); });
+    } else {
+      render();
+      toast(`Estado: ${C.statusInfo(value).label}.`);
+    }
+  }
+
+  async function deleteOrder(o) {
+    const ok = await confirmBox({title: '¿Borrar este pedido?', text: `«${o.title}» se va a borrar. Si fue un error, vas a poder deshacerlo enseguida.`, yes: 'Sí, borrar', danger: true});
+    if (!ok) return;
+    removeItem('order', o);
+    go('pedidos', true);
+    toast('Pedido borrado.', () => { saveItem('order', o); render(); });
+  }
+
+  // Hoja informativa del pedido: dos copias iguales en una A4, con una línea punteada para cortar.
+  // Sin estados ni controles: solo qué se pidió, dónde y cuándo.
+  function printOrder(o) {
+    const b = C.building(o.building);
+    const row = (label, value) => value ? `<tr><th>${label}</th><td>${value}</td></tr>` : '';
+    const copy = `<article class="ps-copy">
+      <header class="ps-head">
+        <div><h1>Orden de trabajo</h1><p>Intendencia · Cámara Nacional de Apelaciones en lo Comercial</p></div>
+        <div class="ps-num"><strong>${esc(o.id)}</strong><span>${esc(C.fullDate(o.createdAt))}</span></div>
+      </header>
+      <p class="ps-task">${esc(o.title)}${C.isUrgent(o) ? '<span class="ps-urgent">Urgente</span>' : ''}</p>
+      <table class="ps-table">
+        ${row('Edificio', esc(b ? `${b.short} · ${b.address}` : o.building))}
+        ${row('Dependencia', esc(C.shortDependency(o.dependency)))}
+        ${row('Piso / oficina', esc(o.location))}
+        ${row('Oficio', esc(C.tradeLabel(o.specialty)))}
+        ${row('Indicaciones', esc(o.description))}
+      </table>
+      <div class="ps-sign"><span>Firma y sello de la dependencia</span></div>
+    </article>`;
+    $('#printSheet').innerHTML = `${copy}<div class="ps-cut" aria-hidden="true"><span>cortar por aquí</span></div>${copy}`;
+    window.print();
+  }
+
+  // ==================== NUEVO PEDIDO (paso a paso) ====================
+  let draft = null;
+  // Al guardar o cancelar, si se vuelve con el botón Atrás a pasos ya cerrados, se siguen salteando.
+  let wizardClosed = false;
+  const STEPS = {oficio: 1, tarea: 1, lugar: 2, urgencia: 3, resumen: 4};
+
+  function startNewOrder() {
+    wizardClosed = false;
+    draft = startDraft('new');
+    go('nuevo/oficio');
+  }
+
+  function startDraft(mode, id) {
+    if (mode === 'edit') {
+      const o = state.orders.find(x => x.id === id);
+      if (!o) return null;
+      return {
+        mode, id, specialty: o.specialty, title: o.title, custom: !(C.TASKS[o.specialty] || []).includes(o.title),
+        building: o.building, dependency: C.shortDependency(o.dependency), location: o.location || '',
+        priority: C.isUrgent(o) ? 'Urgente' : 'Media', description: o.description || ''
+      };
+    }
+    return {mode, specialty: '', title: '', custom: false, building: '', dependency: '', location: '', priority: '', description: ''};
+  }
+
+  function wizardPath(step) {
+    return draft.mode === 'edit' ? `editar/${encodeURIComponent(draft.id)}/${step}` : `nuevo/${step}`;
+  }
+
+  function renderWizard(mode, id, step) {
+    if (!draft || draft.mode !== mode || (mode === 'edit' && draft.id !== id)) {
+      if (wizardClosed) { history.back(); return; }
+      draft = startDraft(mode, id);
+      if (!draft) { go('pedidos', true); return; }
+      if (mode === 'new' && step && step !== 'oficio') { go('nuevo/oficio', true); return; }
+    }
+    step = STEPS[step] ? step : (mode === 'edit' ? 'resumen' : 'oficio');
+    // No se puede saltar pasos sin completar los anteriores.
+    if (step !== 'oficio' && !draft.specialty) return go(wizardPath('oficio'), true);
+    if (STEPS[step] >= 2 && !draft.title) return go(wizardPath('tarea'), true);
+    if (STEPS[step] >= 3 && (!draft.building || !draft.dependency)) return go(wizardPath('lugar'), true);
+    if (STEPS[step] >= 4 && !draft.priority) return go(wizardPath('urgencia'), true);
+
+    const n = STEPS[step];
+    const head = `<div class="wizard-head">
+      <button type="button" class="back" data-cancel>${icon('x')} ${draft.mode === 'edit' ? 'Cancelar cambios' : 'Cancelar'}</button>
+      ${n < 4 ? `<p class="step-count">Paso ${n} de 3</p><div class="progress" aria-hidden="true"><span style="width:${n / 3 * 100}%"></span></div>` : ''}</div>`;
+    const back = prev => `<button type="button" class="btn btn-ghost btn-back" data-step="${prev}">${icon('back')} Atrás</button>`;
+    let body = '';
+
+    if (step === 'oficio') {
+      body = `<h1 class="q">¿Quién tiene que hacer el trabajo?</h1>
+        <div class="tiles">${C.TRADES.map(t => `<button type="button" class="tile${draft.specialty === t.key ? ' selected' : ''}" data-trade="${esc(t.key)}">${icon(t.icon, 'tile-icon')}<span class="tile-label">${esc(t.label)}</span><span class="tile-hint">${esc(t.hint)}</span></button>`).join('')}</div>`;
+    } else if (step === 'tarea') {
+      const tasks = C.TASKS[draft.specialty] || [];
+      const t = C.trade(draft.specialty);
+      body = `<p class="crumb">${icon(t.icon)} ${esc(t.label)}</p><h1 class="q">¿Qué hay que hacer?</h1>
+        <div class="options">${tasks.map(name => `<button type="button" class="option${!draft.custom && draft.title === name ? ' selected' : ''}" data-task="${esc(name)}">${esc(name)}</button>`).join('')}
+        <button type="button" class="option option-other${draft.custom ? ' selected' : ''}" data-other>${icon('pencil')} Otra cosa (escribirla)</button></div>
+        <div class="custom-task" ${draft.custom ? '' : 'hidden'}>
+          <label for="customTask" class="field-label">Escribí qué hay que hacer</label>
+          <input id="customTask" maxlength="90" value="${draft.custom ? esc(draft.title) : ''}" placeholder="Ej.: cambiar el vidrio de la ventana">
+          <button type="button" class="btn btn-primary btn-block" data-custom-ok>Continuar</button>
+        </div>
+        ${back('oficio')}`;
+    } else if (step === 'lugar') {
+      const deps = draft.building ? C.dependenciesForBuilding(draft.building, CATALOG) : [];
+      const groups = [
+        ['Juzgados', deps.filter(d => /^Juzgado/.test(d.name))],
+        ['Salas', deps.filter(d => /^Sala/.test(d.name))],
+        ['Otras oficinas', deps.filter(d => !/^(Juzgado|Sala)/.test(d.name))]
+      ].filter(g => g[1].length);
+      const depButton = d => `<button type="button" class="option${draft.dependency === d.name ? ' selected' : ''}" data-dep="${esc(d.name)}" data-floor="${esc(d.floor)}"><span>${esc(d.name.replace('Juzgado N.º ', 'Juzgado '))}</span>${d.floor ? `<small>${esc(d.floor)}</small>` : ''}</button>`;
+      body = `<h1 class="q">¿Dónde hay que hacerlo?</h1>
+        <h2 class="sub-q">Edificio</h2>
+        <div class="tiles tiles-3">${C.BUILDINGS.map(b => `<button type="button" class="tile tile-building${draft.building === b.id ? ' selected' : ''}" data-bld="${esc(b.id)}"><span class="tile-label">${esc(b.short)}</span><span class="tile-hint">${esc(b.address)}</span></button>`).join('')}</div>
+        ${draft.building ? `<h2 class="sub-q" id="depTitle">Oficina o dependencia</h2>
+          ${groups.map(([title, list]) => `<p class="group-label">${esc(title)}</p><div class="options options-grid">${list.map(depButton).join('')}</div>`).join('')}
+          ${draft.dependency && !deps.some(d => d.name === draft.dependency) ? `<p class="hint">Antes se había cargado: <strong>${esc(draft.dependency)}</strong>. Elegí una de la lista para cambiarla.</p>` : ''}` : ''}
+        ${draft.dependency ? `<div class="field" id="locField">
+          <label for="locInput" class="field-label">Piso, oficina o detalle <span class="optional">(si sabés)</span></label>
+          <input id="locInput" value="${esc(draft.location)}" maxlength="120" placeholder="Ej.: 5º piso, oficina 503, baño de hombres">
+          <button type="button" class="btn btn-primary btn-block" data-loc-ok>Continuar</button></div>` : ''}
+        ${back('tarea')}`;
+    } else if (step === 'urgencia') {
+      body = `<h1 class="q">¿Es urgente?</h1>
+        <div class="tiles tiles-2">
+          <button type="button" class="tile${draft.priority === 'Media' ? ' selected' : ''}" data-prio="Media">${icon('clock', 'tile-icon')}<span class="tile-label">No, es normal</span><span class="tile-hint">Se hace en el orden de llegada</span></button>
+          <button type="button" class="tile tile-urgent${draft.priority === 'Urgente' ? ' selected' : ''}" data-prio="Urgente">${icon('alert', 'tile-icon')}<span class="tile-label">Sí, es urgente</span><span class="tile-hint">Aparece primero en la lista</span></button>
+        </div>
+        <div class="field">
+          <label for="noteInput" class="field-label">¿Algo más que tengan que saber? <span class="optional">(no es obligatorio)</span></label>
+          <textarea id="noteInput" rows="3" maxlength="400" placeholder="Ej.: preguntar por Marta, llevar escalera">${esc(draft.description)}</textarea>
+        </div>
+        <button type="button" class="btn btn-primary btn-block" data-review ${draft.priority ? '' : 'disabled'}>Revisar el pedido →</button>
+        ${back('lugar')}`;
+    } else {
+      draft.reviewed = true;
+      const t = C.trade(draft.specialty);
+      const row = (label, value, stepName) => `<div class="review-row"><div><dt>${label}</dt><dd>${value}</dd></div><button type="button" class="btn btn-small btn-ghost" data-step="${stepName}">Cambiar</button></div>`;
+      body = `<h1 class="q">${draft.mode === 'edit' ? 'Modificar pedido' : '¿Está todo bien?'}</h1>
+        <dl class="review">
+          ${row('Quién lo hace', esc(t.label), 'oficio')}
+          ${row('Qué hay que hacer', esc(draft.title), 'tarea')}
+          ${row('Dónde', esc(C.orderPlace(draft)), 'lugar')}
+          ${row('Urgencia', draft.priority === 'Urgente' ? '<span class="pill pill-urgent">Urgente</span>' : 'Normal', 'urgencia')}
+          ${draft.description ? row('Nota', esc(draft.description), 'urgencia') : ''}
+        </dl>
+        <div class="action-stack">
+          ${draft.mode === 'edit'
+            ? `<button type="button" class="btn btn-primary btn-block" data-save>Guardar cambios</button>`
+            : `<button type="button" class="btn btn-primary btn-block" data-save="print">${icon('printer')} Guardar e imprimir</button>
+               <button type="button" class="btn btn-secondary btn-block" data-save>Guardar sin imprimir</button>`}
+        </div>`;
+    }
+
+    main.innerHTML = `<section class="wizard">${head}${body}</section>`;
+
+    // Después de revisar, cada cambio vuelve directo al resumen.
+    const next = s => go(wizardPath(draft.reviewed ? 'resumen' : s));
+    $('[data-cancel]').onclick = cancelWizard;
+    $$('[data-step]').forEach(b => b.onclick = () => go(wizardPath(b.dataset.step)));
+
+    $$('[data-trade]').forEach(b => b.onclick = () => {
+      if (draft.specialty !== b.dataset.trade) { draft.specialty = b.dataset.trade; draft.title = ''; draft.custom = false; }
+      go(wizardPath('tarea'));
+    });
+    $$('[data-task]').forEach(b => b.onclick = () => { draft.title = b.dataset.task; draft.custom = false; next('lugar'); });
+    const other = $('[data-other]');
+    if (other) other.onclick = () => {
+      $('.custom-task').hidden = false;
+      $$('.option').forEach(x => x.classList.remove('selected'));
+      other.classList.add('selected');
+      $('#customTask').focus();
+    };
+    const okCustom = () => {
+      const v = $('#customTask').value.trim();
+      if (!v) { $('#customTask').focus(); toast('Escribí qué hay que hacer.'); return; }
+      draft.title = v.charAt(0).toUpperCase() + v.slice(1);
+      draft.custom = true;
+      next('lugar');
+    };
+    if ($('[data-custom-ok]')) {
+      $('[data-custom-ok]').onclick = okCustom;
+      $('#customTask').onkeydown = e => { if (e.key === 'Enter') okCustom(); };
+    }
+
+    $$('[data-bld]').forEach(b => b.onclick = () => {
+      if (draft.building !== b.dataset.bld) { draft.building = b.dataset.bld; draft.dependency = ''; draft.location = ''; }
+      renderWizard(mode, id, 'lugar');
+      $('#depTitle')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+    });
+    $$('[data-dep]').forEach(b => b.onclick = () => {
+      if (draft.dependency !== b.dataset.dep) {
+        draft.dependency = b.dataset.dep;
+        draft.location = b.dataset.floor || ''; // el piso de la guía ya queda escrito
+      }
+      renderWizard(mode, id, 'lugar');
+      $('#locField')?.scrollIntoView({behavior: 'smooth', block: 'center'});
+      const input = $('#locInput');
+      if (input) { input.focus({preventScroll: true}); input.setSelectionRange(input.value.length, input.value.length); }
+    });
+    const okLoc = () => { draft.location = $('#locInput').value.trim(); next('urgencia'); };
+    if ($('[data-loc-ok]')) {
+      $('[data-loc-ok]').onclick = okLoc;
+      $('#locInput').onkeydown = e => { if (e.key === 'Enter') okLoc(); };
+    }
+
+    const note = $('#noteInput');
+    if (note) note.oninput = () => { draft.description = note.value; };
+    $$('[data-prio]').forEach(b => b.onclick = () => {
+      draft.priority = b.dataset.prio;
+      $$('[data-prio]').forEach(x => x.classList.toggle('selected', x === b));
+      $('[data-review]').disabled = false;
+    });
+    if ($('[data-review]')) $('[data-review]').onclick = () => { draft.description = note.value.trim(); go(wizardPath('resumen')); };
+
+    $$('[data-save]').forEach(b => b.onclick = () => saveDraft(b.dataset.save === 'print'));
+  }
+
+  async function cancelWizard() {
+    if (draft && (draft.mode === 'edit' || draft.specialty)) {
+      const ok = await confirmBox({
+        title: draft.mode === 'edit' ? '¿Salir sin guardar los cambios?' : '¿Cancelar el pedido?',
+        text: 'Lo que cargaste hasta ahora no se va a guardar.', yes: 'Sí, salir', danger: true
+      });
+      if (!ok) return;
+    }
+    const target = draft?.mode === 'edit' ? `pedido/${encodeURIComponent(draft.id)}` : 'pedidos';
+    draft = null;
+    wizardClosed = true;
+    go(target, true);
+  }
+
+  let savingDraft = false;
+  async function saveDraft(andPrint) {
+    if (savingDraft) return;
+    const now = new Date().toISOString();
+    const data = {
+      title: draft.title, specialty: draft.specialty, building: draft.building, dependency: draft.dependency,
+      location: draft.location, priority: draft.priority, description: draft.description.trim()
+    };
+    let order;
+    if (draft.mode === 'edit') {
+      order = state.orders.find(o => o.id === draft.id);
+      if (!order) { toast('Ese pedido ya no existe.'); go('pedidos', true); return; }
+      // Prioridades viejas (Alta, Baja) se conservan si no se marcó urgente.
+      const keepOld = !['Media', 'Urgente'].includes(order.priority) && data.priority === 'Media';
+      order = {...order, ...data, ...(keepOld ? {priority: order.priority} : {}), updatedAt: now};
+      saveItem('order', order);
+    } else {
+      savingDraft = true;
+      $$('[data-save]').forEach(b => { b.disabled = true; });
+      $('[data-save]').insertAdjacentHTML('beforebegin', '<p class="saving" role="status">Guardando el pedido…</p>');
+      order = await createItem('order', {...data, status: 'Pendiente', createdAt: now, updatedAt: now});
+      savingDraft = false;
+      if (!order) {
+        $$('[data-save]').forEach(b => { b.disabled = false; });
+        $('.saving')?.remove();
+        return;
+      }
+    }
+    const wasEdit = draft.mode === 'edit';
+    draft = null;
+    wizardClosed = true;
+    go(`pedido/${encodeURIComponent(order.id)}`, true);
+    toast(wasEdit ? 'Cambios guardados.' : 'Pedido guardado.');
+    if (andPrint) setTimeout(() => printOrder(order), 150);
+  }
+
+  // ==================== INVENTARIO ====================
+  const invView = {q: '', category: '', status: '', location: '', stock: ''};
+  const STATUS_SUGGESTIONS = ['Cerrado / nuevo', 'Abierto / en uso', 'Usado - buen estado', 'Antiguo', 'A revisar / testear', 'Sin especificar'];
+  const datalist = (id, values) => `<datalist id="${id}">${[...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')).map(v => `<option value="${esc(v)}"></option>`).join('')}</datalist>`;
+  const sheetOutdated = () => connected() && Number(remote.version || 1) < 2;
+
+  function renderInventory() {
+    const all = state.items.slice().sort(C.itemSort);
+    const items = C.filterItems(all, invView);
+    const filtering = !!(invView.q || invView.category || invView.status || invView.location || invView.stock);
+    const options = key => [...new Set(state.items.map(i => i[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+    const select = (key, label, list, allLabel = 'Todas') => list.length > 1 ? `<label class="filter"><span>${label}</span>
+      <select data-filter="${key}"><option value="">${allLabel}</option>${list.map(v => `<option${invView[key] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select></label>` : '';
+    const stockCount = f => C.filterItems(all, {...invView, stock: f.value}).length;
+    const groups = [];
+    items.forEach(i => {
+      const g = groups[groups.length - 1];
+      if (g && g.name === i.category) g.items.push(i); else groups.push({name: i.category, items: [i]});
+    });
+    const categories = new Set(state.items.map(i => i.category)).size;
+    main.innerHTML = `
+      <div class="page-head"><h1 class="page-title">Inventario</h1><button type="button" class="btn btn-small btn-secondary" data-download="items">${icon('save')} Descargar Excel</button></div>
+      <p class="lead">${state.items.length ? `${state.items.length} elemento${state.items.length === 1 ? '' : 's'} en ${categories} categoría${categories === 1 ? '' : 's'}` : 'Cargá los elementos desde un Excel o de a uno.'}</p>
+      ${sheetOutdated() ? `<div class="notice">${icon('alert', 'notice-ico')}<div><strong>Falta actualizar el código de la planilla.</strong><p>Para guardar el inventario, la planilla necesita el código nuevo. Los pasos están en Ajustes.</p></div></div>` : ''}
+      <div class="action-row inv-actions">
+        <button type="button" class="btn btn-primary" data-new-item>${icon('plus')} Agregar elemento</button>
+        <button type="button" class="btn btn-secondary" data-import-items>${icon('upload')} Cargar desde Excel</button>
+      </div>
+      <input type="file" id="importItems" accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" hidden>
+      ${state.items.length > 5 ? `<div class="inv-filters">
+        <label class="search"><span class="sr-only">Buscar en el inventario</span>${icon('search')}<input type="search" id="invSearch" placeholder="Buscar: cable, pincel 20, silicona…" value="${esc(invView.q)}" autocomplete="off"></label>
+        <div class="filter-row">
+          ${select('category', 'Categoría', options('category'))}
+          ${select('status', 'Estado', options('status'), 'Todos')}
+          ${select('location', 'Ubicación', options('location'))}
+        </div>
+        <div class="chips" role="group" aria-label="Stock">
+          ${C.STOCK_FILTERS.map(f => `<button type="button" class="chip${invView.stock === f.value ? ' active' : ''}" data-stock="${f.value}" aria-pressed="${invView.stock === f.value}">${esc(f.label)} <b>${stockCount(f)}</b></button>`).join('')}
+        </div>
+        ${filtering ? `<p class="filter-summary">Mostrando ${items.length} de ${all.length} <button type="button" class="btn btn-small btn-ghost" data-clear-filters>${icon('x')} Quitar filtros</button></p>` : ''}
+      </div>` : ''}
+      <div class="inv-list">${groups.length ? groups.map(g => `<section class="inv-group">
+        <h2 class="group-label">${esc(g.name)} <span>${g.items.length}</span></h2>
+        <div class="list">${g.items.map(itemCard).join('')}</div></section>`).join('')
+        : `<div class="empty"><p>${filtering ? 'No hay elementos con esos filtros.' : 'Todavía no hay elementos en el inventario.'}</p>${filtering ? '<button type="button" class="btn btn-ghost" data-clear-filters>Ver todo el inventario</button>' : ''}</div>`}</div>`;
+
+    $('[data-new-item]').onclick = () => itemForm();
+    $('[data-import-items]').onclick = () => $('#importItems').click();
+    $('#importItems').onchange = importItems;
+    $$('[data-item]').forEach(b => b.onclick = () => itemForm(state.items.find(i => i.id === b.dataset.item)));
+    $$('[data-qty]').forEach(b => b.onclick = () => changeQty(b.dataset.id, Number(b.dataset.qty)));
+    $$('[data-move]').forEach(b => b.onclick = () => stockDialog(b.dataset.move));
+    $$('[data-filter]').forEach(sel => sel.onchange = () => { invView[sel.dataset.filter] = sel.value; renderInventory(); });
+    $$('[data-stock]').forEach(b => b.onclick = () => { invView.stock = b.dataset.stock; renderInventory(); });
+    $$('[data-clear-filters]').forEach(b => b.onclick = () => { Object.assign(invView, {q: '', category: '', status: '', location: '', stock: ''}); renderInventory(); });
+    const s = $('#invSearch');
+    if (s) s.oninput = () => {
+      invView.q = s.value;
+      const p = s.selectionStart;
+      renderInventory();
+      const a = $('#invSearch');
+      a.focus();
+      a.setSelectionRange(p, p);
+    };
+  }
+
+  function itemCard(i) {
+    const meta = [i.status, i.location].filter(x => x && x !== 'Sin especificar').join(' · ');
+    const ini = C.initialStock(i);
+    const iniLine = ini.quantity === null || ini.quantity === undefined ? '' : `Stock inicial ${ini.quantity}${ini.at ? ` · ${C.shortDate(ini.at)}` : ''}`;
+    const qty = i.quantity === null || i.quantity === undefined ? '—' : String(i.quantity);
+    return `<div class="card item-card${i.quantity === 0 ? ' is-empty' : ''}">
+      <button type="button" class="item-main" data-item="${esc(i.id)}">
+        <span class="card-title">${esc(i.name)}</span>
+        ${i.detail ? `<span class="card-sub">${esc(i.detail)}</span>` : ''}
+        ${meta ? `<span class="card-meta">${esc(meta)}</span>` : ''}
+        ${iniLine ? `<span class="card-initial">${esc(iniLine)}</span>` : ''}
+      </button>
+      <div class="qty" role="group" aria-label="Cantidad de ${esc(i.name)}">
+        <button type="button" class="qty-btn" data-qty="-1" data-id="${esc(i.id)}" aria-label="Uno menos" ${i.quantity ? '' : 'disabled'}>${icon('minus')}</button>
+        <button type="button" class="qty-value" data-move="${esc(i.id)}" aria-label="Registrar entrada o salida de ${esc(i.name)}"><b>${esc(qty)}</b><small>${esc(i.quantity === null || i.quantity === undefined ? 'sin contar' : C.unitText(i.unit, i.quantity))}</small></button>
+        <button type="button" class="qty-btn" data-qty="1" data-id="${esc(i.id)}" aria-label="Uno más">${icon('plus')}</button>
+      </div>
+    </div>`;
+  }
+
+  // − y +: una unidad por toque. Los toques seguidos se juntan en un solo movimiento y se guardan una vez.
+  const qtyTimers = {};
+  function changeQty(id, delta) {
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+    const type = delta > 0 ? 'in' : 'out';
+    const r = C.applyMovement(item, {type, amount: 1, reason: 'Ajuste rápido'});
+    if (r.error) { toast(r.error); return; }
+    const moves = r.item.movements;
+    const prev = moves[moves.length - 2];
+    if (prev && prev.quick && prev.type === type && Date.now() - new Date(prev.at).getTime() < 60000) {
+      moves.pop();
+      prev.amount += 1;
+      prev.balance = r.item.quantity;
+    } else {
+      moves[moves.length - 1].quick = true;
+    }
+    upsertLocal('item', r.item);
+    save();
+    const y = window.scrollY;
+    renderInventory();
+    window.scrollTo(0, y);
+    clearTimeout(qtyTimers[id]);
+    qtyTimers[id] = setTimeout(() => saveItem('item', state.items.find(i => i.id === id)), 900);
+  }
+
+  // Entrada, salida o recuento de cualquier cantidad, con motivo e historial.
+  function stockDialog(id, mode = 'out') {
+    const item = state.items.find(i => i.id === id);
+    if (!item) return;
+    const counted = item.quantity !== null && item.quantity !== undefined && item.quantity !== '';
+    if (!counted && mode === 'out') mode = 'count';
+    const unit = item.unit || '';
+    const recent = (item.movements || []).slice(-5).reverse();
+    const openOrders = state.orders.filter(o => !C.isDone(o)).slice(-30).reverse().map(o => `${o.id} · ${o.title}`);
+    const modes = [['out', 'Sale', 'minus'], ['in', 'Entra', 'plus'], ['count', 'Contar', 'list']];
+    openDialog(`<form class="dlg" id="stockForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">${esc(item.name)}</h2>
+      ${item.detail ? `<p class="muted">${esc(item.detail)}</p>` : ''}
+      <p class="big-status">Hay ahora: <strong>${counted ? esc(C.qtyWithUnit(item.quantity, unit)) : 'sin contar'}</strong></p>
+      ${(() => { const ini = C.initialStock(item); return `<p class="muted initial-line">Stock inicial: <strong>${ini.quantity === null ? 'sin contar' : esc(C.qtyWithUnit(ini.quantity, unit))}</strong>${ini.at ? ` <small>· ${ini.source === 'Reposición' ? 'repuesto' : 'cargado'} el ${esc(C.shortDate(ini.at))}</small>` : ''}</p>`; })()}
+      <div class="segmented segmented-3 stock-modes" role="group" aria-label="Qué querés registrar">
+        ${modes.map(([m, label, ic]) => `<button type="button" data-mode="${m}" class="${mode === m ? 'active' : ''}" aria-pressed="${mode === m}" ${m === 'out' && !counted ? 'disabled' : ''}>${icon(ic)} ${label}</button>`).join('')}
+      </div>
+      <label class="field-label" for="moveAmount" id="moveLabel"></label>
+      <div class="stepper">
+        <button type="button" class="qty-btn" data-step-amount="-1" aria-label="Menos">${icon('minus')}</button>
+        <input id="moveAmount" inputmode="decimal" autocomplete="off" value="${mode === 'count' && counted ? esc(item.quantity) : 1}">
+        <button type="button" class="qty-btn" data-step-amount="1" aria-label="Más">${icon('plus')}</button>
+      </div>
+      <div class="chips" id="moveChips">${[5, 10, 20, 50].map(n => `<button type="button" class="chip" data-chip="${n}">${n}</button>`).join('')}</div>
+      <label class="field-label" for="moveReason">Motivo <span class="optional">(opcional)</span></label>
+      <input id="moveReason" list="reasonList" maxlength="80" autocomplete="off" placeholder="Ej.: compra, para el pedido OT-0004">
+      ${datalist('reasonList', ['Compra', 'Reposición', 'Para un trabajo', 'Devolución', 'Corrección de conteo', ...openOrders])}
+      <p class="move-preview" id="movePreview" role="status"></p>
+      <div class="dlg-actions"><button class="btn btn-primary" type="submit" id="moveSave">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button></div>
+      ${recent.length ? `<h3 class="sub-q">Últimos movimientos</h3><ul class="moves">${recent.map(m => `<li><span class="move-${m.type}">${esc(C.MOVE_LABELS[m.type])} ${m.type === 'count' ? esc(m.amount) : (m.type === 'in' ? '+' : '−') + esc(m.amount)}</span><span>${esc(C.when(m.at))}${m.reason && m.reason !== 'Ajuste rápido' ? ' · ' + esc(m.reason) : ''}</span><span>${Number(m.balance) === 1 ? 'quedó' : 'quedaron'} ${esc(C.qtyWithUnit(m.balance, unit))}</span></li>`).join('')}</ul>` : ''}
+    </form>`, body => {
+      const amount = $('#moveAmount', body);
+      const update = () => {
+        $$('[data-mode]', body).forEach(b => { b.classList.toggle('active', b.dataset.mode === mode); b.setAttribute('aria-pressed', String(b.dataset.mode === mode)); });
+        const cuantos = C.isFeminineUnit(unit) ? '¿Cuántas' : '¿Cuántos';
+        $('#moveLabel', body).textContent = mode === 'out' ? `${cuantos} salen?` : mode === 'in' ? `${cuantos} entran?` : `${cuantos} hay en total?`;
+        $('#moveChips', body).hidden = mode === 'count';
+        const r = C.applyMovement(item, {type: mode, amount: C.parseQuantity(amount.value) ?? NaN});
+        $('#movePreview', body).textContent = r.error ? r.error : `${Number(r.item.quantity) === 1 ? 'Va a quedar' : 'Van a quedar'}: ${C.qtyWithUnit(r.item.quantity, unit)}${mode === 'in' ? '. Es una reposición: el stock inicial y la fecha de carga se actualizan.' : ''}`;
+        $('#movePreview', body).classList.toggle('is-error', !!r.error);
+        $('#moveSave', body).disabled = !!r.error;
+      };
+      $$('[data-mode]', body).forEach(b => b.onclick = () => {
+        mode = b.dataset.mode;
+        amount.value = mode === 'count' ? (counted ? item.quantity : 0) : 1;
+        update();
+        amount.focus();
+        amount.select();
+      });
+      $$('[data-step-amount]', body).forEach(b => b.onclick = () => {
+        amount.value = Math.max(0, (C.parseQuantity(amount.value) || 0) + Number(b.dataset.stepAmount));
+        update();
+      });
+      $$('[data-chip]', body).forEach(b => b.onclick = () => { amount.value = b.dataset.chip; update(); });
+      amount.oninput = update;
+      update();
+      amount.focus();
+      amount.select();
+      $('#stockForm', body).onsubmit = e => {
+        e.preventDefault();
+        const r = C.applyMovement(item, {type: mode, amount: C.parseQuantity(amount.value) ?? NaN, reason: $('#moveReason', body).value, restock: mode === 'in'});
+        if (r.error) { toast(r.error); return; }
+        saveItem('item', r.item);
+        dialog.close();
+        const y = window.scrollY;
+        renderInventory();
+        window.scrollTo(0, y);
+        toast(`${C.MOVE_LABELS[mode]} guardada. ${C.remainingText(r.item.quantity, unit)}.`);
+      };
+    });
+  }
+
+  function itemForm(it) {
+    openDialog(`<form class="dlg" id="itemForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">${it ? 'Modificar elemento' : 'Agregar elemento'}</h2>
+      <label class="field-label" for="iName">Elemento</label><input id="iName" name="name" required maxlength="80" placeholder="Ej.: Rollo de cable" value="${esc(it?.name)}">
+      <label class="field-label" for="iDetail">Detalle o variante <span class="optional">(color, medida, marca)</span></label><input id="iDetail" name="detail" maxlength="80" placeholder="Ej.: Color celeste" value="${esc(it?.detail)}">
+      <label class="field-label" for="iCat">Categoría</label><input id="iCat" name="category" list="catList" required maxlength="60" placeholder="Ej.: Electricidad - Cables" value="${esc(it?.category)}">
+      ${datalist('catList', state.items.map(i => i.category))}
+      <div class="form-two">
+        <div><label class="field-label" for="iQty">Cantidad <span class="optional">(vacío = sin contar)</span></label><input id="iQty" name="quantity" inputmode="decimal" maxlength="10" value="${esc(it?.quantity ?? '')}"></div>
+        <div><label class="field-label" for="iUnit">Unidad</label><input id="iUnit" name="unit" list="unitList" maxlength="20" placeholder="Ej.: Rollo" value="${esc(it?.unit)}">${datalist('unitList', ['Unidad', 'Caja', 'Rollo', 'Lata', 'Pomo', 'Bolsa', 'Tarro', ...state.items.map(i => i.unit)])}</div>
+      </div>
+      <label class="field-label" for="iStatus">Estado</label><input id="iStatus" name="status" list="statusList" maxlength="40" value="${esc(it?.status)}">${datalist('statusList', [...STATUS_SUGGESTIONS, ...state.items.map(i => i.status)])}
+      <label class="field-label" for="iLoc">Ubicación <span class="optional">(opcional)</span></label><input id="iLoc" name="location" maxlength="60" placeholder="Ej.: Depósito Diagonal, estante 2" value="${esc(it?.location)}">
+      <label class="field-label" for="iNotes">Observaciones <span class="optional">(opcional)</span></label><textarea id="iNotes" name="notes" rows="2" maxlength="300">${esc(it?.notes)}</textarea>
+      <div class="dlg-actions"><button class="btn btn-primary" type="submit">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+      ${it ? '<button type="button" class="btn btn-link-danger" data-del>Borrar elemento</button>' : ''}</div></form>`, body => {
+      if (!it) $('#iName', body).focus();
+      $('#itemForm', body).onsubmit = async e => {
+        e.preventDefault();
+        const f = Object.fromEntries(new FormData(e.target));
+        Object.keys(f).forEach(k => { f[k] = String(f[k]).trim(); });
+        if (!f.name || !f.category) return;
+        const data = {...f, quantity: C.parseQuantity(f.quantity), updatedAt: new Date().toISOString()};
+        if (it) {
+          saveItem('item', {...it, ...data});
+        } else {
+          const button = $('button[type=submit]', body);
+          button.disabled = true;
+          button.textContent = 'Guardando…';
+          if (!await createItem('item', {...data, createdAt: data.updatedAt, initial: {quantity: data.quantity, at: data.updatedAt, source: 'Carga manual'}})) { button.disabled = false; button.textContent = 'Guardar'; return; }
+        }
+        dialog.close(); renderInventory(); toast('Elemento guardado.');
+      };
+      $('[data-del]', body)?.addEventListener('click', async () => {
+        if (!await confirmBox({title: '¿Borrar este elemento?', text: [it.name, it.detail].filter(Boolean).join(' · '), yes: 'Sí, borrar', danger: true})) return;
+        removeItem('item', it);
+        renderInventory();
+        toast('Elemento borrado.', () => { saveItem('item', it); renderInventory(); });
+      });
+    });
+  }
+
+  async function importItems(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    let rows;
+    try {
+      rows = /\.csv$/i.test(file.name) ? C.parseCsv(await file.text()) : await window.Xlsx.read(await file.arrayBuffer());
+    } catch {
+      toast('No se pudo leer el archivo. Tiene que ser un Excel (.xlsx) o un .csv.');
+      return;
+    }
+    const {items, error} = C.rowsToItems(rows);
+    if (error) { toast(error); return; }
+    const now = new Date().toISOString();
+    const {added, updated} = C.mergeItems(state.items, items.map(i => ({...i, updatedAt: now})));
+    // Lo que entra por primera vez guarda su stock inicial, con la fecha y el archivo.
+    added.forEach(i => { i.createdAt = now; i.initial = {quantity: i.quantity, at: now, source: file.name}; });
+    const ok = await confirmBox({
+      title: `Cargar «${file.name}»`,
+      text: [added.length && `${added.length} elemento${added.length === 1 ? '' : 's'} nuevo${added.length === 1 ? '' : 's'}`, updated.length && `${updated.length} que ya estaba${updated.length === 1 ? '' : 'n'} se actualiza${updated.length === 1 ? '' : 'n'} con los datos del archivo`].filter(Boolean).join(' y ') + '.',
+      yes: 'Sí, cargar'
+    });
+    if (!ok) return;
+    toast('Cargando el inventario…');
+    const payload = [...added, ...updated].map(item => ({kind: 'item', item, row: C.itemRow({...item, id: item.id || ''})}));
+    setSync({busy: sync.busy + 1});
+    try {
+      const res = await api('import', {items: payload});
+      // El código viejo de la planilla ignora el inventario sin avisar: se detecta porque no devuelve los elementos.
+      if (!Array.isArray(res.items)) { if (remote) { remote.version = 1; writeJSON(REMOTE_KEY, remote); } throw new Error('codigo-viejo'); }
+      res.items.forEach(i => upsertLocal('item', i));
+      save();
+      setSync({busy: sync.busy - 1, error: '', lastOk: new Date()});
+      renderInventory();
+      toast(`Listo: inventario cargado (${payload.length} elementos).`);
+    } catch (err) {
+      setSync({busy: sync.busy - 1, error: err.message === 'red' ? 'red' : ''});
+      toast(`No se cargó: ${errorText(err)}`);
+    }
+  }
+
+  // ==================== HERRAMIENTAS ====================
+  const toolView = {q: ''};
+  function renderTools() {
+    const q = C.normalizeText(toolView.q);
+    const list = state.tools
+      .filter(t => !q || C.normalizeText([t.name, t.brand, t.model, t.serial, t.holder].join(' ')).includes(q))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
+    const out = state.tools.filter(t => t.holder).length;
+    const pill = t => t.holder ? `<span class="pill pill-progress">Asignada a ${esc(t.holder)}</span>`
+      : t.toolStatus === 'En reparación' ? '<span class="pill pill-missing">En reparación</span>'
+      : t.toolStatus === 'Fuera de servicio' ? '<span class="pill">Fuera de servicio</span>'
+      : '<span class="pill pill-done">Disponible</span>';
+    main.innerHTML = `
+      <div class="page-head"><h1 class="page-title">Herramientas</h1><button type="button" class="btn btn-small btn-secondary" data-download="tools">${icon('save')} Descargar Excel</button></div>
+      <p class="lead">${state.tools.length ? `${state.tools.length} herramienta${state.tools.length === 1 ? '' : 's'} · ${out} asignada${out === 1 ? '' : 's'}` : 'Anotá acá qué herramientas hay y a quién están asignadas.'}</p>
+      <button type="button" class="btn btn-primary btn-block" data-new-tool>${icon('plus')} Agregar herramienta</button>
+      ${state.tools.length > 5 ? `<label class="search"><span class="sr-only">Buscar herramientas</span>${icon('search')}<input type="search" id="toolSearch" placeholder="Buscar herramienta" value="${esc(toolView.q)}" autocomplete="off"></label>` : ''}
+      <div class="list">${list.length ? list.map(t => `<button type="button" class="card tool-card" data-tool="${esc(t.id)}">
+        <span class="card-main"><span class="card-title">${esc(t.name)}</span>
+        <span class="card-sub">${esc([t.brand, t.model].filter(Boolean).join(' ') || 'Sin marca')}${t.serial ? ' · N.º ' + esc(t.serial) : ''}</span></span>
+        <span class="card-side">${pill(t)}</span></button>`).join('')
+        : `<div class="empty"><p>${q ? 'No se encontró esa herramienta.' : 'Todavía no hay herramientas cargadas.'}</p></div>`}</div>`;
+    $('[data-new-tool]').onclick = () => toolForm();
+    $$('[data-tool]').forEach(b => b.onclick = () => toolSheet(state.tools.find(t => t.id === b.dataset.tool)));
+    const s = $('#toolSearch');
+    if (s) s.oninput = () => {
+      toolView.q = s.value;
+      const p = s.selectionStart;
+      renderTools();
+      const a = $('#toolSearch');
+      a.focus();
+      a.setSelectionRange(p, p);
+    };
+  }
+
+  function toolSheet(t) {
+    if (!t) return;
+    const history = (t.returns || []).slice(-3).reverse();
+    openDialog(`<div class="dlg"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">${esc(t.name)}</h2>
+      <p class="muted">${esc([t.brand, t.model].filter(Boolean).join(' '))}${t.serial ? ' · N.º ' + esc(t.serial) : ''}</p>
+      ${t.holder ? `<p class="big-status">Asignada a <strong>${esc(t.holder)}</strong>${t.assignedDate ? ` desde ${esc(C.when(t.assignedDate).toLowerCase())}` : ''}.</p>
+        <button type="button" class="btn btn-primary btn-block" data-return>${icon('check')} Quitar la asignación</button>
+        <p class="hint">La herramienta vuelve a figurar como disponible.</p>`
+        : `<p class="big-status">${t.toolStatus === 'Disponible' ? 'Está disponible.' : esc(t.toolStatus) + '.'}</p>
+        <h3 class="sub-q">¿A quién se la asignás?</h3>
+        <form class="lend" id="lendForm">
+          <label class="field-label" for="lendName">Nombre de la persona</label>
+          <input id="lendName" list="peopleList" maxlength="60" autocomplete="off" placeholder="Ej.: Carlos Benítez">
+          <datalist id="peopleList">${C.peopleNames(state).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+          <button type="submit" class="btn btn-primary btn-block">${icon('hand')} Asignar</button>
+        </form>`}
+      ${t.notes ? `<p class="muted">Nota: ${esc(t.notes)}</p>` : ''}
+      ${history.length ? `<p class="muted small">Asignaciones anteriores: ${history.map(h => esc(`${h.holderName && !C.trade(h.holder) ? h.holderName + ', ' : ''}${C.when(h.returnedAt).toLowerCase()}`)).join(' · ')}</p>` : ''}
+      <div class="dlg-actions"><button type="button" class="btn btn-secondary" data-edit>${icon('pencil')} Modificar</button><button type="button" class="btn btn-link-danger" data-del>Borrar</button></div></div>`, body => {
+      const now = new Date().toISOString();
+      $('[data-return]', body)?.addEventListener('click', () => {
+        const returns = [...(Array.isArray(t.returns) ? t.returns : []), {holder: t.holder, holderName: t.holder, assignedDate: t.assignedDate || '', returnedAt: now}];
+        saveItem('tool', {...t, returns, holder: '', assignedDate: '', toolStatus: 'Disponible', returnedAt: now, updatedAt: now});
+        dialog.close(); renderTools(); toast('Asignación quitada: la herramienta está disponible.');
+      });
+      const lend = $('#lendForm', body);
+      if (lend) lend.onsubmit = e => {
+        e.preventDefault();
+        const name = $('#lendName', body).value.trim();
+        if (!name) { $('#lendName', body).focus(); toast('Escribí el nombre de la persona.'); return; }
+        saveItem('tool', {...t, holder: name, assignedDate: now.slice(0, 10), toolStatus: 'Entregada', updatedAt: now});
+        dialog.close(); renderTools(); toast(`Asignada a ${name}.`);
+      };
+      $('[data-edit]', body).onclick = () => toolForm(t);
+      $('[data-del]', body).onclick = async () => {
+        if (!await confirmBox({title: '¿Borrar esta herramienta?', text: `«${t.name}» se va a quitar de la lista.`, yes: 'Sí, borrar', danger: true})) return;
+        removeItem('tool', t);
+        renderTools();
+        toast('Herramienta borrada.', () => { saveItem('tool', t); renderTools(); });
+      };
+    });
+  }
+
+  function toolForm(t) {
+    openDialog(`<form class="dlg" id="toolForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">${t ? 'Modificar herramienta' : 'Agregar herramienta'}</h2>
+      <label class="field-label" for="tName">Qué herramienta es</label><input id="tName" name="name" required maxlength="80" placeholder="Ej.: Taladro" value="${esc(t?.name)}">
+      <label class="field-label" for="tBrand">Marca <span class="optional">(si sabés)</span></label><input id="tBrand" name="brand" maxlength="60" placeholder="Ej.: Bosch" value="${esc(t?.brand)}">
+      <label class="field-label" for="tModel">Modelo <span class="optional">(si sabés)</span></label><input id="tModel" name="model" maxlength="60" value="${esc(t?.model)}">
+      <label class="field-label" for="tSerial">Número de inventario <span class="optional">(si tiene)</span></label><input id="tSerial" name="serial" maxlength="40" value="${esc(t?.serial)}">
+      ${t && !t.holder ? `<label class="field-label" for="tState">Estado</label><select id="tState" name="toolStatus">${['Disponible', 'En reparación', 'Fuera de servicio'].map(s => `<option${t.toolStatus === s ? ' selected' : ''}>${s}</option>`).join('')}</select>` : ''}
+      <label class="field-label" for="tNotes">Nota <span class="optional">(opcional)</span></label><textarea id="tNotes" name="notes" rows="2" maxlength="300">${esc(t?.notes)}</textarea>
+      <div class="dlg-actions"><button class="btn btn-primary" type="submit">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button></div></form>`, body => {
+      $('#tName', body).focus();
+      $('#toolForm', body).onsubmit = async e => {
+        e.preventDefault();
+        const f = Object.fromEntries(new FormData(e.target));
+        const now = new Date().toISOString();
+        f.name = f.name.trim();
+        if (!f.name) return;
+        if (t) {
+          saveItem('tool', {...t, ...f, toolStatus: t.holder ? 'Entregada' : (f.toolStatus || t.toolStatus), updatedAt: now});
+        } else {
+          const button = $('button[type=submit]', body);
+          button.disabled = true;
+          button.textContent = 'Guardando…';
+          const created = await createItem('tool', {...f, toolStatus: 'Disponible', holder: '', assignedDate: '', createdAt: now, updatedAt: now});
+          if (!created) { button.disabled = false; button.textContent = 'Guardar'; return; }
+        }
+        dialog.close(); renderTools(); toast('Herramienta guardada.');
+      };
+    });
+  }
+
+  // ==================== CONTACTOS ====================
+  const contactView = {q: ''};
+  function renderContacts() {
+    const list = C.searchContacts(state.contacts, contactView.q);
+    main.innerHTML = `
+      <div class="page-head"><h1 class="page-title">Contactos</h1><button type="button" class="btn btn-small btn-secondary" data-download="contacts">${icon('save')} Descargar Excel</button></div>
+      <label class="search"><span class="sr-only">Buscar contactos</span>${icon('search')}<input type="search" id="contactSearch" placeholder="Buscar: juzgado 5, sala B, biblioteca…" value="${esc(contactView.q)}" autocomplete="off"></label>
+      <div class="list">${list.length ? list.map(c => `<article class="card contact-card">
+        <div class="card-main"><span class="card-title">${esc(c.name)}</span><span class="card-sub">${esc(c.building || '')}</span>
+        ${c.notes && !c.source ? `<span class="card-meta">${esc(c.notes)}</span>` : ''}</div>
+        <div class="contact-actions">
+          ${c.phone ? `<a class="btn btn-small btn-secondary" href="tel:${esc(telNumber(c.phone))}">${icon('phone')} ${esc(c.phone)}</a>` : ''}
+          ${c.email ? `<a class="btn btn-small btn-ghost" href="mailto:${esc(c.email)}">${icon('mail')} Correo</a>` : ''}
+          ${c.source ? '' : `<button type="button" class="btn btn-small btn-ghost" data-contact="${esc(c.id)}">${icon('pencil')} Modificar</button>`}
+        </div></article>`).join('') : '<div class="empty"><p>No se encontró ningún contacto.</p></div>'}</div>
+      <button type="button" class="btn btn-secondary btn-block" data-new-contact>${icon('plus')} Agregar un contacto</button>
+      <p class="muted small">Los datos de juzgados y salas salen de la Guía Judicial del PJN (consultada el 16/09/2026).</p>`;
+    const s = $('#contactSearch');
+    s.oninput = () => {
+      contactView.q = s.value;
+      const p = s.selectionStart;
+      renderContacts();
+      const a = $('#contactSearch');
+      a.focus();
+      a.setSelectionRange(p, p);
+    };
+    $('[data-new-contact]').onclick = () => contactForm();
+    $$('[data-contact]').forEach(b => b.onclick = () => contactForm(state.contacts.find(c => c.id === b.dataset.contact)));
+  }
+  // Primer número del teléfono; si tiene 8 cifras se le agrega el 011.
+  function telNumber(phone) {
+    const first = String(phone).split(/\/| y /)[0].replace(/\D/g, '');
+    return first.length === 8 ? '011' + first : first;
+  }
+
+  function contactForm(c) {
+    openDialog(`<form class="dlg" id="contactForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">${c ? 'Modificar contacto' : 'Agregar contacto'}</h2>
+      <label class="field-label" for="cName">Nombre</label><input id="cName" name="name" required maxlength="80" placeholder="Ej.: Ferretería Pérez" value="${esc(c?.name)}">
+      <label class="field-label" for="cPhone">Teléfono</label><input id="cPhone" name="phone" inputmode="tel" maxlength="40" value="${esc(c?.phone)}">
+      <label class="field-label" for="cMail">Correo <span class="optional">(opcional)</span></label><input id="cMail" name="email" type="email" maxlength="80" value="${esc(c?.email)}">
+      <label class="field-label" for="cNotes">Para qué sirve <span class="optional">(opcional)</span></label><input id="cNotes" name="notes" maxlength="120" placeholder="Ej.: vende repuestos de canillas" value="${esc(c?.notes)}">
+      <div class="dlg-actions"><button class="btn btn-primary" type="submit">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+      ${c ? '<button type="button" class="btn btn-link-danger" data-del>Borrar contacto</button>' : ''}</div></form>`, body => {
+      $('#cName', body).focus();
+      $('#contactForm', body).onsubmit = async e => {
+        e.preventDefault();
+        const f = Object.fromEntries(new FormData(e.target));
+        if (!f.name.trim()) return;
+        if (c) {
+          saveItem('contact', {...c, ...f, role: c.role || 'Contacto'});
+        } else {
+          const button = $('button[type=submit]', body);
+          button.disabled = true;
+          button.textContent = 'Guardando…';
+          const created = await createItem('contact', {...f, role: 'Contacto', organization: '', building: ''});
+          if (!created) { button.disabled = false; button.textContent = 'Guardar'; return; }
+        }
+        dialog.close(); renderContacts(); toast('Contacto guardado.');
+      };
+      $('[data-del]', body)?.addEventListener('click', async () => {
+        if (!await confirmBox({title: '¿Borrar este contacto?', text: c.name, yes: 'Sí, borrar', danger: true})) return;
+        removeItem('contact', c);
+        renderContacts();
+        toast('Contacto borrado.', () => { saveItem('contact', c); renderContacts(); });
+      });
+    });
+  }
+
+  // ==================== AJUSTES ====================
+  function renderSettings() {
+    const size = prefs.size || 'normal';
+    main.innerHTML = `
+      <h1 class="page-title">Ajustes</h1>
+      <section class="panel">
+        <h2>Tamaño de la letra</h2>
+        <div class="segmented segmented-3" role="group" aria-label="Tamaño de la letra">
+          ${[['normal', 'Normal'], ['grande', 'Grande'], ['muy-grande', 'Muy grande']].map(([v, l]) => `<button type="button" data-size="${v}" class="${size === v ? 'active' : ''}" aria-pressed="${size === v}">${l}</button>`).join('')}
+        </div>
+      </section>
+      ${sheetOutdated() ? `<section class="panel"><h2>Actualizar el código de la planilla</h2>
+        <p class="muted">El inventario necesita una versión nueva del código. Se hace una sola vez, desde la computadora donde armaste la planilla:</p>
+        <ol class="steps"><li>En la planilla, abrí <b>Extensiones › Apps Script</b>.</li><li>Borrá todo y pegá el código nuevo (<b>Codigo.gs</b>). Volvé a poner tu clave en la línea CLAVE.</li><li>Guardá con Ctrl+S.</li><li><b>Implementar › Administrar implementaciones</b> › lápiz › <b>Versión: nueva versión</b> › <b>Implementar</b>.</li><li>Acá, tocá <b>Actualizar ahora</b>.</li></ol></section>` : ''}
+      ${sheetPanel()}
+      <section class="panel">
+        <h2>Copia de seguridad</h2>
+        <p class="muted">Los pedidos están en la planilla de Google. Todos los viernes desde las 12:00 la aplicación pide guardar la copia de la semana para imprimir y archivar.</p>
+        <p><strong>Última copia en Excel:</strong> ${lastExcel() ? esc(C.when(lastExcel())) : 'nunca'}</p>
+        <button type="button" class="btn btn-primary btn-block" data-backup>${icon('save')} Guardar copia de la semana</button>
+        <div class="action-row">
+          <button type="button" class="btn btn-secondary" data-excel>Solo el Excel</button>
+          <button type="button" class="btn btn-secondary" data-json>Solo la copia para recuperar</button>
+        </div>
+        <button type="button" class="btn btn-ghost btn-block" data-restore>Recuperar desde una copia</button>
+        <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+      </section>`;
+    $$('[data-size]', main).forEach(b => b.onclick = () => { prefs.size = b.dataset.size; savePrefs(); applyTextSize(); renderSettings(); });
+    bindBackup();
+    $('[data-excel]').onclick = () => { downloadExcel(); toast('Excel descargado.'); renderSettings(); };
+    $('[data-json]').onclick = () => { downloadRestoreCopy(); toast('Copia para recuperar descargada.'); renderSettings(); };
+    $('[data-restore]').onclick = () => $('#restoreFile').click();
+    $('#restoreFile').onchange = restoreBackup;
+    bindSheetPanel();
+  }
+
+  function sheetPanel() {
+    if (connected()) {
+      return `<section class="panel">
+        <h2>Planilla compartida</h2>
+        <p class="sheet-state">${icon('check')} Esta computadora usa la planilla de Google. Lo que se carga acá lo ven todas las computadoras conectadas.</p>
+        <p class="muted">Última actualización: ${sync.lastOk ? esc(C.when(sync.lastOk.toISOString()).toLowerCase()) : 'todavía no'}${sync.error ? ` · ${esc(errorText({message: sync.error}))}` : ''}</p>
+        ${remote.sheetUrl ? `<a class="btn btn-secondary btn-block" href="${esc(remote.sheetUrl)}" target="_blank" rel="noopener">Abrir la planilla</a>` : ''}
+        <button type="button" class="btn btn-ghost btn-block" data-sheet-refresh>Actualizar ahora</button>
+        <button type="button" class="btn btn-link-danger" data-sheet-off>Desconectar esta computadora</button>
+      </section>`;
+    }
+    return '';
+  }
+
+  function renderConnect() {
+    main.innerHTML = `<section class="connect">
+      <h1 class="page-title">Conectá esta computadora</h1>
+      <p class="lead">Los pedidos están en la planilla de Intendencia. Para verlos y cargarlos, escribí ${EN_GOOGLE ? 'la clave' : 'la dirección y la clave'}. Se hace una sola vez en cada computadora.</p>
+      <form id="sheetForm" class="panel sheet-form">
+        ${EN_GOOGLE ? '' : `<label class="field-label" for="sheetUrl">Dirección de la aplicación web</label>
+        <input id="sheetUrl" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">`}
+        <label class="field-label" for="sheetKey">Clave</label>
+        <input id="sheetKey" autocomplete="off" placeholder="La misma que escribiste en el código">
+        <button type="submit" class="btn btn-primary btn-block">Conectar</button>
+      </form>
+      <p class="muted small">La dirección y la clave las tiene quien administra la planilla.</p>
+    </section>`;
+    $('#sheetForm').onsubmit = connectSheet;
+  }
+
+  function bindSheetPanel() {
+    const form = $('#sheetForm');
+    if (form) form.onsubmit = connectSheet;
+    $('[data-sheet-refresh]')?.addEventListener('click', async e => {
+      e.target.disabled = true;
+      e.target.textContent = 'Actualizando…';
+      await refresh({force: true});
+      if (sync.error) toast(errorText({message: sync.error}));
+      else toast('Planilla actualizada.');
+    });
+    $('[data-sheet-off]')?.addEventListener('click', async () => {
+      const ok = await confirmBox({title: '¿Desconectar esta computadora?', text: 'Va a dejar de ver lo que cargan las otras computadoras. Los datos de la planilla no se borran.', yes: 'Sí, desconectar', danger: true});
+      if (!ok) return;
+      remote = null;
+      outbox = [];
+      try { localStorage.removeItem(REMOTE_KEY); localStorage.removeItem(OUTBOX_KEY); } catch {}
+      // No queda ninguna copia de los pedidos en esta computadora.
+      state = C.normalizeState({...state, orders: [], tools: [], items: [], contacts: structuredClone(CATALOG)}, CATALOG);
+      save();
+      go('pedidos', true);
+      toast('Computadora desconectada de la planilla.');
+    });
+  }
+
+  async function connectSheet(e) {
+    e.preventDefault();
+    const url = EN_GOOGLE ? 'google' : $('#sheetUrl').value.trim();
+    const key = $('#sheetKey').value.trim();
+    if (!EN_GOOGLE && !/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)) { toast('La dirección tiene que empezar con https://script.google.com/'); $('#sheetUrl').focus(); return; }
+    if (!key) { toast('Escribí la clave.'); $('#sheetKey').focus(); return; }
+    const button = $('#sheetForm button');
+    button.disabled = true;
+    button.textContent = 'Conectando…';
+    const conf = {url, key};
+    let data, res;
+    try {
+      res = await api('load', {}, conf);
+      ({data} = res);
+    } catch (err) {
+      button.disabled = false;
+      button.textContent = 'Conectar';
+      toast(`No se pudo conectar: ${errorText(err)}`);
+      return;
+    }
+    // Si esta computadora tenía pedidos cargados por su cuenta, se descarga una copia y se reemplazan por los de la planilla.
+    const hasLocal = state.orders.length || state.tools.length || state.contacts.some(C.isCustomContact);
+    if (hasLocal) downloadRestoreCopy();
+    remote = {...conf, rev: res.rev};
+    writeJSON(REMOTE_KEY, remote);
+    applyRemote(data);
+    setSync({error: '', lastOk: new Date()});
+    go('pedidos', true);
+    toast(hasLocal ? 'Conectada. Lo que había en esta computadora quedó en una copia en Descargas.' : 'Listo: esta computadora ya está conectada.');
+  }
+
+  function bindBackup() { $$('[data-backup]').forEach(b => b.onclick = weeklyBackup); }
+
+  function downloadFile(bytes, name, type) {
+    const url = URL.createObjectURL(new Blob([bytes], {type}));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+  const fileDate = d => d.toISOString().slice(0, 10);
+
+  // Los botones «Descargar Excel» de cada sección (un solo escuchador para todas las pantallas).
+  main.addEventListener('click', e => {
+    const b = e.target.closest('[data-download]');
+    if (b) downloadSection(b.dataset.download);
+  });
+
+  // Excel de una sección (lo que se ve en pantalla), con el formato del inventario, para imprimir y guardar.
+  function downloadSection(kind) {
+    const now = new Date();
+    let list, note = '';
+    if (kind === 'items') {
+      list = C.filterItems(state.items, invView);
+      const parts = [invView.category, invView.status, invView.location, C.STOCK_FILTERS.find(f => f.value === invView.stock && f.value)?.label, invView.q && `«${invView.q}»`].filter(Boolean);
+      note = parts.join(', ');
+    } else if (kind === 'tools') list = state.tools;
+    else if (kind === 'contacts') { list = C.searchContacts(state.contacts, contactView.q); note = contactView.q ? `«${contactView.q}»` : ''; }
+    else list = state.orders;
+    if (!list.length) { toast('No hay nada para descargar.'); return; }
+    const sheet = C.sectionSheet(kind, list, {now, note});
+    const names = {items: 'inventario', tools: 'herramientas', contacts: 'contactos', orders: 'pedidos'};
+    downloadFile(window.Xlsx.workbook([sheet]), `intendencia-${names[kind]}-${fileDate(now)}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    toast(`Excel descargado (${list.length} ${list.length === 1 ? 'fila' : 'filas'}${note ? ', con los filtros aplicados' : ''}). Queda en Descargas.`);
+  }
+
+  // Excel para imprimir y archivar.
+  function downloadExcel() {
+    const now = new Date();
+    downloadFile(window.Xlsx.workbook(C.excelSheets(state, now)), `intendencia-pedidos-${fileDate(now)}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    try { localStorage.setItem(C.EXCEL_KEY, now.toISOString()); } catch {}
+  }
+  // Copia completa para recuperar los datos en esta u otra computadora.
+  function downloadRestoreCopy() {
+    const now = new Date();
+    downloadFile(JSON.stringify({app: 'intendencia', version: 'piloto', exportedAt: now.toISOString(), data: state}, null, 2), `intendencia-copia-${fileDate(now)}.json`, 'application/json');
+    try { localStorage.setItem(C.BACKUP_KEY, now.toISOString()); } catch {}
+  }
+  function weeklyBackup() {
+    downloadExcel();
+    setTimeout(() => { downloadRestoreCopy(); render(); }, 700);
+    toast('Copia guardada en la carpeta Descargas: el Excel y la copia para recuperar.');
+  }
+
+  async function restoreBackup(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    let data;
+    try {
+      const parsed = JSON.parse(await file.text());
+      data = parsed && parsed.app === 'intendencia' ? parsed.data : parsed;
+      if (!data || typeof data !== 'object' || !Array.isArray(data.orders)) throw new Error();
+    } catch { toast('Ese archivo no es una copia de Intendencia.'); return; }
+    const ok = await confirmBox({title: '¿Recuperar esta copia?', text: connected() ? `Los ${data.orders.length} pedidos de «${file.name}» se van a cargar en la planilla. Los que tengan el mismo número se reemplazan.` : `Se van a reemplazar los datos de esta computadora por los de «${file.name}» (${data.orders.length} pedidos).`, yes: 'Sí, recuperar', danger: true});
+    if (!ok) return;
+    state = C.normalizeState(data, CATALOG);
+    save();
+    if (connected()) {
+      const items = [
+        ...state.orders.map(item => ({kind: 'order', item, row: C.orderRow(item)})),
+        ...state.tools.map(item => ({kind: 'tool', item, row: C.toolRow(item)})),
+        ...state.contacts.filter(C.isCustomContact).map(item => ({kind: 'contact', item, row: C.contactRow(item)}))
+      ];
+      try { await api('import', {items}); } catch (err) { toast(`La copia se recuperó en esta computadora, pero no se pudo subir a la planilla: ${errorText(err)}`); go('pedidos', true); return; }
+    }
+    go('pedidos', true);
+    toast('Copia recuperada.');
+  }
+
+  // Si la lista está abierta cuando llega el viernes a las 12:00, el aviso aparece solo.
+  let dueShown = C.weeklyExcelDue(lastExcel());
+  setInterval(() => {
+    const due = C.weeklyExcelDue(lastExcel());
+    if (due !== dueShown) { dueShown = due; if (route().name === 'pedidos' && !dialog.open) renderOrders(route().parts[1] === 'terminados'); }
+  }, 60000);
+
+  // ---------- Inicio ----------
+  load();
+  if (!readStored()) save();
+  render();
+  refresh();
+})();
+
+</script>
+</body>
+</html>
