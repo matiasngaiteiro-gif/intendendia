@@ -80,7 +80,38 @@ test('inventario: importar asigna códigos a los nuevos y lee la pestaña Invent
   assert.equal(hoja.rows[2][4], 'Sin contar');
   const data = g.handle({key: 'k', action: 'load'}).data;
   assert.equal(data.items.length, 2);
-  assert.equal(data.version, 2);
+  assert.equal(data.version, 3);
+});
+
+test('contador de cambios: si nada cambió responde sin leer la planilla', () => {
+  const g = loadScript('k');
+  const first = g.handle({key: 'k', action: 'load'});
+  assert.equal(first.rev, 0);
+  assert.ok(first.data);
+  const o = {title: 'A', specialty: 'Pintura', status: 'Pendiente'};
+  const c = g.handle({key: 'k', action: 'create', kind: 'order', item: o, row: C.orderRow(o)});
+  assert.equal(c.rev, 1);
+  const same = g.handle({key: 'k', action: 'load', since: 1});
+  assert.deepEqual(same, {ok: true, unchanged: true, rev: 1, version: 3});
+  const old = g.handle({key: 'k', action: 'load', since: 0});
+  assert.equal(old.rev, 1);
+  assert.equal(old.data.orders.length, 1);
+});
+
+test('importar en bloque actualiza los existentes y numera los nuevos', () => {
+  const g = loadScript('k');
+  const a = {title: 'A', specialty: 'Pintura', status: 'Pendiente'};
+  g.handle({key: 'k', action: 'create', kind: 'order', item: a, row: C.orderRow(a)});
+  const items = Array.from({length: 120}, (_, i) => ({category: 'Cat', name: 'Elemento ' + i, quantity: i}));
+  const r = g.handle({key: 'k', action: 'import', items: items.map(item => ({kind: 'item', item, row: C.itemRow({...item, id: ''})}))});
+  assert.equal(r.count, 120);
+  assert.equal(r.items[119].id, 'I-0120');
+  const upd = {...r.items[5], quantity: 999};
+  g.handle({key: 'k', action: 'import', items: [{kind: 'item', item: upd, row: C.itemRow(upd)}]});
+  const data = g.handle({key: 'k', action: 'load'}).data;
+  assert.equal(data.items.length, 120);
+  assert.equal(data.items.find(i => i.id === 'I-0006').quantity, 999);
+  assert.equal(data.orders.length, 1, 'no toca otras pestañas');
 });
 
 console.log(`${n} pruebas de la planilla: OK`);

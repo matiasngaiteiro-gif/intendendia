@@ -72,3 +72,17 @@ No borres la fila 1 (los títulos). Las computadoras conectadas se actualizan so
 ## Si se actualiza el código
 
 Si más adelante hay que cambiar `Codigo.gs`, después de pegar el código nuevo usá **Implementar › Administrar implementaciones**. Tocá el lápiz, elegí **Versión: nueva versión** y tocá **Implementar**. Así la dirección no cambia y no hay que reconectar las computadoras.
+
+### Código versión 3 (más rápido)
+
+La versión 3 lleva un contador de cambios. Cada 30 segundos las computadoras preguntan «¿cambió algo?»; si no cambió nada, Google responde al instante sin leer la planilla. Además, cargar el inventario desde un Excel escribe todo de una sola vez en lugar de fila por fila.
+
+Para pasar a la versión 3:
+
+1. Copiá tu clave actual (la línea `const CLAVE = '...'`).
+2. Pegá el `Codigo.gs` nuevo y volvé a poner tu clave.
+3. Guardá. Después andá a **Implementar › Administrar implementaciones › lápiz › Versión: nueva versión › Implementar**.
+4. Para comprobarlo, buscá `VERSION = 3` en el código.
+
+La aplicación funciona igual con el código anterior, solo que más lenta.
+

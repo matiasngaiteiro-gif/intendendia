@@ -44,6 +44,8 @@ Diseño sobrio: íconos de línea en un solo color, sin emojis.
 
 En la **planilla compartida de Google**. Todas las computadoras conectadas ven y cargan lo mismo: cada cambio se guarda en la planilla y cada 30 segundos se trae lo que cargaron las demás. Para armarla, seguí los pasos de [`planilla/INSTALAR.md`](planilla/INSTALAR.md).
 
+- **Velocidad**: con el código de planilla versión 3, la consulta de cada 30 segundos solo pregunta si hubo cambios, y la planilla entera se lee únicamente cuando alguien cargó algo. Si Google no responde, la aplicación reintenta una vez a los segundos y después espera cada vez más (1, 2, 4 y hasta 5 minutos) para no saturar la planilla. Al abrir se ve enseguida lo último guardado en esa computadora, con el aviso «Actualizando…».
+- **Apertura sin demoras** (`sw.js`): los archivos de la aplicación quedan guardados en el navegador. Siempre se busca la versión nueva; si GitHub tarda más de 4 segundos o no hay internet, abre con la guardada. Los datos de la planilla nunca pasan por ahí.
 - Una computadora sin conectar no muestra nada: solo la pantalla «Conectá esta computadora», que pide la dirección y la clave. Así nadie carga pedidos por fuera de la planilla.
 - Al conectar una computadora que tenía datos de la versión anterior (clave `intendencia-estado-v2` del navegador), se descarga una copia de esos datos y se reemplazan por los de la planilla.
 - Al desconectarla, se borra la copia de trabajo que quedaba en esa computadora.
@@ -57,6 +59,7 @@ En la **planilla compartida de Google**. Todas las computadoras conectadas ven y
 - `styles.css`: diseño, incluida la hoja impresa.
 - `core.js`: lógica sin pantalla (oficios, tareas, dependencias, mensajes, adaptación de datos viejos).
 - `app.js`: pantallas.
+- `sw.js`: guarda los archivos de la aplicación para que abra rápido.
 - `xlsx.js`: genera el Excel sin librerías externas.
 - `planilla/Codigo.gs` e `INSTALAR.md`: el código de la planilla de Google y los pasos para instalarla.
 - `tests/planilla.test.cjs` y `tests/fake-google.cjs`: prueban el código de la planilla con una simulación de Google.

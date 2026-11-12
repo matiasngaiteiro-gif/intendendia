@@ -51,9 +51,11 @@ function fakeSpreadsheet() {
 
 function loadScript(key) {
   const book = fakeSpreadsheet();
+  const props = {};
   let locked = false;
   const sandbox = {
     SpreadsheetApp: {getActiveSpreadsheet: () => book},
+    PropertiesService: {getScriptProperties: () => ({getProperty: k => props[k] ?? null, setProperty: (k, v) => { props[k] = String(v); }})},
     LockService: {getScriptLock: () => ({
       waitLock() { if (locked) throw new Error('bloqueado'); locked = true; },
       releaseLock() { locked = false; }
@@ -62,7 +64,7 @@ function loadScript(key) {
       MimeType: {JSON: 'json'},
       createTextOutput: text => ({text, setMimeType() { return this; }})
     },
-    JSON, String, Number, Error
+    JSON, String, Number, Error, Object, Math
   };
   let code = fs.readFileSync(path.join(__dirname, '../planilla/Codigo.gs'), 'utf8');
   code = code.replace("const CLAVE = 'CAMBIAR-ESTA-CLAVE';", `const CLAVE = ${JSON.stringify(key)};`);
@@ -90,7 +92,7 @@ if (require.main === module) {
       setTimeout(() => {
         try { res.writeHead(200, cors); res.end(JSON.stringify(g.handle(JSON.parse(body)))); }
         catch (e) { res.writeHead(200, cors); res.end(JSON.stringify({ok: false, error: String(e)})); }
-      }, 300); // demora parecida a la de Google
+      }, Number(process.env.DEMORA || 300)); // demora parecida a la de Google
     });
   }).listen(port, () => console.log('Google simulado en el puerto ' + port));
 }

@@ -24,7 +24,7 @@ const HOJAS = {
 };
 
 // Versión del código, para que la aplicación avise si hay que actualizarlo.
-const VERSION = 2;
+const VERSION = 3;
 
 function doPost(e) {
   let pedido;
@@ -41,19 +41,38 @@ function doGet() {
   return ContentService.createTextOutput('La planilla de Intendencia está conectada y funcionando.');
 }
 
+// Contador de cambios: cada vez que alguien guarda algo, sube en uno.
+// Las computadoras preguntan «¿cambió algo desde el número X?» y, si no cambió,
+// la respuesta sale al instante sin leer la planilla.
+function revision() {
+  return Number(PropertiesService.getScriptProperties().getProperty('rev') || 0);
+}
+function nuevaRevision() {
+  const r = revision() + 1;
+  PropertiesService.getScriptProperties().setProperty('rev', String(r));
+  return r;
+}
+
 function atender(pedido) {
   if (CLAVE === 'CAMBIAR-ESTA-CLAVE') return {ok: false, error: 'sin-clave'};
   if (!pedido || pedido.key !== CLAVE) return {ok: false, error: 'clave'};
   try {
-    if (pedido.action === 'load') return {ok: true, data: leerTodo()};
+    if (pedido.action === 'load') {
+      const rev = revision();
+      if (pedido.since !== undefined && Number(pedido.since) === rev && rev > 0) return {ok: true, unchanged: true, rev: rev, version: VERSION};
+      return {ok: true, rev: rev, data: leerTodo()};
+    }
     const candado = LockService.getScriptLock();
     candado.waitLock(25000); // si otra computadora está guardando, espera su turno
     try {
-      if (pedido.action === 'create') return {ok: true, item: crear(pedido.kind, pedido.item, pedido.row)};
-      if (pedido.action === 'save') return {ok: true, item: guardar(pedido.kind, pedido.item, pedido.row)};
-      if (pedido.action === 'delete') { borrar(pedido.kind, pedido.id); return {ok: true}; }
-      if (pedido.action === 'import') { const creados = importar(pedido.items || []); return {ok: true, count: creados.length, items: creados}; }
-      return {ok: false, error: 'accion'};
+      let respuesta;
+      if (pedido.action === 'create') respuesta = {ok: true, item: crear(pedido.kind, pedido.item, pedido.row)};
+      else if (pedido.action === 'save') respuesta = {ok: true, item: guardar(pedido.kind, pedido.item, pedido.row)};
+      else if (pedido.action === 'delete') { borrar(pedido.kind, pedido.id); respuesta = {ok: true}; }
+      else if (pedido.action === 'import') { const creados = importar(pedido.items || []); respuesta = {ok: true, count: creados.length, items: creados}; }
+      else return {ok: false, error: 'accion'};
+      respuesta.rev = nuevaRevision();
+      return respuesta;
     } finally {
       candado.releaseLock();
     }
@@ -163,16 +182,40 @@ function borrar(tipo, id) {
 
 // Carga varios registros juntos (copias de seguridad, inventario desde Excel).
 // Los que traen código lo conservan; los nuevos reciben el siguiente número.
+// Lee cada pestaña una sola vez y la escribe en un solo bloque: mucho más rápido que fila por fila.
 function importar(items) {
   const creados = [];
+  const porTipo = {};
   items.forEach(x => {
     if (!x || !x.item || !HOJAS[x.kind]) return;
-    if (!x.item.id) {
-      x.item.id = siguienteId(x.kind);
-      if (x.row && x.row.length) x.row[0] = x.item.id;
-    }
-    escribir(x.kind, x.item, x.row);
-    creados.push(x.item);
+    (porTipo[x.kind] = porTipo[x.kind] || []).push(x);
+  });
+  Object.keys(porTipo).forEach(tipo => {
+    const h = hoja(tipo);
+    const ancho = columnaDatos(tipo);
+    const filas = Math.max(0, h.getLastRow() - 1);
+    const valores = filas ? h.getRange(2, 1, filas, ancho).getValues().map(f => f.map(v => String(v))) : [];
+    const indice = {};
+    let max = 0;
+    valores.forEach((f, i) => {
+      indice[f[0]] = i;
+      const n = Number(String(f[0]).split('-')[1]);
+      if (n > max) max = n;
+    });
+    porTipo[tipo].forEach(x => {
+      if (!x.item.id) {
+        max += 1;
+        x.item.id = HOJAS[tipo].prefijo + '-' + String(max).padStart(4, '0');
+      }
+      const fila = (x.row || []).slice(0, HOJAS[tipo].columnas.length);
+      while (fila.length < HOJAS[tipo].columnas.length) fila.push('');
+      fila[0] = x.item.id;
+      const linea = fila.map(v => v === null || v === undefined ? '' : String(v)).concat([JSON.stringify(x.item)]);
+      if (indice[x.item.id] !== undefined) valores[indice[x.item.id]] = linea;
+      else { indice[x.item.id] = valores.length; valores.push(linea); }
+      creados.push(x.item);
+    });
+    if (valores.length) h.getRange(2, 1, valores.length, ancho).setNumberFormat('@').setValues(valores);
   });
   return creados;
 }
