@@ -92,7 +92,7 @@ Sirve cuando la red de la oficina demora o bloquea la página de GitHub. La apli
 
 1. En el editor de Apps Script, pegá el `Codigo.gs` nuevo con tu clave (como siempre).
 2. Tocá el **+** al lado de «Archivos» › **HTML**, y escribí como nombre `App` (Google le agrega `.html`).
-3. Borrá lo que trae y pegá todo el contenido de `planilla/App.html`. Guardá.
+3. Borrá lo que trae y pegá todo el contenido de `planilla/App.html`. Guardá. (El código va codificado en base64 porque Google altera algunos textos, como «<?xml», si van a la vista.)
 4. **Implementar › Administrar implementaciones › lápiz › Versión: nueva versión › Implementar**.
 5. Abrí la dirección `…/exec` en el navegador: aparece la aplicación. Pide solo la clave, una vez por computadora.
 6. Guardá esa dirección como favorito o acceso directo en cada computadora.
