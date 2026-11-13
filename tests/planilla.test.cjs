@@ -80,7 +80,7 @@ test('inventario: importar asigna códigos a los nuevos y lee la pestaña Invent
   assert.equal(hoja.rows[2][4], 'Sin contar');
   const data = g.handle({key: 'k', action: 'load'}).data;
   assert.equal(data.items.length, 2);
-  assert.equal(data.version, 3);
+  assert.equal(data.version, 4);
 });
 
 test('contador de cambios: si nada cambió responde sin leer la planilla', () => {
@@ -92,7 +92,7 @@ test('contador de cambios: si nada cambió responde sin leer la planilla', () =>
   const c = g.handle({key: 'k', action: 'create', kind: 'order', item: o, row: C.orderRow(o)});
   assert.equal(c.rev, 1);
   const same = g.handle({key: 'k', action: 'load', since: 1});
-  assert.deepEqual(same, {ok: true, unchanged: true, rev: 1, version: 3});
+  assert.deepEqual(same, {ok: true, unchanged: true, rev: 1, version: 4});
   const old = g.handle({key: 'k', action: 'load', since: 0});
   assert.equal(old.rev, 1);
   assert.equal(old.data.orders.length, 1);
@@ -120,6 +120,20 @@ test('la aplicación abierta desde Google usa la misma clave', () => {
   const r = g.desdeApp({key: 'k', action: 'load'});
   assert.ok(r.ok && r.data);
   assert.match(g.doGet().text, /funcionando/, 'sin App.html sigue respondiendo');
+});
+
+test('si solo cambió un pedido, no se vuelve a mandar el inventario', () => {
+  const g = loadScript('k');
+  const item = {category: 'Cat', name: 'Cinta', quantity: 3};
+  g.handle({key: 'k', action: 'import', items: [{kind: 'item', item, row: C.itemRow({...item, id: ''})}]});
+  const base = g.handle({key: 'k', action: 'load'});
+  const o = {title: 'A', specialty: 'Pintura', status: 'Pendiente'};
+  g.handle({key: 'k', action: 'create', kind: 'order', item: o, row: C.orderRow(o)});
+  const r = g.handle({key: 'k', action: 'load', since: base.rev});
+  assert.equal(r.partial, true);
+  assert.equal(r.data.orders.length, 1);
+  assert.equal(r.data.items, undefined, 'el inventario no viaja');
+  assert.equal(r.data.tools, undefined);
 });
 
 console.log(`${n} pruebas de la planilla: OK`);

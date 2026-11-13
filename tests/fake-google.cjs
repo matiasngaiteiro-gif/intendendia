@@ -55,7 +55,7 @@ function loadScript(key) {
   let locked = false;
   const sandbox = {
     SpreadsheetApp: {getActiveSpreadsheet: () => book},
-    PropertiesService: {getScriptProperties: () => ({getProperty: k => props[k] ?? null, setProperty: (k, v) => { props[k] = String(v); }})},
+    PropertiesService: {getScriptProperties: () => ({getProperty: k => props[k] ?? null, setProperty: (k, v) => { props[k] = String(v); }, setProperties: o => { Object.entries(o).forEach(([k, v]) => { props[k] = String(v); }); }})},
     LockService: {getScriptLock: () => ({
       waitLock() { if (locked) throw new Error('bloqueado'); locked = true; },
       releaseLock() { locked = false; }
