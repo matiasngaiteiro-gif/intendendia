@@ -1,10 +1,10 @@
 // Guarda una copia de los archivos de la aplicación (no de los datos) para que abra rápido
 // aunque GitHub o internet anden lentos. Siempre intenta primero la versión nueva.
-const CACHE = 'intendencia-piloto-18';
+const CACHE = 'intendencia-piloto-19';
 const ESPERA = 4000; // si en 4 segundos no llegó la versión nueva, abre con la guardada
 
 // Todo lo necesario para abrir, con la misma versión que pide index.html.
-const ARCHIVOS = ['./', 'index.html', 'styles.css?v=piloto-18', 'contacts-data.js?v=10', 'core.js?v=piloto-18', 'xlsx.js?v=piloto-18', 'app.js?v=piloto-18'];
+const ARCHIVOS = ['./', 'index.html', 'styles.css?v=piloto-19', 'contacts-data.js?v=10', 'core.js?v=piloto-19', 'xlsx.js?v=piloto-19', 'app.js?v=piloto-19'];
 
 self.addEventListener('install', e => {
   // Se guarda de a uno: si alguno falla, los demás quedan igual.
