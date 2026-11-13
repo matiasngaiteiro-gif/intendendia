@@ -279,7 +279,7 @@
       orders: keep('orders') ? state.orders : data.orders || [],
       tools: keep('tools') ? state.tools : data.tools || [],
       items: keep('items') ? state.items : data.items || [],
-      contacts: [...structuredClone(CATALOG), ...custom]}, CATALOG);
+      contacts: C.mergeContacts(CATALOG, custom)}, CATALOG);
     if (remote) { remote.sheetUrl = data.sheetUrl || remote.sheetUrl; remote.version = Number(data.version || 1); writeJSON(REMOTE_KEY, remote); }
     save();
   }
@@ -1257,7 +1257,7 @@
         <div class="contact-actions">
           ${c.phone ? `<a class="btn btn-small btn-secondary" href="tel:${esc(telNumber(c.phone))}">${icon('phone')} ${esc(c.phone)}</a>` : ''}
           ${c.email ? `<a class="btn btn-small btn-ghost" href="mailto:${esc(c.email)}">${icon('mail')} Correo</a>` : ''}
-          ${c.source ? '' : `<button type="button" class="btn btn-small btn-ghost" data-contact="${esc(c.id)}">${icon('pencil')} Modificar</button>`}
+          <button type="button" class="btn btn-small btn-ghost" data-contact="${esc(c.id)}">${icon('pencil')} Modificar</button>
         </div></article>`).join('') : '<div class="empty"><p>No se encontró ningún contacto.</p></div>'}</div>
       <button type="button" class="btn btn-secondary btn-block" data-new-contact>${icon('plus')} Agregar un contacto</button>
       <p class="muted small">Los datos de juzgados y salas salen de la Guía Judicial del PJN (consultada el 16/09/2026).</p>`;
@@ -1280,26 +1280,40 @@
   }
 
   function contactForm(c) {
+    const fromGuide = !!c?.source;
+    const guideOriginal = c?.overrides ? CATALOG.find(x => x.id === c.overrides) : null;
     openDialog(`<form class="dlg" id="contactForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
       <h2 id="dialogTitle">${c ? 'Modificar contacto' : 'Agregar contacto'}</h2>
-      <label class="field-label" for="cName">Nombre</label><input id="cName" name="name" required maxlength="80" placeholder="Ej.: Ferretería Pérez" value="${esc(c?.name)}">
-      <label class="field-label" for="cPhone">Teléfono</label><input id="cPhone" name="phone" inputmode="tel" maxlength="40" value="${esc(c?.phone)}">
+      ${fromGuide ? '<p class="muted small">Este contacto sale de la Guía Judicial. Lo que cambies acá queda guardado para todas las computadoras, y siempre se puede volver a los datos de la guía.</p>' : ''}
+      <label class="field-label" for="cName">Nombre</label><input id="cName" name="name" required maxlength="120" placeholder="Ej.: Ferretería Pérez" value="${esc(c?.name)}">
+      <label class="field-label" for="cBuilding">Dirección / piso <span class="optional">(opcional)</span></label><input id="cBuilding" name="building" maxlength="120" placeholder="Ej.: Av. Callao 635, 3.er piso" value="${esc(c?.building)}">
+      <label class="field-label" for="cPhone">Teléfono</label><input id="cPhone" name="phone" inputmode="tel" maxlength="60" value="${esc(c?.phone)}">
       <label class="field-label" for="cMail">Correo <span class="optional">(opcional)</span></label><input id="cMail" name="email" type="email" maxlength="80" value="${esc(c?.email)}">
-      <label class="field-label" for="cNotes">Para qué sirve <span class="optional">(opcional)</span></label><input id="cNotes" name="notes" maxlength="120" placeholder="Ej.: vende repuestos de canillas" value="${esc(c?.notes)}">
+      <label class="field-label" for="cNotes">${fromGuide || guideOriginal ? 'Nota' : 'Para qué sirve'} <span class="optional">(opcional)</span></label><input id="cNotes" name="notes" maxlength="120" placeholder="${fromGuide || guideOriginal ? 'Ej.: preguntar por Marta, interno 23' : 'Ej.: vende repuestos de canillas'}" value="${esc(fromGuide ? '' : c?.notes)}">
       <div class="dlg-actions"><button class="btn btn-primary" type="submit">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button>
-      ${c ? '<button type="button" class="btn btn-link-danger" data-del>Borrar contacto</button>' : ''}</div></form>`, body => {
+      ${guideOriginal ? '<button type="button" class="btn btn-link-danger" data-restore>Volver a los datos de la guía</button>' : c && !fromGuide ? '<button type="button" class="btn btn-link-danger" data-del>Borrar contacto</button>' : ''}</div></form>`, body => {
       $('#cName', body).focus();
       $('#contactForm', body).onsubmit = async e => {
         e.preventDefault();
         const f = Object.fromEntries(new FormData(e.target));
-        if (!f.name.trim()) return;
-        if (c) {
+        Object.keys(f).forEach(k => { f[k] = String(f[k]).trim(); });
+        if (!f.name) return;
+        const button = $('button[type=submit]', body);
+        if (c && !fromGuide) {
           saveItem('contact', {...c, ...f, role: c.role || 'Contacto'});
-        } else {
-          const button = $('button[type=submit]', body);
+        } else if (fromGuide) {
+          if (f.name === c.name && f.building === (c.building || '') && f.phone === (c.phone || '') && f.email === (c.email || '') && !f.notes) { dialog.close(); return; }
           button.disabled = true;
           button.textContent = 'Guardando…';
-          const created = await createItem('contact', {...f, role: 'Contacto', organization: '', building: ''});
+          const {id, source, ...rest} = c;
+          const created = await createItem('contact', {...rest, ...f, role: c.role || 'Contacto', overrides: id});
+          if (!created) { button.disabled = false; button.textContent = 'Guardar'; return; }
+          state.contacts = state.contacts.filter(x => x.id !== id);
+          save();
+        } else {
+          button.disabled = true;
+          button.textContent = 'Guardando…';
+          const created = await createItem('contact', {...f, role: 'Contacto', organization: ''});
           if (!created) { button.disabled = false; button.textContent = 'Guardar'; return; }
         }
         dialog.close(); renderContacts(); toast('Contacto guardado.');
@@ -1309,6 +1323,14 @@
         removeItem('contact', c);
         renderContacts();
         toast('Contacto borrado.', () => { saveItem('contact', c); renderContacts(); });
+      });
+      $('[data-restore]', body)?.addEventListener('click', async () => {
+        if (!await confirmBox({title: '¿Volver a los datos de la guía?', text: 'Se descartan los cambios hechos a «' + c.name + '».', yes: 'Sí, volver'})) return;
+        await removeItem('contact', c);
+        state.contacts.push(structuredClone(guideOriginal));
+        save();
+        renderContacts();
+        toast('Se volvió a los datos de la guía.');
       });
     });
   }
