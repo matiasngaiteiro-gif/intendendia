@@ -6,7 +6,7 @@ const path = require('path');
 const raiz = path.join(__dirname, '..');
 const leer = f => fs.readFileSync(path.join(raiz, f), 'utf8');
 
-let html = leer('index.html');
+let html = leer('app.html');
 html = html.replace(/\s*<meta http-equiv="Content-Security-Policy"[^>]*>/, ''); // Google pone sus propias reglas
 html = html.replace(/<link rel="stylesheet" href="styles\.css[^"]*">/, () => `<style>\n${leer('styles.css')}\n</style>`);
 // Google modifica algunos textos dentro del código (por ejemplo «<?xml», que usa el Excel)

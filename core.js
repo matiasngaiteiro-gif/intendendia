@@ -268,6 +268,36 @@
   ];
   const contactRow = c => [c.id, c.name || '', c.phone || '', c.email || '', c.notes || ''];
 
+  // ---------- Herramientas: cantidad, certificación y planilla de entrega ----------
+  const toolQuantity = t => { const n = Number(t && t.quantity); return Number.isFinite(n) && n > 0 ? n : 1; };
+  const toolCert = t => (t && (t.certified === 'Sí' || t.certified === 'No')) ? t.certified : '';
+  // Las herramientas cargadas antes tenían la cantidad y la certificación escritas en la nota.
+  // Las pasa a sus campos y limpia la nota. Devuelve null si no hay nada que cambiar.
+  function migrateToolNote(t) {
+    const note = String((t && t.notes) || '');
+    if (!note) return null;
+    const out = {...t};
+    let rest = note;
+    const cert = rest.match(/\b(con|sin)\s+certificaci[oó]n\b/i);
+    if (cert && !toolCert(t)) { out.certified = /^con$/i.test(cert[1]) ? 'Sí' : 'No'; rest = rest.replace(cert[0], ''); }
+    const qty = rest.match(/cantidad:\s*(\d+)\s*(unidades|unidad|sets?|u\.?)?/i);
+    if (qty && !(Number(t.quantity) > 0)) { out.quantity = Number(qty[1]); rest = rest.replace(qty[0], ''); }
+    if (rest === note) return null;
+    out.notes = rest.replace(/^[\s·.,;-]+|[\s·.,;-]+$/g, '').replace(/\s{2,}/g, ' ');
+    return out;
+  }
+  // Personas con herramientas asignadas, en orden alfabético.
+  const toolHolders = state => [...new Set((state.tools || []).map(t => (t.holder || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  // Lo que tiene una persona, en el orden en que se le entregó.
+  const toolsOf = (state, person) => (state.tools || []).filter(t => (t.holder || '').trim() === person)
+    .sort((a, b) => String(a.assignedDate || '').localeCompare(String(b.assignedDate || '')) || String(a.name).localeCompare(String(b.name), 'es'));
+  // Datos fijos de la planilla oficial «Entrega de herramientas».
+  const DELIVERY_FORM = {
+    company: 'CONSEJO DE LA MAGISTRATURA DEL PODER JUDICIAL DE LA NACIÓN', cuit: '34-53667147-1',
+    addresses: ['AV. ROQUE SAENZ PEÑA 1211', 'AV. CALLAO 635', 'MONTEVIDEO 546'], city: 'C.A.B.A.', zip: '1036', province: 'C.A.B.A.',
+    jobs: ['TÉCNICO EN AIRES ACONDICIONADOS', 'ELECTRICISTA', 'PLOMERO', 'ALBAÑIL', 'PINTOR', 'CARPINTERO', 'HERRERO', 'TAPICERO', 'AYUDANTE', 'PORTERÍA']
+  };
+
   // ---------- Inventario ----------
   const ITEM_COLUMNS = [
     {header: 'Código', width: 9}, {header: 'Categoría', width: 22}, {header: 'Elemento', width: 26}, {header: 'Detalle / variante', width: 22},
@@ -464,8 +494,9 @@
       }},
     tools: {name: 'Herramientas', label: 'Herramientas', sort: (a, b) => String(a.name).localeCompare(String(b.name), 'es'), columns: [
       {header: 'N°', width: 6}, {header: 'Herramienta', width: 26}, {header: 'Marca', width: 16}, {header: 'Modelo', width: 16}, {header: 'N.º de inventario', width: 16},
+      {header: 'Cantidad', width: 10}, {header: 'Certificación', width: 13},
       {header: 'Estado', width: 16}, {header: 'Asignada a', width: 22}, {header: 'Desde', width: 12}, {header: 'Observaciones', width: 30}],
-      row: (t, n) => [n, t.name || '', t.brand || '', t.model || '', t.serial || '', t.holder ? 'Asignada' : (t.toolStatus || 'Disponible'), t.holder || '', t.holder ? shortDate(t.assignedDate) : '', t.notes || '']},
+      row: (t, n) => [n, t.name || '', t.brand || '', t.model || '', t.serial || '', toolQuantity(t), toolCert(t), t.holder ? 'Asignada' : (t.toolStatus || 'Disponible'), t.holder || '', t.holder ? shortDate(t.assignedDate) : '', t.notes || '']},
     contacts: {name: 'Contactos', label: 'Contactos', sort: (a, b) => String(a.name).localeCompare(String(b.name), 'es', {numeric: true}), columns: [
       {header: 'N°', width: 6}, {header: 'Nombre', width: 34}, {header: 'Dirección', width: 34}, {header: 'Teléfono', width: 20}, {header: 'Correo', width: 32}, {header: 'Notas', width: 30}],
       row: (c, n) => [n, c.name || '', c.building || '', c.phone || '', c.email || '', c.source ? '' : (c.notes || '')]}
@@ -497,6 +528,7 @@
     emptyState, normalizeState, nextId, orderPlace, peopleNames,
     searchOrders, sortOrders, searchContacts, when, fullDate, daysSince,
     EXCEL_KEY, lastFridayNoon, weeklyExcelDue, excelSheets,
+    toolQuantity, toolCert, migrateToolNote, toolHolders, toolsOf, DELIVERY_FORM,
     ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact,
     ITEM_COLUMNS, itemRow, qtyText, parseQuantity, itemKey, rowsToItems, mergeItems, parseCsv, itemSort,
     MOVE_LABELS, applyMovement, movementRows, STOCK_FILTERS, filterItems, isUncounted,

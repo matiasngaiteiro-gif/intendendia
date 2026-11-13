@@ -103,3 +103,7 @@ Cada vez que se publique una versión nueva de la aplicación, hay que volver a 
 
 Además del contador general, la planilla anota qué pestaña cambió. Si alguien cambia un pedido, las otras computadoras reciben solo los pedidos y no vuelven a descargar el inventario ni las herramientas. Se instala igual que siempre: pegar `Codigo.gs` con tu clave y hacer **nueva versión**. Comprobalo buscando `VERSION = 4`.
 
+### La versión de GitHub se retiró
+
+Desde noviembre de 2026 la aplicación se abre solo desde la dirección `…/exec`. La página de GitHub muestra un aviso de mudanza (sin la dirección nueva, porque esa página es pública). Cada vez que cambie la aplicación hay que pegar el `App.html` nuevo en el proyecto de la planilla y publicar una nueva versión.
+
