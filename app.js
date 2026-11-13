@@ -1127,6 +1127,10 @@
       <label class="field-label" for="tModel">Modelo <span class="optional">(si sabés)</span></label><input id="tModel" name="model" maxlength="60" value="${esc(t?.model)}">
       <label class="field-label" for="tSerial">Número de inventario <span class="optional">(si tiene)</span></label><input id="tSerial" name="serial" maxlength="40" value="${esc(t?.serial)}">
       ${t && !t.holder ? `<label class="field-label" for="tState">Estado</label><select id="tState" name="toolStatus">${['Disponible', 'En reparación', 'Fuera de servicio'].map(s => `<option${t.toolStatus === s ? ' selected' : ''}>${s}</option>`).join('')}</select>` : ''}
+      ${t ? '' : `<label class="field-label" for="tHolder">A quién se la asigna <span class="optional">(vacío = queda disponible)</span></label>
+      <input id="tHolder" name="holder" list="peopleListNew" maxlength="60" autocomplete="off" placeholder="Ej.: Carlos Benítez">
+      <datalist id="peopleListNew">${C.peopleNames(state).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <label class="field-label" for="tDate">Fecha de entrega</label><input id="tDate" name="assignedDate" type="date" value="${new Date().toISOString().slice(0, 10)}">`}
       <label class="field-label" for="tNotes">Nota <span class="optional">(opcional)</span></label><textarea id="tNotes" name="notes" rows="2" maxlength="300">${esc(t?.notes)}</textarea>
       <div class="dlg-actions"><button class="btn btn-primary" type="submit">Guardar</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button></div></form>`, body => {
       $('#tName', body).focus();
@@ -1142,7 +1146,9 @@
           const button = $('button[type=submit]', body);
           button.disabled = true;
           button.textContent = 'Guardando…';
-          const created = await createItem('tool', {...f, toolStatus: 'Disponible', holder: '', assignedDate: '', createdAt: now, updatedAt: now});
+          const holder = (f.holder || '').trim();
+          const assignedDate = holder ? (/^\d{4}-\d{2}-\d{2}$/.test(f.assignedDate || '') ? f.assignedDate : now.slice(0, 10)) : '';
+          const created = await createItem('tool', {...f, holder, assignedDate, toolStatus: holder ? 'Entregada' : 'Disponible', createdAt: now, updatedAt: now});
           if (!created) { button.disabled = false; button.textContent = 'Guardar'; return; }
         }
         dialog.close(); renderTools(); toast('Herramienta guardada.');
