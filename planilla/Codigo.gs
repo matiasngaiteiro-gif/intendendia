@@ -1,6 +1,4 @@
 /**
- * @OnlyCurrentDoc  (pide permiso solo sobre esta planilla, no sobre todas las de la cuenta)
- *
  * Intendencia · conexión con la planilla de Google.
  *
  * Este código se pega en la planilla (Extensiones > Apps Script) y se implementa como
@@ -256,4 +254,43 @@ function importar(items) {
 // Opcional: ejecutar una vez desde el editor para crear las pestañas antes de usar la aplicación.
 function prepararPlanilla() {
   Object.keys(HOJAS).forEach(hoja);
+}
+
+// ── Copia de seguridad semanal ──────────────────────────────────────────────
+// Todos los viernes guarda una copia completa de esta planilla en la carpeta «Intendencia»
+// de tu Drive (la crea si no existe). Guarda las últimas 12 copias (unos tres meses);
+// las más viejas van a la papelera de Drive, de donde se pueden recuperar durante 30 días.
+// Para activarla: elegí «activarCopiaSemanal» arriba en el editor y tocá «Ejecutar» una sola vez.
+const CARPETA_COPIAS = 'Intendencia';
+const COPIAS_A_GUARDAR = 12;
+const PREFIJO_COPIA = 'Copia Intendencia ';
+
+function copiaDeSeguridad() {
+  const libro = SpreadsheetApp.getActiveSpreadsheet();
+  const carpetas = DriveApp.getFoldersByName(CARPETA_COPIAS);
+  const carpeta = carpetas.hasNext() ? carpetas.next() : DriveApp.createFolder(CARPETA_COPIAS);
+  const nombre = PREFIJO_COPIA + Utilities.formatDate(new Date(), 'America/Argentina/Buenos_Aires', 'yyyy-MM-dd HH.mm');
+  DriveApp.getFileById(libro.getId()).makeCopy(nombre, carpeta);
+
+  const copias = [];
+  const archivos = carpeta.getFiles();
+  while (archivos.hasNext()) {
+    const f = archivos.next();
+    if (f.getName().indexOf(PREFIJO_COPIA) === 0) copias.push(f);
+  }
+  copias.sort((a, b) => b.getDateCreated() - a.getDateCreated());
+  copias.slice(COPIAS_A_GUARDAR).forEach(f => f.setTrashed(true));
+  return nombre + ' guardada en «' + CARPETA_COPIAS + '»';
+}
+
+function activarCopiaSemanal() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'copiaDeSeguridad')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('copiaDeSeguridad')
+    .timeBased().onWeekDay(ScriptApp.WeekDay.FRIDAY).atHour(14)
+    .inTimezone('America/Argentina/Buenos_Aires').create();
+  const hecho = copiaDeSeguridad();
+  console.log('Copia semanal activada (viernes a las 14). Primera copia: ' + hecho);
+  return hecho;
 }

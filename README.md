@@ -26,6 +26,7 @@ Esta versión es la **primera prueba piloto**: se dejó solo lo esencial y se re
   - Una copia para recuperar los datos (`.json`).
 
   El aviso queda visible hasta que se guarde la copia. La primera vez, el navegador puede preguntar si se permite descargar varios archivos: hay que responder que sí.
+- **Copia automática en Drive**: además, todos los viernes a las 14 la planilla guarda sola una copia completa en la carpeta **Intendencia** de Drive (se conservan las últimas 12). Se activa una vez desde el editor de Apps Script con `activarCopiaSemanal`. El botón «Descargar Excel» de cada sección sigue disponible.
 
 Diseño sobrio: íconos de línea en un solo color, sin emojis.
 
