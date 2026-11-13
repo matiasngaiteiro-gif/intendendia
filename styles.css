@@ -361,6 +361,9 @@ button.qty-value b { text-decoration: underline; text-decoration-color: var(--li
 .sheet-state .ico { color: var(--green); margin-top: 2px; }
 .sheet-form { display: grid; gap: 4px; }
 .sheet-form .btn { margin-top: 14px; }
+.check-line { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: .95rem; cursor: pointer; }
+.sheet-form .check-line input[type="checkbox"] { flex: none; width: 20px; height: 20px; min-height: 0; margin: 0; padding: 0; border: 0; box-shadow: none; accent-color: var(--ink, #111); }
+.sheet-form .check-line { font-weight: 500; }
 .panel .btn + .btn, .panel .btn + .btn-link-danger { margin-top: 8px; }
 .saving { margin: 0; font-weight: 700; color: var(--muted); text-align: center; }
 

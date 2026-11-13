@@ -1366,17 +1366,30 @@
   function renderConnect() {
     main.innerHTML = `<section class="connect">
       <h1 class="page-title">Conectá esta computadora</h1>
-      <p class="lead">Los pedidos están en la planilla de Intendencia. Para verlos y cargarlos, escribí ${EN_GOOGLE ? 'la clave' : 'la dirección y la clave'}. Se hace una sola vez en cada computadora.</p>
-      <form id="sheetForm" class="panel sheet-form">
+      <p class="lead">Los pedidos están en la planilla de Intendencia. Para verlos y cargarlos, escribí ${EN_GOOGLE ? 'la clave' : 'la dirección y la clave'}.</p>
+      <form id="sheetForm" class="panel sheet-form" method="post" action="#">
         ${EN_GOOGLE ? '' : `<label class="field-label" for="sheetUrl">Dirección de la aplicación web</label>
         <input id="sheetUrl" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">`}
+        <input class="sr-only" type="text" id="sheetUser" name="username" autocomplete="username" value="Intendencia" readonly tabindex="-1" aria-hidden="true">
         <label class="field-label" for="sheetKey">Clave</label>
-        <input id="sheetKey" autocomplete="off" placeholder="La misma que escribiste en el código">
+        <input id="sheetKey" name="password" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" placeholder="La clave de Intendencia">
+        <label class="check-line"><input type="checkbox" id="sheetShow"> Mostrar la clave</label>
         <button type="submit" class="btn btn-primary btn-block">Conectar</button>
       </form>
-      <p class="muted small">La dirección y la clave las tiene quien administra la planilla.</p>
+      <p class="muted small"><b>Para no escribirla cada vez:</b> cuando el celular o la computadora pregunte «¿Guardar contraseña?», tocá <b>Guardar</b>. La próxima vez la clave aparece sola: tocá el campo, elegí «Intendencia» y después <b>Conectar</b>.</p>
+      <p class="muted small">La clave la tiene quien administra la planilla.</p>
     </section>`;
     $('#sheetForm').onsubmit = connectSheet;
+    $('#sheetShow').onchange = e => { $('#sheetKey').type = e.target.checked ? 'text' : 'password'; };
+  }
+
+  // Le pide al navegador que guarde la clave como contraseña (Chrome y Android; en iPhone alcanza con el formulario).
+  function rememberKey(key) {
+    try {
+      if (window.PasswordCredential && navigator.credentials) {
+        navigator.credentials.store(new PasswordCredential({id: 'Intendencia', password: key, name: 'Intendencia'})).catch(() => {});
+      }
+    } catch {}
   }
 
   function bindSheetPanel() {
@@ -1426,6 +1439,7 @@
     // Si esta computadora tenía pedidos cargados por su cuenta, se descarga una copia y se reemplazan por los de la planilla.
     const hasLocal = state.orders.length || state.tools.length || state.contacts.some(C.isCustomContact);
     if (hasLocal) downloadRestoreCopy();
+    rememberKey(key);
     remote = {...conf, rev: res.rev};
     writeJSON(REMOTE_KEY, remote);
     applyRemote(data);
