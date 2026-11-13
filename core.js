@@ -469,6 +469,12 @@
   }
   // Contactos propios: los que no salen de la guía oficial del PJN.
   const isCustomContact = c => !c.source;
+  // Guía + propios. Un contacto propio con «overrides» reemplaza al de la guía con ese código
+  // (así se pueden corregir los datos de la guía sin perderlos cuando se actualiza).
+  function mergeContacts(catalog, custom) {
+    const replaced = new Set((custom || []).map(c => c.overrides).filter(Boolean));
+    return [...(catalog || []).filter(c => !replaced.has(c.id)).map(c => structuredClone(c)), ...(custom || [])];
+  }
 
   const itemSort = (a, b) => String(a.category).localeCompare(String(b.category), 'es') || String(a.name).localeCompare(String(b.name), 'es') || String(a.detail || '').localeCompare(String(b.detail || ''), 'es', {numeric: true});
 
@@ -529,7 +535,7 @@
     searchOrders, sortOrders, searchContacts, when, fullDate, daysSince,
     EXCEL_KEY, lastFridayNoon, weeklyExcelDue, excelSheets,
     toolQuantity, toolCert, migrateToolNote, toolHolders, toolsOf, DELIVERY_FORM,
-    ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact,
+    ORDER_COLUMNS, TOOL_COLUMNS, CONTACT_COLUMNS, orderRow, toolRow, contactRow, isCustomContact, mergeContacts,
     ITEM_COLUMNS, itemRow, qtyText, parseQuantity, itemKey, rowsToItems, mergeItems, parseCsv, itemSort,
     MOVE_LABELS, applyMovement, movementRows, STOCK_FILTERS, filterItems, isUncounted,
     unitText, qtyWithUnit, isFeminineUnit, remainingText, sectionSheet, shortDate, initialStock
