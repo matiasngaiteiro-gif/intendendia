@@ -24,7 +24,7 @@ const HOJAS = {
 };
 
 // Versión del código, para que la aplicación avise si hay que actualizarlo.
-const VERSION = 3;
+const VERSION = 4;
 
 function doPost(e) {
   let pedido;
@@ -61,11 +61,17 @@ function desdeApp(texto) {
 function revision() {
   return Number(PropertiesService.getScriptProperties().getProperty('rev') || 0);
 }
-function nuevaRevision() {
+// Además del número general, guarda el último cambio de cada pestaña (rev_order, rev_item…):
+// así, si solo cambió un pedido, no se vuelve a mandar todo el inventario.
+function nuevaRevision(tipos) {
+  const props = PropertiesService.getScriptProperties();
   const r = revision() + 1;
-  PropertiesService.getScriptProperties().setProperty('rev', String(r));
+  const cambios = {rev: String(r)};
+  tipos.forEach(t => { cambios['rev_' + t] = String(r); });
+  props.setProperties(cambios);
   return r;
 }
+const LISTAS = {order: 'orders', tool: 'tools', contact: 'contacts', item: 'items'};
 
 function atender(pedido) {
   if (CLAVE === 'CAMBIAR-ESTA-CLAVE') return {ok: false, error: 'sin-clave'};
@@ -73,7 +79,17 @@ function atender(pedido) {
   try {
     if (pedido.action === 'load') {
       const rev = revision();
-      if (pedido.since !== undefined && Number(pedido.since) === rev && rev > 0) return {ok: true, unchanged: true, rev: rev, version: VERSION};
+      const since = pedido.since === undefined ? NaN : Number(pedido.since);
+      if (since === rev && rev > 0) return {ok: true, unchanged: true, rev: rev, version: VERSION};
+      if (since > 0 && since < rev) {
+        // Solo las pestañas que cambiaron después de lo que ya tiene esa computadora.
+        const props = PropertiesService.getScriptProperties();
+        const data = {version: VERSION, sheetUrl: SpreadsheetApp.getActiveSpreadsheet().getUrl()};
+        Object.keys(LISTAS).forEach(t => {
+          if (Number(props.getProperty('rev_' + t) || 0) > since) data[LISTAS[t]] = leerHoja(t);
+        });
+        return {ok: true, rev: rev, partial: true, data: data};
+      }
       return {ok: true, rev: rev, data: leerTodo()};
     }
     const candado = LockService.getScriptLock();
@@ -85,7 +101,10 @@ function atender(pedido) {
       else if (pedido.action === 'delete') { borrar(pedido.kind, pedido.id); respuesta = {ok: true}; }
       else if (pedido.action === 'import') { const creados = importar(pedido.items || []); respuesta = {ok: true, count: creados.length, items: creados}; }
       else return {ok: false, error: 'accion'};
-      respuesta.rev = nuevaRevision();
+      const tipos = pedido.action === 'import'
+        ? (pedido.items || []).map(x => x && x.kind).filter((t, i, a) => HOJAS[t] && a.indexOf(t) === i)
+        : (HOJAS[pedido.kind] ? [pedido.kind] : []);
+      respuesta.rev = nuevaRevision(tipos);
       return respuesta;
     } finally {
       candado.releaseLock();

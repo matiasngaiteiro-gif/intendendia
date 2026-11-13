@@ -1515,7 +1515,7 @@ ${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.open
       setSync({error: '', lastOk: new Date(), loading: false});
       if (res.unchanged) return;
       if (writes !== before || !res.data) return; // hubo cambios propios en el medio: se trae todo en la próxima vuelta
-      applyRemote(res.data);
+      applyRemote(res.data, !!res.partial);
       remote.rev = res.rev;
       writeJSON(REMOTE_KEY, remote);
       const typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
@@ -1529,9 +1529,15 @@ ${sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.open
       schedule();
     }
   }
-  function applyRemote(data) {
-    const custom = (data.contacts || []).filter(C.isCustomContact);
-    state = C.normalizeState({...state, orders: data.orders || [], tools: data.tools || [], items: data.items || [], contacts: [...structuredClone(CATALOG), ...custom]}, CATALOG);
+  // Con «partial» la planilla manda solo las pestañas que cambiaron; el resto queda como está.
+  function applyRemote(data, partial = false) {
+    const keep = k => partial && !Array.isArray(data[k]);
+    const custom = keep('contacts') ? state.contacts.filter(C.isCustomContact) : (data.contacts || []).filter(C.isCustomContact);
+    state = C.normalizeState({...state,
+      orders: keep('orders') ? state.orders : data.orders || [],
+      tools: keep('tools') ? state.tools : data.tools || [],
+      items: keep('items') ? state.items : data.items || [],
+      contacts: [...structuredClone(CATALOG), ...custom]}, CATALOG);
     if (remote) { remote.sheetUrl = data.sheetUrl || remote.sheetUrl; remote.version = Number(data.version || 1); writeJSON(REMOTE_KEY, remote); }
     save();
   }

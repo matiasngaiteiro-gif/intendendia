@@ -82,7 +82,7 @@ Para pasar a la versión 3:
 1. Copiá tu clave actual (la línea `const CLAVE = '...'`).
 2. Pegá el `Codigo.gs` nuevo y volvé a poner tu clave.
 3. Guardá. Después andá a **Implementar › Administrar implementaciones › lápiz › Versión: nueva versión › Implementar**.
-4. Para comprobarlo, buscá `VERSION = 3` en el código.
+4. Para comprobarlo, buscá `VERSION = 3` (o un número mayor) en el código.
 
 La aplicación funciona igual con el código anterior, solo que más lenta.
 
@@ -98,4 +98,8 @@ Sirve cuando la red de la oficina demora o bloquea la página de GitHub. La apli
 6. Guardá esa dirección como favorito o acceso directo en cada computadora.
 
 Cada vez que se publique una versión nueva de la aplicación, hay que volver a pegar `App.html` y hacer una nueva versión. `App.html` se arma con `node tools/armar-app-google.cjs`.
+
+### Código versión 4 (lectura por pestaña)
+
+Además del contador general, la planilla anota qué pestaña cambió. Si alguien cambia un pedido, las otras computadoras reciben solo los pedidos y no vuelven a descargar el inventario ni las herramientas. Se instala igual que siempre: pegar `Codigo.gs` con tu clave y hacer **nueva versión**. Comprobalo buscando `VERSION = 4`.
 
