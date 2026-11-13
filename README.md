@@ -16,7 +16,7 @@ Esta versión es la **primera prueba piloto**: se dejó solo lo esencial y se re
 - **Cada pedido**: cuatro botones de estado (Pendiente, En curso, Faltan materiales, Terminado). También se puede imprimir, modificar o borrar.
 - **Orden impresa**: dos copias iguales en una hoja A4, con una línea punteada al medio para cortar. Cada copia es informativa, en blanco y negro y con Arial. Lleva número, fecha del pedido, trabajo, edificio, dependencia, piso u oficina, oficio e indicaciones, y marca «Urgente» cuando corresponde. Al final de cada copia hay un espacio para la firma y sello de la dependencia. No incluye el estado, los horarios de inicio y fin, los materiales ni firmas: informa, no controla. Los márgenes son amplios para que no se corten al imprimir. Terminar o borrar se puede **deshacer** durante unos segundos.
 - **Inventario**: los elementos del depósito agrupados por categoría, con buscador. Control de stock: los botones − y + suman o restan de a uno; tocando la cantidad se registra una **salida**, una **entrada** o un **recuento** de cualquier cantidad, con motivo (por ejemplo, el número de pedido). Cada elemento guarda sus últimos 50 movimientos, y no deja sacar más de lo que hay. También guarda su **stock inicial** con la **fecha de carga**: se ve en chico en cada elemento y en la ventana de stock. Cada vez que se registra una **entrada** (reposición), el stock inicial pasa a ser lo que quedó y la fecha de carga se actualiza; los ajustes rápidos con + no lo cambian. Lo anterior queda en el historial de movimientos. Filtros: buscador, categoría, estado, ubicación (si hay cargadas) y situación del stock (con stock, sin stock, sin contar), con «Quitar filtros». Se cargan de a uno o todos juntos desde un Excel (.xlsx) o .csv con las columnas Categoría, Elemento, Detalle / variante, Cantidad, Unidad, Estado, Ubicación y Observaciones (solo «Elemento» es obligatoria). Si se vuelve a cargar el mismo archivo, los elementos que ya estaban se actualizan en lugar de duplicarse. Un mismo elemento con distinto estado (por ejemplo, rollos nuevos y en uso) se cuenta por separado.
-- **Herramientas**: qué hay y a qué persona está asignada cada una (se escribe el nombre; los nombres ya usados se sugieren solos). «Quitar la asignación» la vuelve a dejar disponible y queda en el historial.
+- **Herramientas**: qué hay y a qué persona está asignada cada una, con cantidad, certificación (sí/no) y fecha de entrega. Al agregarla se elige la persona y la fecha. La vista «Por persona» agrupa lo que tiene cada uno y permite imprimir su **planilla «Entrega de herramientas»** en el formato oficial (A4 apaisado, blanco y negro), lista para firmar. «Quitar la asignación» la vuelve a dejar disponible y queda en el historial.
 - **Contactos**: guía de juzgados, salas y oficinas. El teléfono se puede tocar para llamar. También se pueden agregar contactos propios.
 - **Ajustes**: tamaño de letra (Normal, Grande, Muy grande) y la copia de seguridad.
 - **Descargar Excel** en cada sección (Pedidos, Inventario, Herramientas y Contactos): baja lo que se ve en pantalla, con los filtros aplicados, en el mismo formato del Excel de inventario (columna N°; en Inventario, además, Stock inicial, Cantidad actual y Fecha de carga; Arial, blanco y negro, apaisado y ajustado al ancho de la hoja, títulos repetidos en cada página).
@@ -55,7 +55,8 @@ En la **planilla compartida de Google**. Todas las computadoras conectadas ven y
 
 ## Archivos
 
-- `index.html`: estructura de la página.
+- `app.html`: estructura de la página (fuente de la aplicación).
+- `index.html`: aviso de que la aplicación se mudó a la dirección de Google (es lo que muestra GitHub Pages).
 - `styles.css`: diseño, incluida la hoja impresa.
 - `core.js`: lógica sin pantalla (oficios, tareas, dependencias, mensajes, adaptación de datos viejos).
 - `app.js`: pantallas.
@@ -71,6 +72,10 @@ Los archivos de la versión anterior (`ux.js`, `modules.js`, `supplies.js`, etc.
 
 ## Publicación
 
+La aplicación se usa desde la dirección de Google de la planilla (`…/exec`), con `planilla/App.html`. La versión de GitHub Pages se retiró: la dirección de GitHub muestra un aviso y borra la copia que había quedado guardada en cada navegador.
+
+### Antes (GitHub Pages)
+
 GitHub Pages, rama `main`, carpeta raíz. Después de publicar, recargar sin caché (Ctrl+Shift+R en Windows, Cmd+Shift+R en Mac).
 
-Para probarla en la propia computadora: `python3 -m http.server 8080` dentro de esta carpeta y abrir `http://localhost:8080`.
+Para probarla en la propia computadora: `python3 -m http.server 8080` dentro de esta carpeta y abrir `http://localhost:8080/app.html`.

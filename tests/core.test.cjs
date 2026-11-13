@@ -113,7 +113,7 @@ test('Excel válido con pedidos y herramientas', () => {
   assert.deepEqual(sheets[0].rows[0].slice(0, 5), ['OT-0001', '22/10/2026, 08:00 h', 'Pérdida en canilla <baño>', 'Plomero', 'Callao']);
   assert.equal(sheets[0].rows[0][7], 'Sí');
   assert.deepEqual(sheets[1].rows[0].slice(0, 2), [1, 'Taladro']);
-  assert.deepEqual(sheets[1].rows[0].slice(5, 8), ['Asignada', 'Carlos Benítez', '20/10/2026']);
+  assert.deepEqual(sheets[1].rows[0].slice(5, 10), [1, '', 'Asignada', 'Carlos Benítez', '20/10/2026']);
   const bytes = X.workbook(sheets);
   fs.writeFileSync(path.join(require('os').tmpdir(), 'intendencia-test.xlsx'), bytes);
   assert.equal(Buffer.from(bytes.slice(0, 4)).toString('hex'), '504b0304');
@@ -221,6 +221,18 @@ test('stock inicial: guardado o reconstruido desde los movimientos', () => {
   assert.equal(C.initialStock(rapido).quantity, 8, 'el + rápido no cambia el stock inicial');
   const row = C.sectionSheet('items', [repuesto]).rows[0];
   assert.deepEqual([row[4], row[5], row[10]], [12, 12, '25/10/2026']);
+});
+
+test('herramientas: pasa cantidad y certificación de la nota a sus campos', () => {
+  assert.deepEqual(C.migrateToolNote({name: 'A', notes: 'Con certificación'}), {name: 'A', notes: '', certified: 'Sí'});
+  assert.deepEqual(C.migrateToolNote({name: 'B', notes: 'Cantidad: 10 unidades'}), {name: 'B', notes: '', quantity: 10});
+  assert.deepEqual(C.migrateToolNote({name: 'C', notes: 'Cantidad: 2 sets'}), {name: 'C', notes: '', quantity: 2});
+  assert.equal(C.migrateToolNote({name: 'D', notes: 'Usada'}), null);
+  assert.equal(C.migrateToolNote({name: 'E', notes: 'Sin certificación', certified: 'No'}), null);
+  assert.equal(C.toolQuantity({}), 1);
+  const st = {tools: [{name: 'Z', holder: 'Ana', assignedDate: '2026-10-02'}, {name: 'Y', holder: 'Ana', assignedDate: '2026-08-01'}, {name: 'X', holder: 'Beto'}, {name: 'W'}]};
+  assert.deepEqual(C.toolHolders(st), ['Ana', 'Beto']);
+  assert.deepEqual(C.toolsOf(st, 'Ana').map(t => t.name), ['Y', 'Z']);
 });
 
 console.log(`${n} pruebas de la prueba piloto: OK`);

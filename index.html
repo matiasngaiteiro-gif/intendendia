@@ -2,38 +2,28 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#17233d">
-  <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'none'; form-action 'self'">
-  <title>Intendencia · Pedidos de trabajo</title>
-  <link rel="stylesheet" href="styles.css?v=piloto-19">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Intendencia · La aplicación se mudó</title>
+  <style>
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f4f2ed; color: #15171c; }
+    main { max-width: 34rem; margin: 0 auto; padding: 48px 20px; }
+    .mark { display: inline-grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: #17233d; color: #fff; font-weight: bold; }
+    h1 { font-size: 1.7rem; margin: 20px 0 10px; }
+    p { font-size: 1.1rem; line-height: 1.5; }
+  </style>
 </head>
 <body>
-  <a class="skip" href="#main">Ir al contenido</a>
-  <header class="top">
-    <div class="top-inner">
-      <a class="brand" href="#/pedidos" aria-label="Intendencia, ir a pedidos"><span class="brand-mark" aria-hidden="true">IC</span><span><strong>Intendencia</strong><small>Cámara Comercial</small></span></a>
-      <p id="syncStatus" class="sync" role="status" hidden></p>
-      <nav class="tabs" aria-label="Secciones">
-        <a href="#/pedidos" data-tab="pedidos"><span data-nav-icon="list"></span>Pedidos</a>
-        <a href="#/inventario" data-tab="inventario"><span data-nav-icon="shelf"></span>Inventario</a>
-        <a href="#/herramientas" data-tab="herramientas"><span data-nav-icon="toolbox"></span>Herramientas</a>
-        <a href="#/contactos" data-tab="contactos"><span data-nav-icon="phone"></span>Contactos</a>
-        <a href="#/ajustes" data-tab="ajustes"><span data-nav-icon="sliders"></span>Ajustes</a>
-      </nav>
-    </div>
-  </header>
-
-  <main id="main" tabindex="-1"></main>
-
-  <dialog id="dialog" aria-labelledby="dialogTitle"><div id="dialogBody"></div></dialog>
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <section id="printSheet" class="print-sheet" aria-hidden="true"></section>
-
-  <script src="contacts-data.js?v=10"></script>
-  <script src="core.js?v=piloto-19"></script>
-  <script src="xlsx.js?v=piloto-19"></script>
-  <script src="app.js?v=piloto-19"></script>
+  <main>
+    <span class="mark" aria-hidden="true">IC</span>
+    <h1>La aplicación de Intendencia se mudó</h1>
+    <p>Ahora se abre desde la dirección de Google de la planilla, que empieza con <strong>script.google.com</strong>. Los pedidos, el inventario y las herramientas son los mismos.</p>
+    <p>Si no tenés esa dirección guardada como favorito, pedísela a quien administra la planilla.</p>
+  </main>
+  <script>
+    // Quita la copia de la versión anterior que quedó guardada en este navegador.
+    if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+    if (window.caches) caches.keys().then(ks => ks.filter(k => k.startsWith('intendencia-')).forEach(k => caches.delete(k))).catch(() => {});
+  </script>
 </body>
 </html>

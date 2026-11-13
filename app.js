@@ -247,11 +247,12 @@
       }
       failures = 0;
       setSync({error: '', lastOk: new Date(), loading: false});
-      if (res.unchanged) return;
+      if (res.unchanged) { migrateTools(); return; }
       if (writes !== before || !res.data) return; // hubo cambios propios en el medio: se trae todo en la próxima vuelta
       applyRemote(res.data, !!res.partial);
       remote.rev = res.rev;
       writeJSON(REMOTE_KEY, remote);
+      migrateTools();
       const typing = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
       const r = route().name;
       if (force || (!dialog.open && !typing && r !== 'nuevo' && r !== 'editar')) render({keepScroll: true});
@@ -264,6 +265,13 @@
     }
   }
   // Con «partial» la planilla manda solo las pestañas que cambiaron; el resto queda como está.
+  // Una sola vez: pasa «Cantidad: …» y «Con/Sin certificación» de las notas a sus campos.
+  let toolsMigrated = false;
+  function migrateTools() {
+    if (toolsMigrated || !connected()) return;
+    toolsMigrated = true;
+    state.tools.map(C.migrateToolNote).filter(Boolean).forEach(t => saveItem('tool', {...t, updatedAt: new Date().toISOString()}));
+  }
   function applyRemote(data, partial = false) {
     const keep = k => partial && !Array.isArray(data[k]);
     const custom = keep('contacts') ? state.contacts.filter(C.isCustomContact) : (data.contacts || []).filter(C.isCustomContact);
@@ -285,10 +293,7 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
   window.addEventListener('online', () => { failures = 0; refresh(); });
 
-  // Guarda los archivos de la aplicación en la computadora: así abre aunque GitHub o internet anden lentos.
-  if (!EN_GOOGLE && 'serviceWorker' in navigator && /^(https:|http:\/\/localhost)/.test(location.href)) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
+  // La versión de GitHub (con su copia guardada en el navegador) se retiró: la aplicación se abre desde Google.
 
   // ---------- Preferencias de este equipo ----------
   const PREF_KEY = 'intendencia-preferencias';
@@ -1041,7 +1046,85 @@
   }
 
   // ==================== HERRAMIENTAS ====================
-  const toolView = {q: ''};
+  const toolView = {q: '', byPerson: false};
+  function toolCard(t, {hideHolder = false} = {}) {
+    const pill = t.holder ? (hideHolder ? '' : `<span class="pill pill-progress">Asignada a ${esc(t.holder)}</span>`)
+      : t.toolStatus === 'En reparación' ? '<span class="pill pill-missing">En reparación</span>'
+      : t.toolStatus === 'Fuera de servicio' ? '<span class="pill">Fuera de servicio</span>'
+      : '<span class="pill pill-done">Disponible</span>';
+    const qty = C.toolQuantity(t);
+    return `<button type="button" class="card tool-card" data-tool="${esc(t.id)}">
+        <span class="card-main"><span class="card-title">${esc(t.name)}${qty > 1 ? ` <span class="qty-tag">× ${qty}</span>` : ''}</span>
+        <span class="card-sub">${esc([t.brand, t.model].filter(Boolean).join(' ') || 'Sin marca')}${t.serial ? ' · N.º ' + esc(t.serial) : ''}${hideHolder && t.assignedDate ? ' · desde ' + esc(C.shortDate(t.assignedDate)) : ''}</span></span>
+        <span class="card-side">${pill}</span></button>`;
+  }
+  // Una sección por persona, con su botón para imprimir la planilla de entrega.
+  function personGroups(list) {
+    const people = [...new Set(list.map(t => t.holder).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+    const free = list.filter(t => !t.holder);
+    if (!people.length && !free.length) return '<div class="empty"><p>No se encontró esa herramienta.</p></div>';
+    return people.map(p => {
+      const mine = C.toolsOf({tools: list}, p);
+      return `<section class="person-group"><div class="group-head"><h2>${esc(p)} <span class="count">${mine.length}</span></h2>
+        <button type="button" class="btn btn-small btn-secondary" data-print-person="${esc(p)}">${icon('printer')} Planilla de entrega</button></div>
+        <div class="list">${mine.map(t => toolCard(t, {hideHolder: true})).join('')}</div></section>`;
+    }).join('') + (free.length ? `<section class="person-group"><div class="group-head"><h2>Sin asignar <span class="count">${free.length}</span></h2></div>
+      <div class="list">${free.map(t => toolCard(t)).join('')}</div></section>` : '');
+  }
+
+  // Planilla oficial «Entrega de herramientas» de una persona, en A4 apaisado y en blanco y negro.
+  function deliveryDialog(person) {
+    const D = C.DELIVERY_FORM;
+    prefs.delivery = prefs.delivery || {};
+    const saved = prefs.delivery[person] || {};
+    openDialog(`<form class="dlg" id="deliveryForm"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
+      <h2 id="dialogTitle">Planilla de entrega</h2>
+      <p class="lead">${esc(person)} · ${C.toolsOf(state, person).length} elementos</p>
+      <label class="field-label" for="dAddr">Dirección</label>
+      <select id="dAddr">${D.addresses.map(a => `<option${saved.address === a ? ' selected' : ''}>${esc(a)}</option>`).join('')}</select>
+      <label class="field-label" for="dJob">Puesto de trabajo</label>
+      <input id="dJob" list="jobList" maxlength="60" autocomplete="off" value="${esc(saved.job || '')}" placeholder="Ej.: Técnico en aires acondicionados">
+      <datalist id="jobList">${D.jobs.map(j => `<option value="${esc(j)}"></option>`).join('')}</datalist>
+      <p class="hint">Se recuerdan para la próxima vez en esta computadora.</p>
+      <div class="dlg-actions"><button type="submit" class="btn btn-primary">${icon('printer')} Imprimir</button><button type="button" class="btn btn-ghost" data-close>Cancelar</button></div></form>`, body => {
+      $('#deliveryForm', body).onsubmit = e => {
+        e.preventDefault();
+        const address = $('#dAddr', body).value;
+        const job = $('#dJob', body).value.trim();
+        prefs.delivery[person] = {address, job};
+        savePrefs();
+        dialog.close();
+        printDelivery(person, {address, job});
+      };
+    });
+  }
+  function printDelivery(person, {address, job}) {
+    const D = C.DELIVERY_FORM;
+    const tools = C.toolsOf(state, person);
+    const up = v => esc(String(v || '').toLocaleUpperCase('es'));
+    const rows = tools.map((t, i) => `<tr><td class="n">${i + 1}</td><td>${up(t.name)}</td><td>${up(t.model)}</td><td>${up(t.brand)}</td>
+      <td class="c">${C.toolCert(t) === 'Sí' ? 'SI' : C.toolCert(t) === 'No' ? 'NO' : ''}</td><td class="c">${C.toolQuantity(t)}</td>
+      <td class="c">${t.assignedDate ? esc(C.shortDate(t.assignedDate)) : ''}</td><td></td></tr>`);
+    const total = Math.max(rows.length, 14);
+    for (let i = rows.length; i < total; i++) rows.push(`<tr><td class="n">${i + 1}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`);
+    $('#printSheet').className = 'print-sheet entrega';
+    $('#printSheet').innerHTML = `<div class="de">
+      <div class="de-bar">ENTREGA DE HERRAMIENTAS</div>
+      <div class="de-grid">
+        <div class="de-row"><div class="w3"><i>(1)</i> Razón Social: ${esc(D.company)}</div><div><i>(2)</i> C.U.I.T.: ${esc(D.cuit)}</div></div>
+        <div class="de-row"><div class="w3"><i>(3)</i> Dirección: ${esc(address)}</div><div><i>(4)</i> Localidad: ${esc(D.city)}</div><div class="w1"><i>(5)</i> C.P.: ${esc(D.zip)}</div><div><i>(6)</i> Provincia: ${esc(D.province)}</div></div>
+        <div class="de-row"><div class="w3"><i>(7)</i> Nombre y Apellido del Trabajador: ${up(person)}</div><div><i>(8)</i> D.N.I.:</div></div>
+        <div class="de-row tall"><div><i>(9)</i> Descripción breve del puesto/s de trabajo en el/los cuales se desempeña el trabajador: ${up(job)}</div><div><i>(10)</i> Elementos de protección personal necesarios para el trabajador, según el puesto de trabajo:</div></div>
+      </div>
+      <table class="de-table"><colgroup><col style="width:9mm"><col style="width:58mm"><col style="width:44mm"><col style="width:32mm"><col style="width:22mm"><col style="width:18mm"><col style="width:26mm"><col></colgroup>
+        <thead><tr><th></th><th><i>(11)</i> Producto</th><th><i>(12)</i> Tipo // Modelo</th><th><i>(13)</i> Marca</th><th><i>(14)</i> Posee certificación SI // NO</th><th><i>(15)</i> Cantidad</th><th><i>(16)</i> Fecha de entrega</th><th><i>(17)</i> Firma del trabajador</th></tr></thead>
+        <tbody>${rows.join('')}</tbody></table>
+      <div class="de-extra"><i>(18)</i> Información adicional:</div>
+    </div>`;
+    window.print();
+    setTimeout(() => { $('#printSheet').className = 'print-sheet'; }, 500);
+  }
+
   function renderTools() {
     const q = C.normalizeText(toolView.q);
     const list = state.tools
@@ -1057,11 +1140,11 @@
       <p class="lead">${state.tools.length ? `${state.tools.length} herramienta${state.tools.length === 1 ? '' : 's'} · ${out} asignada${out === 1 ? '' : 's'}` : 'Anotá acá qué herramientas hay y a quién están asignadas.'}</p>
       <button type="button" class="btn btn-primary btn-block" data-new-tool>${icon('plus')} Agregar herramienta</button>
       ${state.tools.length > 5 ? `<label class="search"><span class="sr-only">Buscar herramientas</span>${icon('search')}<input type="search" id="toolSearch" placeholder="Buscar herramienta" value="${esc(toolView.q)}" autocomplete="off"></label>` : ''}
-      <div class="list">${list.length ? list.map(t => `<button type="button" class="card tool-card" data-tool="${esc(t.id)}">
-        <span class="card-main"><span class="card-title">${esc(t.name)}</span>
-        <span class="card-sub">${esc([t.brand, t.model].filter(Boolean).join(' ') || 'Sin marca')}${t.serial ? ' · N.º ' + esc(t.serial) : ''}</span></span>
-        <span class="card-side">${pill(t)}</span></button>`).join('')
-        : `<div class="empty"><p>${q ? 'No se encontró esa herramienta.' : 'Todavía no hay herramientas cargadas.'}</p></div>`}</div>`;
+      ${out ? `<div class="segmented seg-tight" role="group" aria-label="Cómo ver la lista"><button type="button" data-view="all" aria-pressed="${!toolView.byPerson}" class="${toolView.byPerson ? '' : 'active'}">Todas</button><button type="button" data-view="person" aria-pressed="${toolView.byPerson}" class="${toolView.byPerson ? 'active' : ''}">Por persona</button></div>` : ''}
+      ${toolView.byPerson && out ? personGroups(list) : `<div class="list">${list.length ? list.map(toolCard).join('')
+        : `<div class="empty"><p>${q ? 'No se encontró esa herramienta.' : 'Todavía no hay herramientas cargadas.'}</p></div>`}</div>`}`;
+    $$('[data-view]').forEach(b => b.onclick = () => { toolView.byPerson = b.dataset.view === 'person'; renderTools(); });
+    $$('[data-print-person]').forEach(b => b.onclick = () => deliveryDialog(b.dataset.printPerson));
     $('[data-new-tool]').onclick = () => toolForm();
     $$('[data-tool]').forEach(b => b.onclick = () => toolSheet(state.tools.find(t => t.id === b.dataset.tool)));
     const s = $('#toolSearch');
@@ -1080,7 +1163,7 @@
     const history = (t.returns || []).slice(-3).reverse();
     openDialog(`<div class="dlg"><button type="button" class="dlg-x" data-close aria-label="Cerrar">${icon('x')}</button>
       <h2 id="dialogTitle">${esc(t.name)}</h2>
-      <p class="muted">${esc([t.brand, t.model].filter(Boolean).join(' '))}${t.serial ? ' · N.º ' + esc(t.serial) : ''}</p>
+      <p class="muted">${esc([t.brand, t.model].filter(Boolean).join(' '))}${t.serial ? ' · N.º ' + esc(t.serial) : ''}${C.toolQuantity(t) > 1 ? ' · Cantidad: ' + C.toolQuantity(t) : ''}${C.toolCert(t) ? ' · ' + (C.toolCert(t) === 'Sí' ? 'Con' : 'Sin') + ' certificación' : ''}</p>
       ${t.holder ? `<p class="big-status">Asignada a <strong>${esc(t.holder)}</strong>${t.assignedDate ? ` desde ${esc(C.when(t.assignedDate).toLowerCase())}` : ''}.</p>
         <button type="button" class="btn btn-primary btn-block" data-return>${icon('check')} Quitar la asignación</button>
         <p class="hint">La herramienta vuelve a figurar como disponible.</p>`
@@ -1126,6 +1209,10 @@
       <label class="field-label" for="tBrand">Marca <span class="optional">(si sabés)</span></label><input id="tBrand" name="brand" maxlength="60" placeholder="Ej.: Bosch" value="${esc(t?.brand)}">
       <label class="field-label" for="tModel">Modelo <span class="optional">(si sabés)</span></label><input id="tModel" name="model" maxlength="60" value="${esc(t?.model)}">
       <label class="field-label" for="tSerial">Número de inventario <span class="optional">(si tiene)</span></label><input id="tSerial" name="serial" maxlength="40" value="${esc(t?.serial)}">
+      <div class="form-two">
+        <div><label class="field-label" for="tQty">Cantidad</label><input id="tQty" name="quantity" type="number" min="1" step="1" inputmode="numeric" value="${C.toolQuantity(t)}"></div>
+        <div><label class="field-label" for="tCert">Certificación</label><select id="tCert" name="certified">${[['', 'Sin dato'], ['Sí', 'Sí'], ['No', 'No']].map(([v, l]) => `<option value="${v}"${C.toolCert(t) === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+      </div>
       ${t && !t.holder ? `<label class="field-label" for="tState">Estado</label><select id="tState" name="toolStatus">${['Disponible', 'En reparación', 'Fuera de servicio'].map(s => `<option${t.toolStatus === s ? ' selected' : ''}>${s}</option>`).join('')}</select>` : ''}
       ${t ? '' : `<label class="field-label" for="tHolder">A quién se la asigna <span class="optional">(vacío = queda disponible)</span></label>
       <input id="tHolder" name="holder" list="peopleListNew" maxlength="60" autocomplete="off" placeholder="Ej.: Carlos Benítez">
@@ -1140,6 +1227,7 @@
         const now = new Date().toISOString();
         f.name = f.name.trim();
         if (!f.name) return;
+        f.quantity = Math.max(1, Math.round(Number(f.quantity) || 1));
         if (t) {
           saveItem('tool', {...t, ...f, toolStatus: t.holder ? 'Entregada' : (f.toolStatus || t.toolStatus), updatedAt: now});
         } else {
